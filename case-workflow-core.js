@@ -5,7 +5,7 @@ const CaseWorkflowCore = (() => {
   function validate(note) {
     if (!Object.hasOwn(note.toolkit,"workflow")) return;
     const w=note.toolkit.workflow;
-    if (!w || typeof w!=="object" || Array.isArray(w) || !["recentChange","fix","verification","prevention","repeatOf","knowledge"].every(k=>typeof w[k]==="string" && w[k].length<=50000) || !["Unspecified","Service unavailable","Service degraded","How-to / planning"].includes(w.severity) || typeof w.confirmed!=="boolean" || !w.results || typeof w.results!=="object" || Array.isArray(w.results) || Object.keys(w.results).length>30 || !Object.entries(w.results).every(([k,v])=>Object.hasOwn(tools,k) && typeof v==="string" && v.length<=50000)) throw Error("Invalid case workflow data");
+    if (!w || typeof w!=="object" || Array.isArray(w) || !["recentChange","fix","verification","prevention","repeatOf","knowledge"].every(k=>typeof w[k]==="string" && w[k].length<=50000) || !["Unspecified","Service unavailable","Service degraded","Deployment","How-to / planning"].includes(w.severity) || typeof w.confirmed!=="boolean" || !w.results || typeof w.results!=="object" || Array.isArray(w.results) || Object.keys(w.results).length>30 || !Object.entries(w.results).every(([k,v])=>Object.hasOwn(tools,k) && typeof v==="string" && v.length<=50000)) throw Error("Invalid case workflow data");
   }
   const catalog="https://seancrawforddell.github.io/DellSupportoolRepository/#/tools/";
   const tools={
@@ -22,6 +22,8 @@ const CaseWorkflowCore = (() => {
     if(os==="Azure Local") {
       if(issue==="network" && /endpoint|registration|deploy|update|proxy/.test(text))ids.push("urls");
       ids.push("sddc","cluster");
+    } else if(os==="No OS") {
+      ids.push("tsr");
     } else if(os==="Windows Server") {
       if(issue==="performance" && /hyper-v|hyperv|virtual machine/.test(text))ids.push("perf");
       ids.push("events","logs");

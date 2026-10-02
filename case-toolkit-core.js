@@ -69,6 +69,7 @@ const CaseToolkitCore = (() => {
     "ESX": ["esx", "Collect the affected ESXi host support bundle and vCenter bundle if relevant", "Broadcom diagnostic collection", "https://knowledge.broadcom.com/external/article/326299"],
     "VCF": ["vcf", "Identify the affected VCF component; collect ESXi/vCenter bundles when those components are involved", "Broadcom ESXi / vCenter collection", "https://knowledge.broadcom.com/external/article/326299"],
     "Azure Stack Hub": ["ash", "Collect the requested Azure Stack Hub diagnostic logs with support guidance", "Microsoft Azure Stack Hub collection", "https://learn.microsoft.com/en-us/azure-stack/operator/azure-stack-get-azurestacklog"],
+    "No OS": ["noos", "No OS in scope: export the iDRAC SupportAssist collection (TSR) and Lifecycle Controller log", "Export a SupportAssist collection via iDRAC", "https://www.dell.com/support/kbdoc/en-us/000126308/export-a-supportassist-collection-via-idrac9"],
     "Azure Local": ["azlocal", "Collect Azure Local diagnostic logs for the affected nodes and incident window", "Microsoft Azure Local collection", "https://learn.microsoft.com/en-us/azure/azure-local/manage/collect-logs"]
   };
   function checklist(note) {

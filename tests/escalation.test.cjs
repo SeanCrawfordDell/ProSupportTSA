@@ -105,7 +105,7 @@ test('senior assistance is excluded from scoring and export; total remains 100',
 
 test('every Case Notes field reaches its corresponding escalation input and survives reload',()=>{
  const note=core.create(core.empty(),'mapped',100);
- Object.assign(note,{tag:'TAG1234',platform:'PowerEdge R750',request:'000456',os:'Ubuntu',country:'GB',supportType:'PSP',logLocation:'https://example.com/logs',issue:'Application timeout',notes:'<p>Restarted service</p><p>Timeout persisted</p>',next:'<p>Collect service diagnostics</p>'});
+ Object.assign(note,{tag:'TAG1234',platform:'PowerEdge R750',request:'000456',os:'Ubuntu',country:'GB',supportType:'Solution Support includes OS',logLocation:'https://example.com/logs',issue:'Application timeout',notes:'<p>Restarted service</p><p>Timeout persisted</p>',next:'<p>Collect service diagnostics</p>'});
  note.toolkit.impact='Two users affected';
  const h=harness({imported:core.escalation(note,200)});
  const expected={tag:note.tag,platform:note.platform,serviceRequest:note.request,os:note.os,country:note.country,supportType:note.supportType,logLocation:note.logLocation,problem:note.issue,troubleshooting:core.plainText(note.notes),impact:note.toolkit.impact};
@@ -127,7 +127,7 @@ test('OS Support is required and every available selection receives full complet
  const h=harness();const missing=h.run('evaluate({...samples.strong,supportType:""})');
  assert.equal(missing.ready_to_escalate,false);assert.ok(missing.blocking_issues.some(item=>item.field==='supportType'));
  assert.ok(missing.categories.completeness<35);
- for(const supportType of ['OEM','PSP','No OS Support']){
+ for(const supportType of ['OEM OS','ProSupport Plus Bring Your own License','Solution Support includes OS','No Software Support','OEM','PSP','No OS Support']){
   const result=h.run('evaluate({...samples.strong,supportType:'+JSON.stringify(supportType)+'})');
   assert.equal(result.categories.completeness,35);assert.equal(result.ready_to_escalate,true);
  }

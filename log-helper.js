@@ -42,8 +42,9 @@ window.LogHelper = (() => {
     });
     for(const id of ["helperOS","helperSymptom"]) $(id).addEventListener("change",render);
     $("closeLogHelper").addEventListener("click",()=>dialog.close());
+    $("closeLogHelperBottom")?.addEventListener("click",()=>dialog.close());
     dialog.addEventListener("close",()=>$("openLogHelper").focus());
-    $("helperCopy").addEventListener("click",async()=>{
+    $("helperCopy")?.addEventListener("click",async()=>{
       try{await navigator.clipboard.writeText($("helperPlanText").value);$("helperStatus").textContent="Collection plan copied.";}
       catch{$("helperStatus").textContent="Copy failed. Expand Plain text plan to select and copy it manually.";$("helperPlain").open=true;$("helperPlanText").focus();$("helperPlanText").select();}
     });

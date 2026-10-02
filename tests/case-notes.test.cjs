@@ -251,7 +251,7 @@ test('older cases gain empty optional fields without losing notes or timing', ()
 });
 test('new case details autosave and are included in Lightning copy',async()=>{
   const h=harness();h.click('newNote');
-  const details={request:'001234',os:'Windows Server 2022',country:'United States',supportType:'PSP',logLocation:'https://example.com/logs/123'};
+  const details={request:'001234',os:'Windows Server 2022',country:'United States',supportType:'ProSupport Plus Bring Your own License',logLocation:'https://example.com/logs/123'};
   for(const [key,value] of Object.entries(details))h.edit(key,value);
   h.intervals.find(i=>i.ms===10000).f();
   const restored=C.parse(h.stored()).cases[0];
