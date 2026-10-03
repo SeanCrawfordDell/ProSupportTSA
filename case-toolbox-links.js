@@ -174,6 +174,7 @@
   }
   function closeMenu() {
     document.getElementById('floatingToolbox').classList.remove('is-open');
+    toolbox.style.removeProperty('--orbit');
     radial.inert = true;
     const launcher = document.getElementById('toolboxLauncher');
     launcher.setAttribute('aria-expanded', 'false');

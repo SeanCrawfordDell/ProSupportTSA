@@ -1157,15 +1157,21 @@
   let toolboxMoved = false, toolboxStart;
   const setToolboxOpen = open => {
     toolbox.classList.toggle('is-open', open);
+    if (!open) toolbox.style.removeProperty('--orbit');
     $('toolboxRadial').inert = !open;
     toolboxLauncher.setAttribute('aria-expanded', String(open));
     toolboxLauncher.setAttribute('aria-label', `${open ? 'Close' : 'Open'} case notes toolbox`);
     if (open) {
       const rect = toolbox.getBoundingClientRect();
       toolbox.style.right = 'auto'; toolbox.style.bottom = 'auto';
-      const reach = toolbox.offsetWidth / 2 + 79 + 36, margin = reach + 16 - toolbox.offsetWidth / 2;
-      toolbox.style.left = `${Math.max(margin, Math.min(window.innerWidth - margin - toolbox.offsetWidth, rect.left))}px`;
-      toolbox.style.top = `${Math.max(margin, Math.min(window.innerHeight - margin - toolbox.offsetWidth, rect.top))}px`;
+      // Shrink the orbit when the viewport is too small for the full ring, and center the ring if it still cannot fit.
+      const half = toolbox.offsetWidth / 2, fit = Math.min(window.innerWidth, window.innerHeight) / 2 - 8 - 36;
+      const orbit = Math.min(half + 79, Math.max(half + 36, fit));
+      toolbox.style.setProperty('--orbit', `${orbit}px`);
+      const margin = orbit + 36 + 16 - half;
+      const place = (value, inner) => { const hi = inner - margin - toolbox.offsetWidth; return hi < margin ? (inner - toolbox.offsetWidth) / 2 : Math.max(margin, Math.min(hi, value)); };
+      toolbox.style.left = `${place(rect.left, window.innerWidth)}px`;
+      toolbox.style.top = `${place(rect.top, window.innerHeight)}px`;
       toolbox.querySelectorAll('[data-toolbox-action]').forEach(button => {
         button.disabled = $({email:'emailNote',escalate:'escalateNote',copy:'copyNote'}[button.dataset.toolboxAction]).disabled;
       });
