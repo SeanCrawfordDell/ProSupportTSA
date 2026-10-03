@@ -154,7 +154,7 @@ test('missing backups warn on startup and configure opens backup options',async(
   assert.match(h.get('backupWarningMessage').textContent,/not configured/);
   h.click('configureBackups');
   assert.equal(h.get('backupWarningDialog').open,false);
-  assert.equal(h.get('backupRestoreDialog').open,true);
+  assert.equal(h.get('backupRestoreMenu').hidden,false);
 });
 test('dismissed backup warning stays closed for this visit',async()=>{
   const h=harness();await new Promise(setImmediate);
@@ -170,13 +170,15 @@ test('startup warning waits for folder permission and skips connected folders',a
     if(permission!=='granted')assert.match(h.get('backupWarningMessage').textContent,/permission/);
   }
 });
-test('backup popup opens and closes without changing notes',async()=>{
+test('backup dropdown opens and closes without changing notes',async()=>{
   const h=harness();const before=h.stored();
+  h.get('backupRestoreMenu').hidden=true;
   await h.click('openBackupRestore');
-  assert.equal(h.get('backupRestoreDialog').open,true);
+  assert.equal(h.get('backupRestoreMenu').hidden,false);
+  assert.equal(h.get('openBackupRestore').attributes?.['aria-expanded'] ?? 'true','true');
   assert.equal(h.get('chooseBackupFolder').textContent,'Set Backup Folder');
-  h.click('closeBackupRestore');
-  assert.equal(h.get('backupRestoreDialog').open,false);
+  await h.click('openBackupRestore');
+  assert.equal(h.get('backupRestoreMenu').hidden,true);
   assert.equal(h.stored(),before);
 });
 test('folder control reconnects a saved folder then offers change folder',async()=>{

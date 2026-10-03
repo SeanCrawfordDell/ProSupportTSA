@@ -196,11 +196,29 @@
       setBackupFolderStatus(error?.message || "Could not restore settings. Confirm customer-config.json exists in ProSupportToolsBackup.");
     }
   }
+  // Backup & Restore is a dropdown in the top bar; it stays open while its actions report status.
+  function setBackupMenu(open, focusFirst = false) {
+    const menu = $("backupRestoreMenu"), toggle = $("openBackupRestore");
+    if (!menu || !toggle) return;
+    menu.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+    if (open) {
+      void refreshBackupFolderButton();
+      if (focusFirst) [...menu.querySelectorAll("button")].find(item => !item.disabled)?.focus();
+    }
+  }
   $("openBackupRestore")?.addEventListener("click", async () => {
-    $("backupRestoreDialog").showModal();
-    await refreshBackupFolderButton();
+    const opening = $("backupRestoreMenu").hidden;
+    setBackupMenu(opening);
+    if (opening) await refreshBackupFolderButton();
   });
-  $("closeBackupRestore")?.addEventListener("click", () => $("backupRestoreDialog").close());
+  document.addEventListener?.("click", event => {
+    const menu = $("backupMenu");
+    if (menu && !$("backupRestoreMenu").hidden && event.target && menu.contains && !menu.contains(event.target)) setBackupMenu(false);
+  });
+  document.addEventListener?.("keydown", event => {
+    if (event.key === "Escape" && !$("backupRestoreMenu")?.hidden) { setBackupMenu(false); $("openBackupRestore").focus(); }
+  });
   backupFolderButton?.addEventListener("click", async () => {
     try {
       if (!backupFolderHandle || await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted") {
@@ -219,6 +237,7 @@
   });
   restoreSettingsButton?.addEventListener("click", () => {
     if (!writable || copying) return;
+    setBackupMenu(false);
     $("restoreSettingsFromFolder").disabled = !backupFolderHandle;
     $("restoreSettingsFolderHint").textContent = backupFolderHandle
       ? "From backup folder reads the latest customer-config.json. Choose a file to use an older backup or a file from another computer."
@@ -287,8 +306,8 @@
   $("dismissBackupWarning")?.addEventListener("click", () => $("backupWarningDialog").close());
   $("configureBackups")?.addEventListener("click", () => {
     $("backupWarningDialog").close();
-    $("backupRestoreDialog").showModal();
-    void refreshBackupFolderButton();
+    window.scrollTo?.(0, 0);
+    setBackupMenu(true, true);
   });
   // Check once per page visit, after the saved folder has been loaded.
   restoreBackupFolder().then(warnIfBackupsUnavailable);
