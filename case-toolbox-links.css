@@ -11,7 +11,12 @@
 /* Launcher size and icon. --toolbox-size is set from the saved toolbox appearance. */
 #floatingToolbox{width:var(--toolbox-size,58px);height:var(--toolbox-size,58px);--orbit:calc(var(--toolbox-size,58px) / 2 + 79px)}
 .floating-toolbox .toolbox-launcher{overflow:hidden;--lc:#b42318}
-.floating-toolbox .toolbox-launcher svg.toolbox-icon{width:68%;height:68%;overflow:visible}
+.floating-toolbox .toolbox-launcher svg.toolbox-icon{width:var(--icon-scale,68%);height:var(--icon-scale,68%);overflow:visible}
+/* Icons larger than the circle, or with no circle, may extend past the button edge. */
+.floating-toolbox.toolbox-icon-big .toolbox-launcher,.floating-toolbox.toolbox-no-circle .toolbox-launcher{overflow:visible}
+/* No circle: the icon takes the launcher color and cutouts take the page background. */
+.floating-toolbox.toolbox-no-circle .toolbox-launcher{background:transparent!important;box-shadow:none;color:var(--lc)!important}
+.floating-toolbox.toolbox-no-circle .toolbox-launcher svg.toolbox-icon{--lc:var(--bg,#fff);filter:drop-shadow(0 2px 3px #0005)}
 /* Animated launcher icons. Respect reduced motion and the Animate icon setting. */
 .toolbox-launcher svg *{transform-box:fill-box}
 .floating-toolbox.toolbox-still .toolbox-launcher svg *{animation:none!important}
@@ -76,3 +81,4 @@
 .toolbox-launcher svg .tbi-dl-8{animation-delay:0.8s}
 .toolbox-launcher svg .tbi-dur-14{animation-duration:1.4s}
 .toolbox-launcher svg .tbi-dur-18{animation-duration:1.8s}
+#toolboxIconPicker label.toolbox-animate{display:flex;flex-direction:row;align-items:center;gap:8px;margin:8px 0}#toolboxIconPicker label.toolbox-animate input{width:auto;margin:0}
