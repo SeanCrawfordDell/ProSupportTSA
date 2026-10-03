@@ -15,6 +15,7 @@ test('toolbox icon list has unique ids, a valid default and no inline styles blo
     assert.match(icon.svg, /^<svg /);
     assert.doesNotMatch(icon.svg, /style=|<script|on\w+=/i);
   }
+  assert.equal(Icons.defaultId, 'clip-twirl');
   assert.equal(Icons.find('missing').id, Icons.defaultId);
   assert.equal(Icons.find('clip-wave').id, 'clip-wave');
 });
@@ -26,9 +27,9 @@ test('every animation class used by an icon has a stylesheet rule', () => {
 });
 
 test('settings accept launcher icon, size and animation and reject invalid values', () => {
-  const ok = S.validate(withAppearance({icon:'clip-wave',size:80,animate:false}), C.fields);
+  const ok = S.validate(withAppearance({icon:'clip-wave',size:80,animate:false,iconScale:120,circle:false}), C.fields);
   assert.match(ok.values['dell-support.toolbox-appearance.v1'], /"size":80/);
   assert.doesNotThrow(() => S.validate(withAppearance({}), C.fields));
-  for (const bad of [{icon:'Bad Icon'},{icon:7},{size:20},{size:121},{size:'80'},{size:NaN},{animate:'no'}])
+  for (const bad of [{icon:'Bad Icon'},{icon:7},{size:20},{size:121},{size:'80'},{size:NaN},{animate:'no'},{iconScale:39},{iconScale:141},{iconScale:'90'},{circle:'off'}])
     assert.throws(() => S.validate(withAppearance(bad), C.fields), undefined, JSON.stringify(bad));
 });

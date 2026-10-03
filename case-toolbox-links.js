@@ -46,11 +46,15 @@
     try { const saved = JSON.parse(localStorage.getItem(preferencesKey)); if (saved && Array.isArray(saved.order) && saved.colors && typeof saved.colors === 'object') preferences = saved; } catch {}
   }
   const launcherSize = () => { const size = Number(preferences.size); return Number.isFinite(size) ? Math.round(Math.max(ToolboxIcons.minSize, Math.min(ToolboxIcons.maxSize, size))) : ToolboxIcons.defaultSize; };
+  const iconScale = () => { const scale = Number(preferences.iconScale); return Number.isFinite(scale) ? Math.round(Math.max(ToolboxIcons.minScale, Math.min(ToolboxIcons.maxScale, scale))) : ToolboxIcons.defaultScale; };
   function applyLauncher() {
     const icon = ToolboxIcons.find(preferences.icon);
     if (launcher.dataset.icon !== icon.id) { launcher.innerHTML = icon.svg; launcher.dataset.icon = icon.id; }
     toolbox.style.setProperty('--toolbox-size', `${launcherSize()}px`);
+    toolbox.style.setProperty('--icon-scale', `${iconScale()}%`);
     toolbox.classList.toggle('toolbox-still', preferences.animate === false);
+    toolbox.classList.toggle('toolbox-no-circle', preferences.circle === false);
+    toolbox.classList.toggle('toolbox-icon-big', iconScale() > 90);
     if (toolbox.style.left) {
       const size = toolbox.offsetWidth;
       toolbox.style.left = `${Math.max(8, Math.min(window.innerWidth - size - 8, parseFloat(toolbox.style.left)))}px`;
@@ -114,15 +118,29 @@
   const sizeReset = document.createElement('button'); sizeReset.type = 'button'; sizeReset.className = 'button secondary'; sizeReset.textContent = 'Reset';
   sizeReset.addEventListener('click', () => { delete preferences.size; savePreferences(); applyLauncher(); syncIconControls(); });
   sizeLabel.append(sizeInput, sizeOut); sizeRow.append(sizeLabel, sizeReset);
+  const scaleRow = document.createElement('div'); scaleRow.className = 'toolbox-size-row';
+  const scaleLabel = document.createElement('label'); scaleLabel.append('Icon size');
+  const scaleInput = document.createElement('input'); scaleInput.type = 'range'; scaleInput.min = ToolboxIcons.minScale; scaleInput.max = ToolboxIcons.maxScale; scaleInput.step = 2;
+  const scaleOut = document.createElement('output'); scaleInput.setAttribute('aria-label', 'Launcher icon size as a percent of the button');
+  scaleInput.addEventListener('input', () => { preferences.iconScale = Number(scaleInput.value); scaleOut.textContent = `${scaleInput.value}%`; savePreferences(); applyLauncher(); });
+  const scaleReset = document.createElement('button'); scaleReset.type = 'button'; scaleReset.className = 'button secondary'; scaleReset.textContent = 'Reset';
+  scaleReset.addEventListener('click', () => { delete preferences.iconScale; savePreferences(); applyLauncher(); syncIconControls(); });
+  scaleLabel.append(scaleInput, scaleOut); scaleRow.append(scaleLabel, scaleReset);
+  const circleLabel = document.createElement('label'); circleLabel.className = 'toolbox-animate';
+  const circleInput = document.createElement('input'); circleInput.type = 'checkbox';
+  circleInput.addEventListener('change', () => { preferences.circle = circleInput.checked; savePreferences(); applyLauncher(); });
+  circleLabel.append(circleInput, ' Show the background circle');
   const animateLabel = document.createElement('label'); animateLabel.className = 'toolbox-animate';
   const animateInput = document.createElement('input'); animateInput.type = 'checkbox';
   animateInput.addEventListener('change', () => { preferences.animate = animateInput.checked; savePreferences(); applyLauncher(); });
   animateLabel.append(animateInput, ' Animate the icon');
-  iconSection.append(sizeRow, animateLabel);
+  iconSection.append(sizeRow, scaleRow, circleLabel, animateLabel);
   function syncIconControls() {
     const current = ToolboxIcons.find(preferences.icon).id;
     options.querySelectorAll('input').forEach(radio => { radio.checked = radio.value === current; });
     sizeInput.value = launcherSize(); sizeOut.textContent = `${launcherSize()} px`;
+    scaleInput.value = iconScale(); scaleOut.textContent = `${iconScale()}%`;
+    circleInput.checked = preferences.circle !== false;
     animateInput.checked = preferences.animate !== false;
   }
   function renderAppearance() {
