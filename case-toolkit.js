@@ -96,7 +96,7 @@ window.CaseToolkit = (() => {
       api.refreshEditors();$("templateStatus").textContent="Template appended. Existing notes were kept. Replace the bracketed prompts with case details.";
       } catch(error) { $("templateStatus").textContent=error.message || "Could not apply the template. Existing notes were kept."; }
     });
-    for(const [id,key,build] of [["generateCustomer","customerDraft",note=>core.customerUpdate(note,CaseNotes.plainText,$("customerTone").value)],["generateSummary","summaryDraft",note=>core.summary(note,CaseNotes.plainText,CaseNotes.duration(CaseNotes.elapsed(note,Date.now())))]] ) {
+    for(const [id,key,build] of [["generateCustomer","customerDraft",note=>core.customerUpdate(note,CaseNotes.plainText,$("customerTone").value)],["generateSummary","summaryDraft",note=>core.summary({...note,notes:CaseNotes.exportField(note,"notes"),next:CaseNotes.exportField(note,"next")},CaseNotes.plainText,CaseNotes.duration(CaseNotes.elapsed(note,Date.now())))]] ) {
       $(id).addEventListener("click",()=>{
         const note=api.current();if(!note || !api.canEdit())return;
         if(core.ensure(note)[key] && !confirm("Replace the existing draft with an updated draft from this case?"))return;

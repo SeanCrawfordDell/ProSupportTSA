@@ -8,7 +8,44 @@ const CaseNotes = (() => {
   // Earlier versions stored short codes; map them to the current entitlement options.
   const legacySupportTypes = { "OEM": "OEM OS", "PSP": "ProSupport Plus Bring Your own License", "No OS Support": "No Software Support" };
   const normalizeSupportType = value => Object.hasOwn(legacySupportTypes, value) ? legacySupportTypes[value] : value;
-  const empty = () => ({ version: 2, selected: null, cases: [], archive: [], trash: [], revisions: {}, fieldConfig: { order: [...defaultFieldOrder], customFields: {} } });
+  const empty = () => ({ version: 3, selected: null, cases: [], archive: [], trash: [], revisions: {}, fieldConfig: { order: [...defaultFieldOrder], customFields: {} } });
+  function migrateEntries(note) {
+    note.activeEntryId = "initial-" + note.id;
+    note.entries = [{ id: note.activeEntryId, created: note.created, updated: note.updated, notes: note.notes, next: note.next }];
+  }
+  // Top-level notes/next remain the active editor fields for existing tools.
+  // Entries retain the history; synchronize before storage or changing selection.
+  function syncEntry(note, now = note.updated) {
+    const entry = note.entries.find(item => item.id === note.activeEntryId);
+    if (!entry) throw Error("Invalid active note entry");
+    if (entry.notes !== note.notes || entry.next !== note.next) {
+      entry.notes = note.notes; entry.next = note.next;
+      entry.updated = Math.max(entry.updated, now);
+    }
+  }
+  function entryList(note) {
+    return (note.entries || [{id:"initial-" + note.id,created:note.created,updated:note.updated,notes:note.notes,next:note.next}])
+      .map(entry => entry.id === note.activeEntryId ? {...entry, notes:note.notes, next:note.next} : {...entry})
+      .sort((a,b) => a.created - b.created);
+  }
+  function selectEntry(note, id) {
+    const entry = note.entries.find(item => item.id === id);
+    if (!entry) throw Error("Note entry not found");
+    syncEntry(note);
+    note.activeEntryId = id; note.notes = entry.notes; note.next = entry.next;
+  }
+  function addEntry(note, id, now) {
+    if (typeof id !== "string" || !id || note.entries.some(item => item.id === id) || !Number.isFinite(now) || now < 0) throw Error("Invalid new note entry");
+    syncEntry(note);
+    note.entries.push({id,created:now,updated:now,notes:"",next:""});
+    selectEntry(note,id); note.updated = now;
+  }
+  function exportField(note, field) {
+    if (!["notes","next"].includes(field)) return note[field] || "";
+    const entries = entryList(note);
+    if (entries.length === 1) return entries[0][field];
+    return entries.map(entry => "### " + new Date(entry.created).toLocaleString() + "\n\n" + (entry[field] || "(No content recorded)")).join("\n\n");
+  }
   const elapsed = (note, now) => note.elapsed + (note.started === null ? 0 : Math.max(0, now - note.started));
   const lastSession = (note, now) => note.started === null ? (note.lastSession || 0) : Math.max(0, now - note.started);
   function stop(note, now) {
@@ -25,6 +62,7 @@ const CaseNotes = (() => {
     const fieldConfig = state.fieldConfig || { order: [...defaultFieldOrder], customFields: {} };
     const allFields = { ...fields, ...fieldConfig.customFields };
     const note = { toolkit: Toolkit.defaults(), id, created: now, updated: now, elapsed: 0, started: now, lastSession: 0, ...Object.fromEntries(Object.keys(allFields).map(key => [key, ""])) };
+    migrateEntries(note);
     state.cases.unshift(note); trimWorkingList(state, now); state.selected = id;
     return note;
   }
@@ -56,7 +94,7 @@ const CaseNotes = (() => {
     const config = fieldConfig || { order: [...defaultFieldOrder], customFields: {} };
     const allFields = { ...fields, ...config.customFields };
     const orderedFields = config.order.filter(key => allFields[key]).concat(Object.keys(config.customFields).filter(key => !config.order.includes(key)));
-    return [...orderedFields.map(key => `${allFields[key] || key}:\n${plainImages(note[key] || "")}`), ...(extra ? [extra] : []), `Time Spent:\n${duration(elapsed(note, now))}`].join("\n\n");
+    return [...orderedFields.map(key => `${allFields[key] || key}:\n${plainImages(exportField(note,key))}`), ...(extra ? [extra] : []), `Time Spent:\n${duration(elapsed(note, now))}`].join("\n\n");
   }
   function emailFile(note, now, content, token, fieldConfig = null) {
     if (!/^[a-zA-Z0-9-]+$/.test(token)) throw Error("Invalid email ID");
@@ -108,7 +146,7 @@ const CaseNotes = (() => {
     else if (state.selected === id) state.selected = state.cases[0]?.id || null;
     return note;
   }
-  const contentSignature = note => JSON.stringify(Object.fromEntries(Object.entries(note).filter(([key]) => !["started", "elapsed", "lastSession", "updated", "pinned", "deletedAt"].includes(key))));
+  const contentSignature = note => JSON.stringify({...Object.fromEntries(Object.entries(note).filter(([key]) => !["started", "elapsed", "lastSession", "updated", "pinned", "deletedAt", "activeEntryId", "notes", "next", "entries"].includes(key))),entries:entryList(note)});
   function checkpoint(state, previous, now) {
     state.revisions ||= {};
     const current = new Map(state.cases.map(note => [note.id, note]));
@@ -125,7 +163,7 @@ const CaseNotes = (() => {
     }
   }
   function searchText(note) {
-    return [...Object.entries(note).filter(([key,value]) => key !== "id" && typeof value === "string").map(([,value]) => value), ...Object.values(note.toolkit || {}).filter(value => typeof value === "string")].map(plainImages).join("\n");
+    return [...Object.entries(note).filter(([key,value]) => !["id","activeEntryId"].includes(key) && typeof value === "string").map(([,value]) => value), ...entryList(note).flatMap(entry=>[entry.notes,entry.next]), ...Object.values(note.toolkit || {}).filter(value => typeof value === "string")].map(plainImages).join("\n");
   }
   function excerpt(note, query) {
     const text = searchText(note).replace(/\s+/g, " ");
@@ -141,7 +179,23 @@ const CaseNotes = (() => {
     });
     return { problem: note.issue, tag: note.tag, os: note.os, country: note.country,
       osVersion: note.osVersion || "", serviceRequest: note.request, platform: note.platform || "", supportType: normalizeSupportType(note.supportType || ""), logLocation: note.logLocation || "", impact: note.toolkit?.impact || "", checks: note.toolkit?.checks || {}, issueType: note.toolkit?.issueType || "general",
-      troubleshooting: plainImages(note.notes), nextSteps: plainImages(note.next), sourceNote: copyText(note, now, config), customFields: customFieldsData };
+      troubleshooting: plainImages(exportField(note,"notes")), nextSteps: plainImages(exportField(note,"next")), sourceNote: copyText(note, now, config), customFields: customFieldsData };
+  }
+  // Preserve custom IDs accepted before dated entries reserved these names.
+  function migrateLegacyFieldConfig(config, notes = []) {
+    if (!config || !config.customFields || typeof config.customFields !== "object" || Array.isArray(config.customFields) || !Array.isArray(config.order)) return;
+    for (const oldId of ["entries", "activeEntryId"]) {
+      if (!Object.hasOwn(config.customFields, oldId)) continue;
+      let newId = "legacy_" + oldId;
+      while (Object.hasOwn(config.customFields, newId) || Object.hasOwn(fields, newId)) newId += "_";
+      config.customFields[newId] = config.customFields[oldId]; delete config.customFields[oldId];
+      config.order = config.order.map(id => id === oldId ? newId : id);
+      for (const note of notes) {
+        if (note && typeof note === "object" && Object.hasOwn(note, oldId)) {
+          note[newId] = note[oldId]; delete note[oldId];
+        }
+      }
+    }
   }
   function parse(raw, nested = false) {
     if (raw === null) return empty();
@@ -151,10 +205,19 @@ const CaseNotes = (() => {
       state.version = 2;
       state.fieldConfig = { order: [...defaultFieldOrder], customFields: {} };
     }
-    if (state.version !== 2 || !Array.isArray(state.cases) || state.cases.length > 100) throw Error("Invalid history");
+    if (![2,3].includes(state.version) || !Array.isArray(state.cases) || state.cases.length > 100) throw Error("Invalid history");
+    const inputVersion = state.version; state.version = 3;
     if (!state.fieldConfig) state.fieldConfig = { order: [...defaultFieldOrder], customFields: {} };
     const config = state.fieldConfig;
-    const reserved = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt"]);
+    if (inputVersion === 2) {
+      const legacyNotes = [...state.cases];
+      for (const name of ["archive", "trash"]) if (Array.isArray(state[name])) legacyNotes.push(...state[name]);
+      if (state.revisions && typeof state.revisions === "object") {
+        for (const versions of Object.values(state.revisions)) if (Array.isArray(versions)) legacyNotes.push(...versions.map(version => version?.note));
+      }
+      migrateLegacyFieldConfig(config, legacyNotes);
+    }
+    const reserved = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt", "entries", "activeEntryId"]);
     if (!config.customFields || typeof config.customFields !== "object" || Array.isArray(config.customFields) || !Array.isArray(config.order)) throw Error("Invalid field configuration");
     for (const [id,label] of Object.entries(config.customFields)) {
       if (!/^[a-zA-Z0-9_-]+$/.test(id) || reserved.has(id) || Object.hasOwn(fields,id) || typeof label !== "string" || !label.trim()) throw Error("Invalid custom field");
@@ -180,6 +243,15 @@ const CaseNotes = (() => {
         if (!Object.hasOwn(note, "lastSession")) note.lastSession = 0;
       }
       if (!note || typeof note.id !== "string" || ids.has(note.id) || ![note.created, note.updated, note.elapsed, note.lastSession].every(n => Number.isFinite(n) && n >= 0) || !(note.started === null || (Number.isFinite(note.started) && note.started >= 0)) || !Object.keys(allFields).every(key => typeof note[key] === "string")) throw Error("Invalid case");
+      if (inputVersion === 2 && !Object.hasOwn(note,"entries")) migrateEntries(note);
+      if (!Array.isArray(note.entries) || !note.entries.length) throw Error("Invalid note entries");
+      const entryIds = new Set();
+      for (const entry of note.entries) {
+        if (!entry || typeof entry.id !== "string" || !entry.id || ["__proto__","constructor","prototype"].includes(entry.id) || entryIds.has(entry.id) || ![entry.created,entry.updated].every(n=>Number.isFinite(n)&&n>=0) || typeof entry.notes !== "string" || typeof entry.next !== "string") throw Error("Invalid note entry");
+        entryIds.add(entry.id);
+      }
+      if (!entryIds.has(note.activeEntryId)) throw Error("Invalid active note entry");
+      syncEntry(note);
       if (!Object.hasOwn(note, "images")) note.images = {};
       if (!note.images || typeof note.images !== "object" || Array.isArray(note.images) || !Object.entries(note.images).every(([id, image]) => /^[a-zA-Z0-9-]+$/.test(id) && image && typeof image.name === "string" && typeof image.data === "string" && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(image.data))) throw Error("Invalid screenshots");
       Toolkit.validate(note);
@@ -191,7 +263,7 @@ const CaseNotes = (() => {
         state[collection] ||= [];
         if (!Array.isArray(state[collection])) throw Error("Invalid saved collection");
         state[collection] = state[collection].map(note => {
-          const valid = parse(JSON.stringify({ version:2, cases:[note], selected:null, fieldConfig:state.fieldConfig }), true).cases[0];
+          const valid = parse(JSON.stringify({ version:inputVersion, cases:[note], selected:null, fieldConfig:state.fieldConfig }), true).cases[0];
           if (ids.has(valid.id)) throw Error("Duplicate case");
           ids.add(valid.id); valid.started = null; return valid;
         });
@@ -203,7 +275,7 @@ const CaseNotes = (() => {
         if (!Array.isArray(versions) || versions.length > 10) throw Error("Invalid versions");
         versions.forEach(version => {
           if (!version || !Number.isFinite(version.savedAt) || version.note?.id !== id) throw Error("Invalid version");
-          version.note = parse(JSON.stringify({version:2, cases:[version.note], selected:null, fieldConfig:state.fieldConfig}), true).cases[0];
+          version.note = parse(JSON.stringify({version:inputVersion, cases:[version.note], selected:null, fieldConfig:state.fieldConfig}), true).cases[0];
           version.note.started = null;
         });
       }
@@ -214,7 +286,7 @@ const CaseNotes = (() => {
   function addCustomField(state, fieldId, fieldLabel) {
     if (typeof fieldLabel !== "string" || !fieldLabel.trim() || fieldLabel.length > 120) throw Error("Field labels must contain 1–120 characters.");
     if (!/^[a-zA-Z0-9_-]+$/.test(fieldId)) throw Error("Invalid field ID");
-    if (["id","created","updated","started","elapsed","lastSession","images","toolkit","pinned","deletedAt","__proto__","constructor","prototype"].includes(fieldId)) throw Error("Reserved field ID");
+    if (["id","created","updated","started","elapsed","lastSession","images","toolkit","pinned","deletedAt","entries","activeEntryId","__proto__","constructor","prototype"].includes(fieldId)) throw Error("Reserved field ID");
     if (fields[fieldId] || state.fieldConfig.customFields[fieldId]) throw Error("Field already exists");
     state.fieldConfig.customFields[fieldId] = fieldLabel;
     state.fieldConfig.order.push(fieldId);
@@ -251,6 +323,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, searchText, excerpt, trimWorkingList };
+  return { migrateLegacyFieldConfig, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;
