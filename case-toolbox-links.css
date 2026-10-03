@@ -3,8 +3,75 @@
 @keyframes toolbox-wiggle{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-7deg)}40%,80%{transform:rotate(7deg)}}
 @media(prefers-reduced-motion:reduce){.toolbox-launcher.toolbox-wiggle{animation:none}}
 /* Override the original nth-child positions with one evenly spaced orbit. */
-#floatingToolbox.is-open #toolboxRadial button{transform:translate(-50%,-50%) rotate(var(--angle)) translateX(108px) rotate(calc(-1 * var(--angle))) scale(1);touch-action:none;user-select:none}
+#floatingToolbox.is-open #toolboxRadial button{transform:translate(-50%,-50%) rotate(var(--angle)) translateX(var(--orbit,108px)) rotate(calc(-1 * var(--angle))) scale(1);touch-action:none;user-select:none}
 .toolbox-color-row{display:flex;align-items:center;gap:8px;margin:12px 0}.toolbox-color-row label{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:1}.toolbox-color-row input{width:48px;height:34px;padding:2px}.toolbox-color-row button{padding:8px;cursor:pointer}
 #toolboxEditor{width:min(540px,calc(100% - 32px));max-height:85vh;overflow:auto;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:24px}
 #toolboxEditor form{display:grid;gap:14px}#toolboxLinkList{padding:0;list-style:none}#toolboxLinkList li{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px 0}#toolboxLinkList span{overflow-wrap:anywhere;min-width:0}
 .demo-toolbox-preview{display:flex;align-items:center;gap:18px;padding:20px;margin:16px 0;border:2px solid #73caff;border-radius:12px;background:#0076ad18}.demo-toolbox-preview svg{flex:none;width:48px;height:48px;color:#0076ad}.demo-toolbox-preview p{margin:0}.demo-toolbox-preview[hidden]{display:none}
+/* Launcher size and icon. --toolbox-size is set from the saved toolbox appearance. */
+#floatingToolbox{width:var(--toolbox-size,58px);height:var(--toolbox-size,58px);--orbit:calc(var(--toolbox-size,58px) / 2 + 79px)}
+.floating-toolbox .toolbox-launcher{overflow:hidden;--lc:#b42318}
+.floating-toolbox .toolbox-launcher svg.toolbox-icon{width:68%;height:68%;overflow:visible}
+/* Animated launcher icons. Respect reduced motion and the Animate icon setting. */
+.toolbox-launcher svg *{transform-box:fill-box}
+.floating-toolbox.toolbox-still .toolbox-launcher svg *{animation:none!important}
+@media (prefers-reduced-motion:reduce){.toolbox-launcher svg *{animation:none!important}}
+.toolbox-launcher .tbi-sway{transform-origin:50% 100%;animation:tbi-sway 1.1s ease-in-out infinite}
+@keyframes tbi-sway{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+.toolbox-launcher .tbi-bounce{transform-origin:50% 100%;animation:tbi-bounce .6s ease-in-out infinite}
+@keyframes tbi-bounce{0%,100%{transform:translateY(0) scale(1.05,.93)}50%{transform:translateY(-5px) scale(.96,1.05)}}
+.toolbox-launcher .tbi-armL{transform-origin:100% 100%;animation:tbi-armL .6s ease-in-out infinite}
+.toolbox-launcher .tbi-armR{transform-origin:0% 100%;animation:tbi-armR .6s ease-in-out infinite}
+@keyframes tbi-armL{0%,100%{transform:rotate(-25deg)}50%{transform:rotate(25deg)}}
+@keyframes tbi-armR{0%,100%{transform:rotate(25deg)}50%{transform:rotate(-25deg)}}
+.toolbox-launcher .tbi-shimmy{transform-origin:50% 100%;animation:tbi-shimmy .36s linear infinite}
+@keyframes tbi-shimmy{0%,100%{transform:skewX(-9deg)}50%{transform:skewX(9deg)}}
+.toolbox-launcher .tbi-tap{transform-origin:50% 100%;animation:tbi-tap .8s ease-in-out infinite}
+@keyframes tbi-tap{0%,100%{transform:rotate(-5deg) translateY(0)}25%{transform:rotate(0) translateY(-4px)}50%{transform:rotate(5deg) translateY(0)}75%{transform:rotate(0) translateY(-4px)}}
+.toolbox-launcher .tbi-twirl{transform-origin:50% 50%;animation:tbi-twirl 1.8s ease-in-out infinite}
+@keyframes tbi-twirl{0%{transform:scaleX(1)}50%{transform:scaleX(-1)}100%{transform:scaleX(1)}}
+.toolbox-launcher .tbi-note{animation:tbi-note 1.6s ease-out infinite;opacity:0}
+@keyframes tbi-note{0%{transform:translateY(6px);opacity:0}25%{opacity:1}100%{transform:translateY(-10px);opacity:0}}
+.toolbox-launcher .tbi-twinkle{transform-origin:50% 50%;animation:tbi-twinkle 1.1s ease-in-out infinite}
+@keyframes tbi-twinkle{0%,100%{transform:scale(.4);opacity:.4}50%{transform:scale(1.15);opacity:1}}
+.toolbox-launcher .tbi-pulse{transform-origin:50% 50%;animation:tbi-pulse 1.3s ease-in-out infinite}
+@keyframes tbi-pulse{0%,100%{transform:scale(.8);opacity:.25}50%{transform:scale(1.25);opacity:.6}}
+.toolbox-launcher .tbi-wobble{transform-origin:50% 100%;animation:tbi-wobble 1.6s ease-in-out infinite}
+@keyframes tbi-wobble{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.toolbox-launcher .tbi-wiggle{transform-origin:50% 50%;animation:tbi-wiggle 2.4s ease-in-out infinite}
+@keyframes tbi-wiggle{0%,60%,100%{transform:rotate(0)}70%,90%{transform:rotate(-8deg)}80%{transform:rotate(8deg)}}
+.toolbox-launcher .tbi-spin{transform-origin:50% 50%;animation:tbi-spin 5s linear infinite}
+@keyframes tbi-spin{to{transform:rotate(360deg)}}
+.toolbox-launcher .tbi-stepA{animation:tbi-stepA .7s ease-in-out infinite}
+.toolbox-launcher .tbi-stepB{animation:tbi-stepB .7s ease-in-out infinite}
+@keyframes tbi-stepA{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(2px,-4px) rotate(-10deg)}}
+@keyframes tbi-stepB{0%,100%{transform:translate(2px,-4px) rotate(-10deg)}50%{transform:translate(0,0) rotate(0)}}
+.toolbox-launcher .tbi-tailwag{transform-origin:100% 50%;animation:tbi-tailwag .7s ease-in-out infinite}
+@keyframes tbi-tailwag{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.toolbox-launcher .tbi-hop{transform-origin:50% 100%;animation:tbi-hop .8s ease-in-out infinite}
+@keyframes tbi-hop{0%,100%{transform:translateY(0) scale(1.04,.94)}45%{transform:translateY(-7px) scale(.96,1.05)}}
+.toolbox-launcher .tbi-armwave{transform-origin:0% 100%;animation:tbi-armwave .45s ease-in-out infinite}
+@keyframes tbi-armwave{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(25deg)}}
+.toolbox-launcher .tbi-blink{transform-origin:50% 50%;animation:tbi-blink 3s infinite}
+@keyframes tbi-blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+#toolboxIconPicker{border:0;margin:0 0 20px;padding:0;min-width:0}#toolboxIconPicker legend{font-weight:600;padding:0;margin-bottom:6px}
+.toolbox-icon-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin:10px 0}
+.toolbox-icon-option{position:relative;display:grid;justify-items:center;gap:4px;padding:8px 4px;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:11px;text-align:center;line-height:1.2;min-width:0}
+.toolbox-icon-option input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.toolbox-icon-option:has(input:checked){border-color:#0076ad;box-shadow:0 0 0 2px #0076ad}
+.toolbox-icon-option:has(input:focus-visible){outline:3px solid #73caff;outline-offset:2px}
+.toolbox-icon-swatch{width:44px;height:44px;border-radius:50%;background:var(--lc,#b42318);color:#fff;display:grid;place-items:center;overflow:hidden}
+.toolbox-icon-swatch svg{width:68%;height:68%;overflow:visible}
+.toolbox-icon-swatch svg *{animation:none!important}
+.toolbox-size-row{display:flex;align-items:center;gap:12px;margin:10px 0}.toolbox-size-row label{display:flex;align-items:center;gap:12px;flex:1}.toolbox-size-row input[type=range]{flex:1;min-width:0}.toolbox-size-row output{min-width:4.5ch;font-variant-numeric:tabular-nums}
+/* Per-element timing, kept as classes because the page CSP blocks inline style attributes. */
+.toolbox-launcher svg .tbi-dl-0{animation-delay:0s}
+.toolbox-launcher svg .tbi-dl-15{animation-delay:0.15s}
+.toolbox-launcher svg .tbi-dl-3{animation-delay:0.3s}
+.toolbox-launcher svg .tbi-dl-35{animation-delay:0.35s}
+.toolbox-launcher svg .tbi-dl-4{animation-delay:0.4s}
+.toolbox-launcher svg .tbi-dl-6{animation-delay:0.6s}
+.toolbox-launcher svg .tbi-dl-7{animation-delay:0.7s}
+.toolbox-launcher svg .tbi-dl-8{animation-delay:0.8s}
+.toolbox-launcher svg .tbi-dur-14{animation-duration:1.4s}
+.toolbox-launcher svg .tbi-dur-18{animation-duration:1.8s}

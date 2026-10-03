@@ -17,8 +17,9 @@
     const rect = range.getBoundingClientRect();
     toolbox.style.right = 'auto';
     toolbox.style.bottom = 'auto';
-    toolbox.style.left = `${Math.max(8, Math.min(window.innerWidth - 66, rect.right + 18))}px`;
-    toolbox.style.top = `${Math.max(8, Math.min(window.innerHeight - 66, rect.top + rect.height / 2 - 29))}px`;
+    const size = toolbox.offsetWidth;
+    toolbox.style.left = `${Math.max(8, Math.min(window.innerWidth - size - 8, rect.right + 18))}px`;
+    toolbox.style.top = `${Math.max(8, Math.min(window.innerHeight - size - 8, rect.top + rect.height / 2 - size / 2))}px`;
   }
   launcher.addEventListener('pointerdown', event => {
     positionStart = {x:event.clientX, y:event.clientY};
@@ -44,6 +45,19 @@
     preferences = {order:[], colors:{}};
     try { const saved = JSON.parse(localStorage.getItem(preferencesKey)); if (saved && Array.isArray(saved.order) && saved.colors && typeof saved.colors === 'object') preferences = saved; } catch {}
   }
+  const launcherSize = () => { const size = Number(preferences.size); return Number.isFinite(size) ? Math.round(Math.max(ToolboxIcons.minSize, Math.min(ToolboxIcons.maxSize, size))) : ToolboxIcons.defaultSize; };
+  function applyLauncher() {
+    const icon = ToolboxIcons.find(preferences.icon);
+    if (launcher.dataset.icon !== icon.id) { launcher.innerHTML = icon.svg; launcher.dataset.icon = icon.id; }
+    toolbox.style.setProperty('--toolbox-size', `${launcherSize()}px`);
+    toolbox.classList.toggle('toolbox-still', preferences.animate === false);
+    if (toolbox.style.left) {
+      const size = toolbox.offsetWidth;
+      toolbox.style.left = `${Math.max(8, Math.min(window.innerWidth - size - 8, parseFloat(toolbox.style.left)))}px`;
+      toolbox.style.top = `${Math.max(8, Math.min(window.innerHeight - size - 8, parseFloat(toolbox.style.top)))}px`;
+    }
+    placeBesideHeading();
+  }
   loadPreferences();
   function savePreferences() {
     try { localStorage.setItem(preferencesKey, JSON.stringify(preferences)); }
@@ -52,8 +66,10 @@
   const buttonId = button => button.dataset.toolboxAction || button.dataset.shortcutId || 'edit';
   function paint(button, id) {
     const color = preferences.colors[id];
-    if (!/^#[0-9a-f]{6}$/i.test(color || '')) { button.style.background = ''; button.style.color = ''; return; }
+    if (button === launcher) iconSection?.style.setProperty('--lc', /^#[0-9a-f]{6}$/i.test(color || '') ? color : '#b42318');
+    if (!/^#[0-9a-f]{6}$/i.test(color || '')) { button.style.background = ''; button.style.color = ''; button.style.removeProperty('--lc'); return; }
     button.style.background = color;
+    if (button === launcher) button.style.setProperty('--lc', color);
     const rgb = [1,3,5].map(start => parseInt(color.slice(start,start+2),16) / 255).map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4);
     button.style.color = rgb[0]*.2126 + rgb[1]*.7152 + rgb[2]*.0722 > .179 ? '#000000' : '#ffffff';
   }
@@ -77,6 +93,38 @@
   }
   const appearance = document.createElement('section');
   list.after(appearance);
+  const iconSection = document.createElement('fieldset');
+  iconSection.id = 'toolboxIconPicker';
+  list.after(iconSection);
+  const legend = document.createElement('legend'); legend.textContent = 'Launcher icon'; iconSection.append(legend);
+  const options = document.createElement('div'); options.className = 'toolbox-icon-options'; iconSection.append(options);
+  ToolboxIcons.list.forEach(icon => {
+    const label = document.createElement('label'); label.className = 'toolbox-icon-option';
+    const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'toolboxIcon'; radio.value = icon.id; radio.setAttribute('aria-label', icon.name);
+    radio.addEventListener('change', () => { preferences.icon = icon.id; savePreferences(); applyLauncher(); });
+    const swatch = document.createElement('span'); swatch.className = 'toolbox-icon-swatch'; swatch.innerHTML = icon.svg;
+    const text = document.createElement('span'); text.textContent = icon.name.replace(/^(Paperclip|Wizard|T-rex): /, '');
+    label.append(radio, swatch, text); options.append(label);
+  });
+  const sizeRow = document.createElement('div'); sizeRow.className = 'toolbox-size-row';
+  const sizeLabel = document.createElement('label'); sizeLabel.append('Button size');
+  const sizeInput = document.createElement('input'); sizeInput.type = 'range'; sizeInput.min = ToolboxIcons.minSize; sizeInput.max = ToolboxIcons.maxSize; sizeInput.step = 2;
+  const sizeOut = document.createElement('output'); sizeInput.setAttribute('aria-label', 'Launcher button size in pixels');
+  sizeInput.addEventListener('input', () => { preferences.size = Number(sizeInput.value); sizeOut.textContent = `${sizeInput.value} px`; savePreferences(); applyLauncher(); });
+  const sizeReset = document.createElement('button'); sizeReset.type = 'button'; sizeReset.className = 'button secondary'; sizeReset.textContent = 'Reset';
+  sizeReset.addEventListener('click', () => { delete preferences.size; savePreferences(); applyLauncher(); syncIconControls(); });
+  sizeLabel.append(sizeInput, sizeOut); sizeRow.append(sizeLabel, sizeReset);
+  const animateLabel = document.createElement('label'); animateLabel.className = 'toolbox-animate';
+  const animateInput = document.createElement('input'); animateInput.type = 'checkbox';
+  animateInput.addEventListener('change', () => { preferences.animate = animateInput.checked; savePreferences(); applyLauncher(); });
+  animateLabel.append(animateInput, ' Animate the icon');
+  iconSection.append(sizeRow, animateLabel);
+  function syncIconControls() {
+    const current = ToolboxIcons.find(preferences.icon).id;
+    options.querySelectorAll('input').forEach(radio => { radio.checked = radio.value === current; });
+    sizeInput.value = launcherSize(); sizeOut.textContent = `${launcherSize()} px`;
+    animateInput.checked = preferences.animate !== false;
+  }
   function renderAppearance() {
     appearance.replaceChildren();
     const help = document.createElement('p'); help.textContent = 'Drag action circles around the toolbox to reorder them, or use the arrows below. Choose a color for each circle.'; appearance.append(help);
@@ -150,7 +198,7 @@
       remove.addEventListener('click', () => { if (save(links.filter((_, i) => i !== index))) status.textContent = 'Shortcut removed.'; });
       row.append(text, remove); list.append(row);
     });
-    layout(); renderAppearance();
+    layout(); renderAppearance(); applyLauncher(); syncIconControls();
   }
   document.getElementById('toolboxLinkForm').addEventListener('submit', event => {
     event.preventDefault();
