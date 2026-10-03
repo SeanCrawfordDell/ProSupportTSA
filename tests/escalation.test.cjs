@@ -231,7 +231,7 @@ test('cross-field duplicates warn, name both fields and credit only the first co
  assert.ok(result.categories.completeness<base.categories.completeness);assert.ok(result.score<base.score);
  assert.ok(!result.warnings.some(w=>w.field==='problem'));
 });
-test('severity, production status and affected systems earn specificity points and satisfy the impact quantity check',()=>{
+test('severity, service impact and affected systems earn specificity points and satisfy the impact quantity check',()=>{
  const h=harness();const strong=h.run('samples.strong');const base=run(h,strong);
  assert.equal(base.score,100);
  const none=run(h,{...strong,severity:'',production:'',affected:''});
@@ -271,7 +271,7 @@ test('escalation text plausibility stays identical to the shared Case Notes help
  for(const text of samplesText){h.ctx.fixture=text;assert.equal(h.run('textQuality.filler(fixture)'),R.text.filler(text),text.slice(0,40));}
  for(const [a,b] of [[strong.results,strong.troubleshooting],[strong.problem,strong.problem],[honest.problem,honest.impact]]){h.ctx.a=a;h.ctx.b=b;assert.equal(h.run('textQuality.similarity(a,b)'),R.text.similarity(a,b));}
 });
-test('Case Notes handoff fills recent changes, production status and gathered logs, and leaves results empty with the import hint',()=>{
+test('Case Notes handoff fills recent changes, service impact and gathered logs, and leaves results empty with the import hint',()=>{
  const note=core.create(core.empty(),'handoff-map',100);
  Object.assign(note,{issue:'Cluster node evictions',logLocation:'https://example.com/logs',notes:'<p>Collected cluster log</p>'});
  note.toolkit.workflow={...require('../case-workflow-core.js').defaults(),recentChange:'Patched node 2 on 2026-09-30',severity:'Service unavailable'};
@@ -279,24 +279,24 @@ test('Case Notes handoff fills recent changes, production status and gathered lo
  assert.equal(h.get('changes').value,'Patched node 2 on 2026-09-30');assert.equal(h.get('production').value,'Service unavailable');
  assert.equal(h.get('evidence').value,'Yes');assert.equal(h.get('results').value,'');
  const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
- // Both pages label the field Production Status and offer exactly the same options, so the handoff needs no mapping.
+ // Both pages label the field Service Impact and offer exactly the same options, so the handoff needs no mapping.
  const notesHtml=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
  const options=markup=>[...markup.matchAll(/<option([^>]*)>([^<]*)<\/option>/g)].filter(m=>!/value=""/.test(m[1])).map(m=>m[2]);
  const triage=options(notesHtml.match(/<select data-workflow-field="severity">[\s\S]*?<\/select>/)[0]).filter(o=>o!=='Unspecified');
  const escalation=options(html.match(/<select id="production">[\s\S]*?<\/select>/)[0]);
  assert.deepEqual(escalation,triage);assert.deepEqual(triage,['Service unavailable','Service degraded','Deployment','How-to / planning']);
- assert.match(html,/<label class="field">Production Status<select id="production">/);assert.match(notesHtml,/<label class="field">Production Status<select data-workflow-field="severity">/);
+ assert.match(html,/<label class="field">Service Impact<select id="production">/);assert.match(notesHtml,/<label class="field">Service Impact<select data-workflow-field="severity">/);
  for(const severity of triage){note.toolkit.workflow.severity=severity;assert.equal(core.escalation(note,200).production,severity);}
  note.toolkit.workflow.severity='Unspecified';assert.equal(core.escalation(note,200).production,'');
  assert.match(html,/left empty on import: document outcomes there/);
- assert.match(html,/repeated or placeholder text/);assert.match(html,/Severity \(2\), Production Status \(2\) and Affected systems \/ users \(3\)/);
+ assert.match(html,/repeated or placeholder text/);assert.match(html,/Severity \(2\), Service Impact \(2\) and Affected systems \/ users \(3\)/);
 });
-test('saved drafts and reviews still carrying the former Production down / degraded values map onto the shared options',()=>{
+test('saved drafts and reviews still carrying the former Production status values map onto the shared options',()=>{
  const h=harness();const strong=h.run('samples.strong');
  const populate=production=>{h.ctx.fixture={...strong,production};h.run('populate(fixture)');return h.get('production').value;};
  assert.equal(populate('Production down'),'Service unavailable');
  assert.equal(populate('Production degraded'),'Service degraded');
  assert.equal(populate('Non-production'),'Non-production','values without a Triage equivalent are kept rather than dropped');
  assert.equal(run(h,{...strong,production:'Production degraded'}).score,run(h,strong).score);
- assert.equal(h.run('labels.production'),'Production Status');
+ assert.equal(h.run('labels.production'),'Service Impact');
 });

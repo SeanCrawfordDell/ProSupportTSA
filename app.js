@@ -10,7 +10,7 @@ let formHasData = false;
 const fieldIds = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "errors", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "serviceRequest", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
 const required = ["problem", "impact", "timeline", "expected", "country", "os", "reproduction", "troubleshooting", "results", "evidence", "supportType", "osVersion"];
 const labels = {
-  serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Production Status", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Have you Gathered Logs?", changes: "recent changes"
+  serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Have you Gathered Logs?", changes: "recent changes"
 };
 // Short answers that match one of these as a prefix or whole word are too vague to score (fields under 25 characters only).
 const weakPhrases = /(?:^|[^a-z0-9])(?:n\/a|na|none|unknown|not working|not sure|broken|issue|problem|see above|as above|same|latest|newest|current|tbd|tba|asap|ok|okay|fine|ask customer|pending|wip)(?![a-z0-9])/i;
@@ -91,7 +91,7 @@ const supportTypeOptions = ["OEM OS","ProSupport Plus Bring Your own License","S
 // Earlier versions stored short codes; map them to the current entitlement options.
 const legacySupportTypes = {"OEM":"OEM OS","PSP":"ProSupport Plus Bring Your own License","No OS Support":"No Software Support"};
 const normalizeSupportType = text => Object.hasOwn(legacySupportTypes,text) ? legacySupportTypes[text] : text;
-// Production Status shares its options with Case Notes Triage; saved drafts may still carry the earlier Production down / degraded values.
+// Service Impact shares its options with Case Notes Triage; saved drafts may still carry the earlier Production down / degraded values.
 const legacyServiceImpact = {"Production down":"Service unavailable","Production degraded":"Service degraded"};
 const normalizeServiceImpact = text => Object.hasOwn(legacyServiceImpact,text) ? legacyServiceImpact[text] : text;
 const scoreMaxima = { completeness:35, specificity:20, reproducibility:15, evidence:15, troubleshooting:15 };
@@ -142,11 +142,11 @@ function evaluate(input = {}) {
   if (form.evidence === "No" && (!form.logReason || isWeak(form.logReason))) addFinding(blockers, "logReason", "Explain why logs cannot be obtained before escalating.", "blocker");
   if (form.evidence === "Yes" && !form.logLocation) addFinding(warnings, "logLocation", "Record where DE can find the collected logs.", "warning");
   if (!form.changes) addFinding(warnings, "changes", "Document recent changes or explicitly state that none are known.", "warning");
-  if (!form.severity || !form.production || !hasDetail(form.affected, 2) || discounted.has("affected")) addFinding(warnings, "affected", "Set Severity and Production Status, and record the affected systems or users.", "warning");
+  if (!form.severity || !form.production || !hasDetail(form.affected, 2) || discounted.has("affected")) addFinding(warnings, "affected", "Set Severity and Service Impact, and record the affected systems or users.", "warning");
 
   const completedRequired = required.filter(id => credit(id) && !blockers.some(item => item.field === id)).length;
   const completeness = Math.round(scoreMaxima.completeness * completedRequired / required.length);
-  // Specificity: 13 points for concrete detail in the core text, 7 for Severity (2), Production Status (2) and Affected systems / users (3).
+  // Specificity: 13 points for concrete detail in the core text, 7 for Severity (2), Service Impact (2) and Affected systems / users (3).
   const coreText = ["problem", "impact", "timeline", "os", "osVersion"].filter(credit).map(id => form[id]).join(" ");
   const context = (hasDetail(form.severity, 1) ? 2 : 0) + (hasDetail(form.production, 1) ? 2 : 0) + (hasDetail(form.affected, 2) && !discounted.has("affected") ? 3 : 0);
   const specificity = Math.min(scoreMaxima.specificity, Math.round(Math.min(coreText.length, 500) / 500 * 7) + (specificityTerms.test(coreText) ? 3 : 0) + (/\d/.test(coreText) ? 3 : 0) + context);
