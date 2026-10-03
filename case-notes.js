@@ -15,6 +15,7 @@
   const buttonTooltips = {
     newNote: "Start a blank case note and begin time tracking.",
     loadExampleNote: "Load a sample case note you can safely explore.",
+    openTraining: "Tutorial Demo and Load Example.",
     tutorialDemo: "See a guided tour of Case Notes and the toolbox.",
     customizeFields: "Choose which case fields appear and their order.",
     toggleHistory: "Show or hide the list of saved case notes.",
@@ -218,6 +219,23 @@
   });
   document.addEventListener?.("keydown", event => {
     if (event.key === "Escape" && !$("backupRestoreMenu")?.hidden) { setBackupMenu(false); $("openBackupRestore").focus(); }
+  });
+  // Training dropdown: Tutorial Demo and Load Example. Closes after a choice, outside click, or Escape.
+  function setTrainingMenu(open, focusFirst = false) {
+    const menu = $("trainingMenuList"), toggle = $("openTraining");
+    if (!menu || !toggle) return;
+    menu.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+    if (open && focusFirst) [...menu.querySelectorAll("button")].find(item => !item.disabled)?.focus();
+  }
+  $("openTraining")?.addEventListener("click", () => setTrainingMenu($("trainingMenuList").hidden));
+  $("trainingMenuList")?.addEventListener("click", event => { if (event.target?.closest?.("button")) setTrainingMenu(false); });
+  document.addEventListener?.("click", event => {
+    const menu = $("trainingMenu");
+    if (menu && !$("trainingMenuList").hidden && event.target && menu.contains && !menu.contains(event.target)) setTrainingMenu(false);
+  });
+  document.addEventListener?.("keydown", event => {
+    if (event.key === "Escape" && !$("trainingMenuList")?.hidden) { setTrainingMenu(false); $("openTraining").focus(); }
   });
   backupFolderButton?.addEventListener("click", async () => {
     try {
