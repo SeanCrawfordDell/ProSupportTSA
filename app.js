@@ -10,7 +10,7 @@ let formHasData = false;
 const fieldIds = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "errors", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "serviceRequest", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
 const required = ["problem", "impact", "timeline", "expected", "country", "os", "reproduction", "troubleshooting", "results", "evidence", "supportType", "osVersion"];
 const labels = {
-  serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Production status", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Have you Gathered Logs?", changes: "recent changes"
+  serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service impact", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Have you Gathered Logs?", changes: "recent changes"
 };
 // Short answers that match one of these as a prefix or whole word are too vague to score (fields under 25 characters only).
 const weakPhrases = /(?:^|[^a-z0-9])(?:n\/a|na|none|unknown|not working|not sure|broken|issue|problem|see above|as above|same|latest|newest|current|tbd|tba|asap|ok|okay|fine|ask customer|pending|wip)(?![a-z0-9])/i;
@@ -61,7 +61,7 @@ const samples = {
   strong: { problem:"PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.", impact:"The infrastructure team cannot use the UI to complete a scheduled firmware compliance review for host DC2-HV-047. One of 24 hosts is affected; production workloads continue running, but the maintenance window closes at 22:00 UTC.", timeline:"First observed 2026-09-10 at 14:18 UTC after the monthly credential rotation. Reproduces on every login attempt. Last confirmed at 16:42 UTC.", expected:"After authentication, the iDRAC dashboard should load and display system health and firmware inventory.", country:"US", tag:"PowerEdge R750, service tag ABC1234, asset DC2-HV-047", os:"Windows Server", errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Yes", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known." }
 };
 
-Object.assign(samples.strong, {serviceRequest:"123456789", platform:"PowerEdge R750", tag:"ABC1234", supportType:"OEM OS", osVersion:"Windows Server 2022; iDRAC 7.10.30.00", severity:"Sev 3", production:"Production operational", affected:"1 of 24 hosts; infrastructure team", logLocation:"Case attachments: Lifecycle Controller log and browser trace"});
+Object.assign(samples.strong, {serviceRequest:"123456789", platform:"PowerEdge R750", tag:"ABC1234", supportType:"OEM OS", osVersion:"Windows Server 2022; iDRAC 7.10.30.00", severity:"Sev 3", production:"Service degraded", affected:"1 of 24 hosts; infrastructure team", logLocation:"Case attachments: Lifecycle Controller log and browser trace"});
 
 function value(id) { return document.getElementById(id).value.trim(); }
 function caseTitle(form) {
@@ -91,6 +91,9 @@ const supportTypeOptions = ["OEM OS","ProSupport Plus Bring Your own License","S
 // Earlier versions stored short codes; map them to the current entitlement options.
 const legacySupportTypes = {"OEM":"OEM OS","PSP":"ProSupport Plus Bring Your own License","No OS Support":"No Software Support"};
 const normalizeSupportType = text => Object.hasOwn(legacySupportTypes,text) ? legacySupportTypes[text] : text;
+// The field was "Production status" before it took the Case Notes Service impact options; saved drafts may still carry the old values.
+const legacyServiceImpact = {"Production down":"Service unavailable","Production degraded":"Service degraded"};
+const normalizeServiceImpact = text => Object.hasOwn(legacyServiceImpact,text) ? legacyServiceImpact[text] : text;
 const scoreMaxima = { completeness:35, specificity:20, reproducibility:15, evidence:15, troubleshooting:15 };
 const readinessThreshold = 75;
 function readiness(score, blockers) {
@@ -100,6 +103,7 @@ function readiness(score, blockers) {
 function evaluate(input = {}) {
   const form = Object.fromEntries(fieldIds.map(id => [id, typeof input[id] === "string" ? input[id].trim() : ""]));
   form.supportType = normalizeSupportType(form.supportType);
+  form.production = normalizeServiceImpact(form.production);
   const blockers = [], warnings = [], strengths = [];
   required.forEach(id => {
     if (!form[id]) addFinding(blockers, id, "Required information is missing.", "blocker");
@@ -138,11 +142,11 @@ function evaluate(input = {}) {
   if (form.evidence === "No" && (!form.logReason || isWeak(form.logReason))) addFinding(blockers, "logReason", "Explain why logs cannot be obtained before escalating.", "blocker");
   if (form.evidence === "Yes" && !form.logLocation) addFinding(warnings, "logLocation", "Record where DE can find the collected logs.", "warning");
   if (!form.changes) addFinding(warnings, "changes", "Document recent changes or explicitly state that none are known.", "warning");
-  if (!form.severity || !form.production || !hasDetail(form.affected, 2) || discounted.has("affected")) addFinding(warnings, "affected", "Set Severity and Production status, and record the affected systems or users.", "warning");
+  if (!form.severity || !form.production || !hasDetail(form.affected, 2) || discounted.has("affected")) addFinding(warnings, "affected", "Set Severity and Service impact, and record the affected systems or users.", "warning");
 
   const completedRequired = required.filter(id => credit(id) && !blockers.some(item => item.field === id)).length;
   const completeness = Math.round(scoreMaxima.completeness * completedRequired / required.length);
-  // Specificity: 13 points for concrete detail in the core text, 7 for Severity (2), Production status (2) and Affected systems / users (3).
+  // Specificity: 13 points for concrete detail in the core text, 7 for Severity (2), Service impact (2) and Affected systems / users (3).
   const coreText = ["problem", "impact", "timeline", "os", "osVersion"].filter(credit).map(id => form[id]).join(" ");
   const context = (hasDetail(form.severity, 1) ? 2 : 0) + (hasDetail(form.production, 1) ? 2 : 0) + (hasDetail(form.affected, 2) && !discounted.has("affected") ? 3 : 0);
   const specificity = Math.min(scoreMaxima.specificity, Math.round(Math.min(coreText.length, 500) / 500 * 7) + (specificityTerms.test(coreText) ? 3 : 0) + (/\d/.test(coreText) ? 3 : 0) + context);
@@ -294,7 +298,7 @@ function updateLogReasonVisibility() {
 }
 function populate(fields) {
   fieldIds.forEach(id => {
-    const input = byId(id), raw = typeof fields[id] === "string" ? fields[id] : "", text = id === "supportType" ? normalizeSupportType(raw) : raw;
+    const input = byId(id), raw = typeof fields[id] === "string" ? fields[id] : "", text = id === "supportType" ? normalizeSupportType(raw) : id === "production" ? normalizeServiceImpact(raw) : raw;
     if (input.tagName === "SELECT" && text && ![...input.options].some(option => option.value === text)) { const option = document.createElement("option"); option.value = text; option.textContent = text; input.append(option); }
     input.value = text;
   });

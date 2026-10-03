@@ -152,9 +152,10 @@ test('text plausibility flags repeated and placeholder text but not long real no
 });
 test('handoff maps recent change, service impact and evidence onto the escalation and leaves results empty',()=>{
  const note=strong();const payload=C.escalation(note,2000);
- assert.equal(payload.changes,'iDRAC firmware update');assert.equal(payload.production,'Production degraded');assert.equal(payload.evidence,'Yes');assert.equal(payload.results,'');
- note.toolkit.workflow.severity='Service unavailable';assert.equal(C.escalation(note,2000).production,'Production down');
- note.toolkit.workflow.severity='Deployment';assert.equal(C.escalation(note,2000).production,'');
+ assert.equal(payload.changes,'iDRAC firmware update');assert.equal(payload.production,'Service degraded');assert.equal(payload.evidence,'Yes');assert.equal(payload.results,'');
+ note.toolkit.workflow.severity='Service unavailable';assert.equal(C.escalation(note,2000).production,'Service unavailable');
+ note.toolkit.workflow.severity='Deployment';assert.equal(C.escalation(note,2000).production,'Deployment');
+ note.toolkit.workflow.severity='Unspecified';assert.equal(C.escalation(note,2000).production,'');
  const bare=blank();assert.equal(C.escalation(bare,2000).evidence,'');assert.equal(C.escalation(bare,2000).changes,'');assert.equal(C.escalation(bare,2000).production,'');
  bare.toolkit.checks.incident=true;assert.equal(C.escalation(bare,2000).evidence,'Yes');
  const located=blank();located.logLocation='\\\\server\\share\\logs';assert.equal(C.escalation(located,2000).evidence,'Yes');
