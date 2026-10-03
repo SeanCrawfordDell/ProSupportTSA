@@ -752,6 +752,9 @@
     
     console.log("Populating example data");
     populate(exampleData);
+    // Keep the selected case in step with the form so the example is saved and scored.
+    const exampleNote = selected();
+    if (exampleNote) { Object.assign(exampleNote, exampleData); exampleNote.updated = Date.now(); }
     dirty = true;
     save();
     // Don't call render() since we've already populated the form directly

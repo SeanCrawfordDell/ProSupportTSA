@@ -26,3 +26,12 @@ test('legacy OS support codes migrate to the entitlement options',()=>{
  assert.equal(C.normalizeSupportType('OEM'),'OEM OS');assert.equal(C.normalizeSupportType('No OS Support'),'No Software Support');
  assert.equal(C.escalation({...note,supportType:'OEM'},2000).supportType,'OEM OS');
 });
+test('untouched default next-step scaffolding earns no next-step credit',()=>{
+ const note=blank();note.next=T.templateNextHtml('network');
+ assert.equal(R.score(note).categories.next,0);
+});
+test('No OS plans list the iDRAC collection once on PowerEdge platforms',()=>{
+ const L=require('../log-helper-core.js');
+ const items=L.plan({os:'No OS',platform:'PowerEdge R750'}).items;
+ assert.equal(items.filter(i=>/SupportAssist/.test(i.title+' '+i.how)).length,1);
+});

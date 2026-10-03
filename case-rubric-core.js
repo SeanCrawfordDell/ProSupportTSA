@@ -8,7 +8,7 @@ const CaseRubricCore = (() => {
   const detailFields = { request:"Service Request Number", tag:"Service Tag", platform:"System/Platform", os:"OS/Solution", osVersion:"OS version / build", country:"Customer Country", supportType:"OS Support Entitlement Verification", issue:"Issue Description" };
   const outcomeTerms = /\b(result|resulted|outcome|observed|showed|shows|returned|confirmed|persist(?:s|ed)?|resolved|fixed|failed|fails|succeeded|success(?:ful)?|same|no change|unchanged|worked|works|did not|didn't|still|error|passed|cleared)\b/i;
   const concreteTerms = /(\d|\b0x[0-9a-f]+\b|\b[A-Z]{2,}\d{2,}\b|\bv?\d+\.\d+|\b(?:event id|error|code|kb\d+|build|firmware|bios|idrac|driver)\b)/i;
-  const placeholder = /\[(?:add|enter|insert|describe)\b[^\]]*\]/gi;
+  const placeholder = /\[(?:add|enter|insert|describe|assign|agree)\b[^\]]*\]/gi;
 
   // Plain text without template scaffolding, so applying a template alone earns no credit.
   function clean(value) {
