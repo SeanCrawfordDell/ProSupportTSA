@@ -19,6 +19,8 @@
   <link rel="stylesheet" href="case-workflow.css?v=20260919-support-workflow">
   <script src="case-toolkit-core.js?v=20260919-support-workflow" defer></script>
   <script src="case-notes-core.js" defer></script>
+  <script src="case-rubric-core.js" defer></script>
+  <script src="case-rubric.js" defer></script>
   <script src="case-settings-core.js?v=20260918-personal-templates" defer></script>
   <script src="devin-prompt-core.js" defer></script>
 <script src="case-toolkit.js?v=20260919-support-workflow" defer></script>
@@ -33,16 +35,26 @@
 <script src="case-template-manager.js" defer></script>
 <script src="case-tooltips.js" defer></script>
 <link rel="stylesheet" href="case-toolbox-links.css">
+<link rel="stylesheet" href="case-rubric.css">
 <link rel="stylesheet" href="case-notes-popout.css?v=20260919-support-workflow">
 </head>
 <body>
   <header id="compactNotesHeader" hidden><h1 id="compactCaseTitle">Notes</h1><button id="returnToCase" class="button secondary" type="button">Return to case</button></header>
   <header class="topbar">
     <a class="brand home-link" href="index.html"><span class="brand-mark">←</span>Support Assistant</a>
+    <nav class="topbar-actions" aria-label="Case Notes actions"><button class="button primary" id="newNote" disabled>+ New Note</button><button class="button secondary" id="loadExampleNote" disabled>Load Example</button><button class="button secondary" id="tutorialDemo" type="button">Tutorial Demo</button><button class="button secondary" id="customizeFields" disabled>Customize Fields</button><div class="topbar-menu" id="backupMenu"><button class="button secondary" id="openBackupRestore" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="backupRestoreMenu">Backup &amp; Restore <span aria-hidden="true">▾</span></button><div class="topbar-dropdown" id="backupRestoreMenu" hidden>
+<p class="dropdown-label">Case history</p>
+<div class="history-backup"><button class="dropdown-item" id="backupHistory" type="button" disabled>Backup Case History</button><button class="dropdown-item" id="restoreHistory" type="button" disabled>Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" class="dropdown-status" role="status"></p></div>
+<p class="dropdown-label">Site configuration</p>
+<div class="backup-location"><button class="dropdown-item" id="downloadSettings" type="button">Backup Site Configuration</button><input id="settingsFile" type="file" accept=".json,application/json" hidden><button class="dropdown-item" id="restoreSettings" type="button" aria-haspopup="dialog">Restore Settings</button></div>
+<p class="dropdown-label">Backup folder</p>
+<button class="dropdown-item" id="chooseBackupFolder" type="button">Set Backup Folder</button><p id="backupFolderStatus" class="dropdown-status" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration and note backups.</p>
+<p class="dropdown-help">Notes autosave in this browser. With folder access approved, automatic backups run every minute when changes are present while this page is open. Clearing browser data removes local history.</p>
+</div></div><a class="button secondary" id="requestFeature" href="https://github.com/SeanCrawfordDell/EscalationQuality/issues/new?title=%5BCase%20Notes%5D%20&amp;body=%2A%2AType%3A%2A%2A%20Feature%20request%20%2F%20Bug%20%28delete%20one%29%0A%2A%2APage%3A%2A%2A%20Case%20Notes%0A%0A%2A%2AWhat%20would%20you%20like%2C%20or%20what%20went%20wrong%3F%2A%2A%0A%0A%0A%2A%2ASteps%20to%20reproduce%20%28bugs%20only%29%3A%2A%2A%0A1.%0A%0A%2A%2AExpected%20result%3A%2A%2A%0A%0A%0A_Do%20not%20include%20customer%20names%2C%20Service%20Tags%2C%20SR%20numbers%2C%20logs%2C%20or%20other%20case%20data._" target="_blank" rel="noopener noreferrer" title="Opens a new GitHub issue in a new tab. Do not include customer or case data.">Request feature / Report bug ↗</a></nav>
     <div class="theme-controls" role="group" aria-label="Appearance"><button id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button></div>
   </header>
   <main>
-    <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div><div class="hero-actions"><button class="button primary" id="newNote" disabled>+ New Note</button><button class="button secondary" id="loadExampleNote" disabled>Load Example</button><button class="button secondary" id="tutorialDemo" type="button">Tutorial Demo</button><button class="button secondary" id="customizeFields" disabled>Customize Fields</button><button class="button secondary" id="openBackupRestore" type="button" aria-haspopup="dialog" aria-controls="backupRestoreDialog">Backup &amp; Restore</button></div></section>
+    <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div></section>
     <p class="notice" id="lockNotice" role="status">Opening case history…</p>
     <p class="notice" id="notesWindowStatus" role="status"></p><button class="button secondary" id="compactNotesFallback" type="button" hidden>Use compact view here</button>
     <div class="case-work-area" id="caseWorkArea">
@@ -82,9 +94,9 @@
             <fieldset id="workflowFields" disabled>
               <section data-workflow-panel="diagnose">
                 <div class="field-grid">
-                  <label class="field">OS/Solution<select id="os"><option value="">Select OS/Solution</option><option value="Azure Local">Azure Local</option><option value="Azure Stack Hub">Azure Stack Hub</option><option value="Debian">Debian</option><option value="ESX">ESX</option><option value="Nutanix">Nutanix</option><option value="Redhat">Redhat</option><option value="Ubuntu">Ubuntu</option><option value="VCF">VCF</option><option value="Windows Server">Windows Server</option></select></label>
+                  <label class="field">OS/Solution<select id="os"><option value="">Select OS/Solution</option><option value="Azure Local">Azure Local</option><option value="Azure Stack Hub">Azure Stack Hub</option><option value="Debian">Debian</option><option value="ESX">ESX</option><option value="Nutanix">Nutanix</option><option value="Redhat">Redhat</option><option value="Ubuntu">Ubuntu</option><option value="VCF">VCF</option><option value="Windows Server">Windows Server</option><option value="No OS">No OS</option></select></label>
                   <label class="field">Issue type<select id="caseIssueType"><option value="general">General investigation</option><option value="boot">Boot failure</option><option value="crash">Crash / unexpected restart</option><option value="network">Network connectivity</option><option value="performance">Performance degradation</option></select></label>
-                  <label class="field">Service impact<select data-workflow-field="severity"><option>Unspecified</option><option>Service unavailable</option><option>Service degraded</option><option>How-to / planning</option></select></label>
+                  <label class="field">Service impact<select data-workflow-field="severity"><option>Unspecified</option><option>Service unavailable</option><option>Service degraded</option><option>Deployment</option><option>How-to / planning</option></select></label>
                   <label class="field wide">Recent change<input data-workflow-field="recentChange" maxlength="2000" placeholder="What changed before the issue began?"></label>
                 </div>
                 <div class="workflow-actions" role="group" aria-label="Issue templates">
@@ -121,7 +133,7 @@
             <label class="field">Service Request Number<input id="request" autocomplete="off"></label>
             <label class="field">OS version / build<input id="osVersion" maxlength="250" placeholder="Exact version, build, and relevant component firmware"></label>
             <label class="field">Customer Country<select id="country"><option value="">Select country</option><option value="US">United States</option><option value="CA">Canada</option><option value="GB">United Kingdom</option><option value="DE">Germany</option><option value="FR">France</option><option value="IT">Italy</option><option value="ES">Spain</option><option value="NL">Netherlands</option><option value="BE">Belgium</option><option value="AT">Austria</option><option value="CH">Switzerland</option><option value="SE">Sweden</option><option value="NO">Norway</option><option value="DK">Denmark</option><option value="FI">Finland</option><option value="PL">Poland</option><option value="CZ">Czech Republic</option><option value="HU">Hungary</option><option value="RO">Romania</option><option value="GR">Greece</option><option value="PT">Portugal</option><option value="IE">Ireland</option><option value="LU">Luxembourg</option><option value="JP">Japan</option><option value="CN">China</option><option value="KR">South Korea</option><option value="TW">Taiwan</option><option value="SG">Singapore</option><option value="HK">Hong Kong</option><option value="IN">India</option><option value="AU">Australia</option><option value="NZ">New Zealand</option><option value="BR">Brazil</option><option value="MX">Mexico</option><option value="AR">Argentina</option><option value="CL">Chile</option><option value="CO">Colombia</option><option value="ZA">South Africa</option><option value="AE">United Arab Emirates</option><option value="SA">Saudi Arabia</option><option value="IL">Israel</option><option value="TR">Turkey</option><option value="RU">Russia</option><option value="UA">Ukraine</option><option value="MY">Malaysia</option><option value="TH">Thailand</option><option value="VN">Vietnam</option><option value="ID">Indonesia</option><option value="PH">Philippines</option><option value="Other">Other</option></select></label>
-            <label class="field">OS Support<select id="supportType"><option value="">Select OS Support</option><option value="OEM">OEM</option><option value="PSP">PSP</option><option value="No OS Support">No OS Support</option></select></label>
+            <label class="field">OS Support Entitlement Verification<select id="supportType"><option value="">Select OS support entitlement</option><option value="OEM OS">OEM OS</option><option value="ProSupport Plus Bring Your own License">ProSupport Plus Bring Your own License</option><option value="Solution Support includes OS">Solution Support includes OS</option><option value="No Software Support">No Software Support</option></select></label>
             <label class="field">Log Location<input id="logLocation" type="url" placeholder="https://…" autocomplete="off"></label>
             <label class="field wide">Issue Description<textarea id="issue" placeholder="Summarize the issue and customer impact."></textarea></label>
             </div></section>
@@ -132,6 +144,14 @@
             <div class="field wide rich-field"><div class="rich-toolbar" id="nextToolbar" role="toolbar" aria-label="Action Plan / Next Steps formatting"><button type="button" class="button secondary" data-command="bold" aria-label="Bold">Bold</button><button type="button" class="button secondary" data-command="italic" aria-label="Italic">Italic</button><button type="button" class="button secondary" data-command="underline" aria-label="Underline">Underline</button><button type="button" class="button secondary" data-command="insertUnorderedList" aria-label="Bullets">Bullets</button><button type="button" class="button secondary" data-command="insertOrderedList" aria-label="Numbered list">Numbered list</button><button type="button" class="button secondary" data-command="createLink" aria-label="Link">Link</button><button type="button" class="button secondary" data-command="removeFormat" aria-label="Clear formatting">Clear formatting</button></div><div id="nextRich" class="rich-editor" contenteditable="false" role="textbox" aria-multiline="true" aria-labelledby="nextLabel" aria-describedby="nextHelp"></div><textarea id="next" hidden></textarea><small id="nextHelp">Format your notes with the toolbar. Paste screenshots with Ctrl+V / ⌘V. Click an image, then drag its bottom-right corner to resize.</small><p id="nextImageStatus" class="image-status" role="status"></p></div>
             </div></section>
           </fieldset></form>
+          <details class="note-rubric" id="noteRubric" open>
+            <summary><span>Note quality score</span><strong id="rubricTotal" aria-live="polite">0</strong><span id="rubricRating" class="rubric-rating">Incomplete</span></summary>
+            <div class="rubric-body">
+              <div id="rubricCategories" class="rubric-categories"></div>
+              <div class="rubric-gaps"><h3>To raise the score</h3><ul id="rubricGaps"></ul></div>
+              <p class="rubric-help">Updates as you write. 85+ is Strong, 60–84 Needs detail. This rule-based check finds missing information; it does not verify technical accuracy or replace your judgment.</p>
+            </div>
+          </details>
           <div class="copy-actions" id="copyActions"><nav class="toolkit-nav" aria-label="Case Toolkit"><button class="button secondary" type="button" data-toolkit="customer" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Customer Update</button><button class="button secondary" type="button" data-toolkit="summary" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Handoff Summary</button><button class="button secondary" id="toggleActionDock" type="button" aria-pressed="false">Stop floating</button></nav><p id="copyStatus" role="status">Copy all fields and tracked time as plain text.</p><div class="note-actions"><button class="button secondary" id="emailNote" type="button" disabled>Email to Case</button><button class="button secondary" id="escalateNote" disabled>Escalate to DE</button><button class="button primary" id="copyNote" disabled>Copy to Lightning</button></div><div class="devin-copy"><label class="field">Ask AI to<select id="devinTask"></select></label><button class="button secondary" id="manageAiTasks" type="button">Add your Own AI Prompt/skills</button><button class="button secondary" id="copyDevin" type="button" disabled>Copy to AI</button><p id="devinStatus" role="status">Copies a prompt for AI tools. Review the included case data before pasting.</p></div></div>
         </div>
       </section>
@@ -148,7 +168,7 @@
 <label class="field">Issue type for this plan<select id="helperSymptom" aria-describedby="helperContext"></select></label>
 </div><div id="helperResults"></div>
 <details id="helperPlain"><summary>Plain text plan</summary><textarea id="helperPlanText" aria-label="Log collection plan" readonly></textarea></details>
-<div class="log-helper-actions"><button id="helperCopy" class="button secondary" type="button">Copy plan</button><button id="helperAdd" class="button primary" type="button">Add plan</button></div><p id="helperStatus" role="status"></p>
+<div class="log-helper-actions"><button id="helperAdd" class="button primary" type="button">Add to Next Steps</button><button class="button secondary" id="closeLogHelperBottom" type="button">Close</button></div><p id="helperStatus" role="status"></p>
 </dialog>
 <dialog id="aiTasksDialog" class="ai-tasks-dialog" aria-labelledby="aiTasksTitle">
 <div class="ai-tasks-heading"><h2 id="aiTasksTitle">Add your Own AI Prompt/skills</h2><button class="button secondary" id="closeAiTasks" type="button">Close</button></div>
@@ -184,10 +204,6 @@
 <p id="backupWarningMessage"></p>
 <p id="backupWarningHelp">Without folder backups, your latest notes and settings may exist only in this browser. Clearing browser data or losing this device could lose that data. We recommend a work-approved, OneDrive-synced folder for ProSupportToolsBackup. Automatic backups run while Case Notes is open and folder access is approved.</p>
 <div class="backup-location"><button class="button primary" id="configureBackups" type="button">Configure Backups</button><button class="button secondary" id="dismissBackupWarning" type="button">Continue Without Backups</button></div>
-</dialog>
-<dialog id="backupRestoreDialog" class="toolkit-dialog" aria-labelledby="backupRestoreTitle">
-<div class="toolkit-dialog-heading"><h2 id="backupRestoreTitle">Backup &amp; Restore</h2><button class="button secondary" id="closeBackupRestore" type="button">Close</button></div>
-<div class="history-backup"><button class="button secondary" id="backupHistory" disabled>Backup History</button><button class="button secondary" id="restoreHistory" disabled>Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" role="status"></p></div><div class="backup-location"><button class="button secondary" id="chooseBackupFolder" type="button">Set Backup Folder</button><button class="button secondary" id="downloadSettings" type="button">Backup Settings</button><input id="settingsFile" type="file" accept=".json,application/json" hidden><button class="button secondary" id="restoreSettings" type="button" aria-haspopup="dialog">Restore Settings</button><p id="backupFolderStatus" class="history-help" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration and note backups.</p></div><p class="history-help">Notes autosave in this browser. With folder access approved, automatic backups run every minute when changes are present while this page is open. Clearing browser data removes local history.</p>
 </dialog>
 <dialog id="restoreSettingsDialog" class="toolkit-dialog" aria-labelledby="restoreSettingsTitle" aria-describedby="restoreSettingsHelp">
   <h2 id="restoreSettingsTitle">Restore Settings</h2>

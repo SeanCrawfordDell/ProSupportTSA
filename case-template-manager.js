@@ -48,7 +48,7 @@
     try {
       const id=editing || "custom-"+crypto.randomUUID();
       persist({...overrides,[id]:draft()});edit(id);
-      message("Template saved in this browser. Backup Settings also saves it to your configured backup folder.");
+      message("Template saved in this browser. Backup Site Configuration also saves it to your configured backup folder.");
     } catch(error){message(error.message || "Template could not be saved. Your changes are still in the editor.");}
   });
   $("deleteTemplate").addEventListener("click",()=>{

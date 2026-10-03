@@ -85,7 +85,7 @@
       const name = index === 0 ? 'Toolbox icon' : button.textContent;
       const row = document.createElement('div'); row.className = 'toolbox-color-row';
       const label = document.createElement('label'); label.textContent = name;
-      const color = document.createElement('input'); color.type='color'; color.value = preferences.colors[id] || (id === 'launcher' ? '#0076ad' : '#164156'); color.setAttribute('aria-label', `${name} color`);
+      const color = document.createElement('input'); color.type='color'; color.value = preferences.colors[id] || (id === 'launcher' ? '#b42318' : '#164156'); color.setAttribute('aria-label', `${name} color`);
       color.addEventListener('input', () => { preferences.colors[id]=color.value; paint(button,id); savePreferences(); });
       label.append(color); row.append(label);
       if(index > 0) [-1,1].forEach(direction => {

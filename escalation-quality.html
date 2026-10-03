@@ -81,9 +81,9 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
             <label class="field">Service Tag<input id="tag" maxlength="250" placeholder="Service Tag"></label>
             <label class="field">Service Request Number<input id="serviceRequest" maxlength="100"></label>
 <label class="field">System/Platform<input id="platform" maxlength="250" placeholder="e.g. PowerEdge R750"></label>
-<label class="field">OS Support <b>Required</b><select id="supportType" required><option value="">Select OS Support</option><option>OEM</option><option>PSP</option><option>No OS Support</option></select></label>
+<label class="field">OS Support Entitlement Verification <b>Required</b><select id="supportType" required><option value="">Select OS support entitlement</option><option>OEM OS</option><option>ProSupport Plus Bring Your own License</option><option>Solution Support includes OS</option><option>No Software Support</option></select></label>
 <label class="field">OS version / build <b>Required</b><input id="osVersion" required maxlength="250" placeholder="Exact version, build, and relevant component firmware"></label>
-<label class="field">OS/Solution <b>Required</b><select id="os" required><option value="">Select OS/Solution</option><option value="Azure Local">Azure Local</option><option value="Azure Stack Hub">Azure Stack Hub</option><option value="Debian">Debian</option><option value="ESX">ESX</option><option value="Nutanix">Nutanix</option><option value="Redhat">Redhat</option><option value="Ubuntu">Ubuntu</option><option value="VCF">VCF</option><option value="Windows Server">Windows Server</option></select></label>
+<label class="field">OS/Solution <b>Required</b><select id="os" required><option value="">Select OS/Solution</option><option value="Azure Local">Azure Local</option><option value="Azure Stack Hub">Azure Stack Hub</option><option value="Debian">Debian</option><option value="ESX">ESX</option><option value="Nutanix">Nutanix</option><option value="Redhat">Redhat</option><option value="Ubuntu">Ubuntu</option><option value="VCF">VCF</option><option value="Windows Server">Windows Server</option><option value="No OS">No OS</option></select></label>
             <label class="field wide">Exact errors and timestamps <textarea id="errors" maxlength="3000" placeholder="Paste exact error text, codes, and occurrence times, or state that no error is shown."></textarea></label>
             <label class="field wide">Reproduction steps <b>Required</b><textarea id="reproduction" maxlength="3000" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea></label>
           </div>
@@ -145,7 +145,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 <label class="field">Issue type for this plan<select id="helperSymptom" aria-describedby="helperContext"></select></label>
 </div><div id="helperResults"></div>
 <details id="helperPlain"><summary>Plain text plan</summary><textarea id="helperPlanText" aria-label="Log collection plan" readonly></textarea></details>
-<div class="log-helper-actions"><button id="helperCopy" class="button secondary" type="button">Copy plan</button><button id="helperAdd" class="button primary" type="button">Add plan</button></div><p id="helperStatus" role="status"></p>
+<div class="log-helper-actions"><button id="helperCopy" class="button secondary" type="button">Copy plan</button><button id="helperAdd" class="button primary" type="button">Add plan</button><button class="button secondary" id="closeLogHelperBottom" type="button">Close</button></div><p id="helperStatus" role="status"></p>
 </dialog>
 <dialog id="aiTasksDialog" class="ai-tasks-dialog" aria-labelledby="aiTasksTitle">
 <div class="ai-tasks-heading"><h2 id="aiTasksTitle">Add your Own AI Prompt/skills</h2><button class="button secondary" id="closeAiTasks" type="button">Close</button></div>

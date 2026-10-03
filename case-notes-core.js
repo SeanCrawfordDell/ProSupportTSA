@@ -2,8 +2,12 @@
 // Pure case operations, shared with the Node regression tests.
 const CaseNotes = (() => {
   const Toolkit = typeof module !== "undefined" ? require("./case-toolkit-core.js") : CaseToolkitCore;
-  const fields = { tag: "Service Tag", platform: "System/Platform", request: "Service Request Number", os: "OS/Solution", osVersion: "OS version / build", country: "Customer Country", supportType: "OS Support", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
+  const fields = { tag: "Service Tag", platform: "System/Platform", request: "Service Request Number", os: "OS/Solution", osVersion: "OS version / build", country: "Customer Country", supportType: "OS Support Entitlement Verification", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
   const defaultFieldOrder = Object.keys(fields);
+  const supportTypes = ["OEM OS", "ProSupport Plus Bring Your own License", "Solution Support includes OS", "No Software Support"];
+  // Earlier versions stored short codes; map them to the current entitlement options.
+  const legacySupportTypes = { "OEM": "OEM OS", "PSP": "ProSupport Plus Bring Your own License", "No OS Support": "No Software Support" };
+  const normalizeSupportType = value => Object.hasOwn(legacySupportTypes, value) ? legacySupportTypes[value] : value;
   const empty = () => ({ version: 2, selected: null, cases: [], archive: [], trash: [], revisions: {}, fieldConfig: { order: [...defaultFieldOrder], customFields: {} } });
   const elapsed = (note, now) => note.elapsed + (note.started === null ? 0 : Math.max(0, now - note.started));
   const lastSession = (note, now) => note.started === null ? (note.lastSession || 0) : Math.max(0, now - note.started);
@@ -136,7 +140,7 @@ const CaseNotes = (() => {
       if (note[key]) customFieldsData[config.customFields[key]] = note[key];
     });
     return { problem: note.issue, tag: note.tag, os: note.os, country: note.country,
-      osVersion: note.osVersion || "", serviceRequest: note.request, platform: note.platform || "", supportType: note.supportType || "", logLocation: note.logLocation || "", impact: note.toolkit?.impact || "", checks: note.toolkit?.checks || {}, issueType: note.toolkit?.issueType || "general",
+      osVersion: note.osVersion || "", serviceRequest: note.request, platform: note.platform || "", supportType: normalizeSupportType(note.supportType || ""), logLocation: note.logLocation || "", impact: note.toolkit?.impact || "", checks: note.toolkit?.checks || {}, issueType: note.toolkit?.issueType || "general",
       troubleshooting: plainImages(note.notes), nextSteps: plainImages(note.next), sourceNote: copyText(note, now, config), customFields: customFieldsData };
   }
   function parse(raw, nested = false) {
@@ -167,6 +171,7 @@ const CaseNotes = (() => {
         for (const key of ["os", "country", "supportType", "logLocation", "platform", "osVersion"]) {
           if (!Object.hasOwn(note, key)) note[key] = "";
         }
+        if (typeof note.supportType === "string") note.supportType = normalizeSupportType(note.supportType);
         // Add custom fields to existing notes
         for (const key of Object.keys(state.fieldConfig.customFields)) {
           if (!Object.hasOwn(note, key)) note[key] = "";
@@ -246,6 +251,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { fields, defaultFieldOrder, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, searchText, excerpt, trimWorkingList };
+  return { fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, searchText, excerpt, trimWorkingList };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;

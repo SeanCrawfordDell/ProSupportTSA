@@ -22,7 +22,7 @@ Search includes case fields, note content, next steps, custom fields, and suppor
 
 ## Restoring settings and notes
 
-**Backup Settings** saves `customer-config.json` and a dated settings copy directly to your configured `ProSupportToolsBackup` folder. Without a connected folder, it downloads the settings file instead. If folder access is denied or a write fails, the status explains the failure so you can reconnect and retry; it does not silently download elsewhere. Settings backups do not change your case-note backup files or the last successful full-backup time.
+**Backup Site Configuration** saves `customer-config.json` and a dated settings copy directly to your configured `ProSupportToolsBackup` folder. Without a connected folder, it downloads the settings file instead. If folder access is denied or a write fails, the status explains the failure so you can reconnect and retry; it does not silently download elsewhere. Settings backups do not change your case-note backup files or the last successful full-backup time.
 
 Settings include field configuration, toolbox URLs/order/colors, custom AI prompts, personal and edited built-in troubleshooting templates, theme, floating-panel preference, collapsed sections/history, and pinned site resources. They do not include browser folder permissions or the temporary dragged position of the toolbox.
 
