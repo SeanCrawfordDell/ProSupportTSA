@@ -122,7 +122,7 @@ const CaseRubricCore = (() => {
     const severitySet = workflow.severity && workflow.severity !== "Unspecified";
     const impactNote = filler.impact ? "Business impact reads as repeated or placeholder text." : repeats.impact ? `Business impact repeats the ${repeats.impact}.` : "";
     if (usable("impact") || severitySet || (usable("issue") && impactTerms.test(issue))) triageScore += 3;
-    else gap("triage", 3, impactNote || "Set Service impact in Triage, record the Business impact under Handoff Summary, or state who is affected in the Issue Description.", !!impactNote);
+    else gap("triage", 3, impactNote || "Set Service Impact in Triage, record the Business impact under Handoff Summary, or state who is affected in the Issue Description.", !!impactNote);
     const changeNote = filler.recentChange ? "Recent change reads as repeated or placeholder text." : repeats.recentChange ? `Recent change repeats the ${repeats.recentChange}.` : "";
     if (usable("recentChange") || (usable("issue") && changeTerms.test(issue))) triageScore += 3;
     else gap("triage", 3, changeNote || "Record the recent change in Triage or in the Issue Description, or note that none is known.", !!changeNote);

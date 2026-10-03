@@ -279,24 +279,24 @@ test('Case Notes handoff fills recent changes, service impact and gathered logs,
  assert.equal(h.get('changes').value,'Patched node 2 on 2026-09-30');assert.equal(h.get('production').value,'Service unavailable');
  assert.equal(h.get('evidence').value,'Yes');assert.equal(h.get('results').value,'');
  const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
- // The escalation Service impact field offers exactly the Case Notes Triage options, so the handoff needs no mapping.
+ // Both pages label the field Service Impact and offer exactly the same options, so the handoff needs no mapping.
  const notesHtml=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
  const options=markup=>[...markup.matchAll(/<option([^>]*)>([^<]*)<\/option>/g)].filter(m=>!/value=""/.test(m[1])).map(m=>m[2]);
  const triage=options(notesHtml.match(/<select data-workflow-field="severity">[\s\S]*?<\/select>/)[0]).filter(o=>o!=='Unspecified');
  const escalation=options(html.match(/<select id="production">[\s\S]*?<\/select>/)[0]);
  assert.deepEqual(escalation,triage);assert.deepEqual(triage,['Service unavailable','Service degraded','Deployment','How-to / planning']);
- assert.match(html,/<label class="field">Service impact<select id="production">/);
+ assert.match(html,/<label class="field">Service Impact<select id="production">/);assert.match(notesHtml,/<label class="field">Service Impact<select data-workflow-field="severity">/);
  for(const severity of triage){note.toolkit.workflow.severity=severity;assert.equal(core.escalation(note,200).production,severity);}
  note.toolkit.workflow.severity='Unspecified';assert.equal(core.escalation(note,200).production,'');
  assert.match(html,/left empty on import: document outcomes there/);
- assert.match(html,/repeated or placeholder text/);assert.match(html,/Severity \(2\), Service impact \(2\) and Affected systems \/ users \(3\)/);
+ assert.match(html,/repeated or placeholder text/);assert.match(html,/Severity \(2\), Service Impact \(2\) and Affected systems \/ users \(3\)/);
 });
-test('saved drafts and reviews still carrying the former Production status values map onto Service impact',()=>{
+test('saved drafts and reviews still carrying the former Production status values map onto the shared options',()=>{
  const h=harness();const strong=h.run('samples.strong');
  const populate=production=>{h.ctx.fixture={...strong,production};h.run('populate(fixture)');return h.get('production').value;};
  assert.equal(populate('Production down'),'Service unavailable');
  assert.equal(populate('Production degraded'),'Service degraded');
  assert.equal(populate('Non-production'),'Non-production','values without a Triage equivalent are kept rather than dropped');
  assert.equal(run(h,{...strong,production:'Production degraded'}).score,run(h,strong).score);
- assert.equal(h.run('labels.production'),'Service impact');
+ assert.equal(h.run('labels.production'),'Service Impact');
 });

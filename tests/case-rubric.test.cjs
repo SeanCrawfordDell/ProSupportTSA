@@ -108,7 +108,7 @@ test('triage is scored separately from issue clarity and the help text explains 
  assert.equal(R.maxima.issue,14);assert.equal(R.maxima.triage,6);assert.equal(R.labels.triage,'Triage');
  assert.equal(Object.values(R.maxima).reduce((a,b)=>a+b,0),100);
  const r=R.score(blank());
- assert.ok(r.gaps.some(g=>g.category==='triage'&&/Set Service impact in Triage, record the Business impact under Handoff Summary/.test(g.text)));
+ assert.ok(r.gaps.some(g=>g.category==='triage'&&/Set Service Impact in Triage, record the Business impact under Handoff Summary/.test(g.text)));
  assert.ok(!r.gaps.some(g=>g.category==='issue'&&/impact|recent change/i.test(g.text)));
  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
  assert.match(html,/repeated or placeholder text/);assert.match(html,/every dated entry/);assert.match(html,/Service Tag \(5–10 letters and digits\)/);
