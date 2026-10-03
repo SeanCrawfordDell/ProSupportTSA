@@ -26,7 +26,8 @@ window.CaseRubric = (() => {
     $("rubricGaps").replaceChildren(...(gaps.length ? gaps.map(item => {
       const li = document.createElement("li"), points = document.createElement("b");
       points.textContent = `+${item.points}`;
-      li.append(points, document.createTextNode(" " + item.text));
+      // Blocking gaps keep the note below Strong regardless of the total.
+      li.append(points, document.createTextNode(" " + item.text + (item.blocking ? " (needed for Strong)" : "")));
       return li;
     }) : [Object.assign(document.createElement("li"), { textContent: "Nothing missing. This note covers every rubric item." })]));
   }

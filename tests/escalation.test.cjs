@@ -117,7 +117,8 @@ test('every Case Notes field reaches its corresponding escalation input and surv
  const expected={tag:note.tag,platform:note.platform,serviceRequest:note.request,os:note.os,country:note.country,supportType:note.supportType,logLocation:note.logLocation,problem:note.issue,troubleshooting:core.plainText(note.notes),impact:note.toolkit.impact};
  const restored=harness({stored:h.stored()});
  for(const [id,value] of Object.entries(expected)){assert.equal(h.get(id).value,value,id);assert.equal(restored.get(id).value,value,id+' restored');}
- assert.equal(h.get('evidence').value,'');assert.equal(h.get('results').value,'');
+ // Log Location is set, so the handoff answers the gathered-logs question; results stay empty for outcomes to be recorded.
+ assert.equal(h.get('evidence').value,'Yes');assert.equal(h.get('results').value,'');
  assert.ok(h.get('sourceNote').value.includes(core.plainText(note.next)));
  assert.equal(h.run('fieldIds.includes("nextSteps")'),false);
 });
@@ -181,4 +182,105 @@ test('incomplete action pairs receive no fabricated outcome credit or overall re
  const h=harness();await h.click('loadStrong');h.get('results').value='';h.run('actions=[{action:"Restarted controller",result:""}];renderActions()');
  const result=h.run('runReview()');assert.equal(result.ready_to_escalate,false);assert.ok(!result.strengths.some(item=>item.field==='overall'));
  assert.equal(h.run('reviewData().results'),'');assert.doesNotMatch(h.get('copyPreview').value,/\[Result missing\]/);
+});
+
+// --- Content scoring: fixtures from the scoring review (items 9-15) ---
+const lorem='Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident 1.';
+const requiredText=['problem','impact','timeline','expected','reproduction','troubleshooting','results','osVersion'];
+const baseForm={evidence:'Yes',supportType:'OEM OS',country:'US',os:'Windows Server'};
+const honest={...baseForm,problem:'Hyper-V host crashes.',impact:'Production down for all users.',timeline:'Started 2026-10-01, happens daily',expected:'Host stays up.',reproduction:'1. Start VMs\n2. Wait',troubleshooting:'1. Rebooted\n2. Checked logs',results:'No change observed.',osVersion:'Windows Server 2022'};
+function run(h,form){h.ctx.fixture=form;return h.run('evaluate(fixture)');}
+test('lorem ipsum in every required field is flagged as placeholder text and is not Ready',()=>{
+ const h=harness();const form={...baseForm};for(const id of requiredText)form[id]=lorem;
+ const result=run(h,form);
+ assert.equal(result.ready_to_escalate,false);assert.ok(result.score<75,String(result.score));
+ assert.ok(result.warnings.some(w=>/repeated or placeholder/.test(w.reason)));
+ assert.ok(result.categories.completeness<35);assert.ok(result.categories.specificity<10);
+ assert.ok(!result.strengths.some(s=>s.field==='overall'));
+});
+test('repeated gibberish with step prefixes, one keyword and one digit per field is not Ready and earns no praise',()=>{
+ const h=harness();const g=k=>`1. blah blah blah blah ${k} 7\n2. blah blah blah blah blah`;
+ const form={...baseForm,problem:g('error'),impact:g('users'),timeline:g('since'),expected:g('always'),reproduction:g('every'),troubleshooting:g('failed'),results:g('observed'),osVersion:g('build'),errors:g('timestamp')};
+ const result=run(h,form);
+ assert.equal(result.ready_to_escalate,false);assert.ok(result.score<75,String(result.score));
+ for(const field of ['overall','reproduction','troubleshooting'])assert.ok(!result.strengths.some(s=>s.field===field),field);
+ assert.ok(result.warnings.filter(w=>/repeated or placeholder/.test(w.reason)).length>=8);
+});
+test('weak phrases block short fields as a prefix or whole word but not long fields that contain the word',()=>{
+ const h=harness();const strong=h.run('samples.strong');
+ assert.equal(run(h,{...strong,results:'see above please'}).status,'blocked');
+ assert.equal(run(h,{...strong,osVersion:'latest'}).status,'blocked');
+ for(const phrase of ['see above','as above','latest','newest','current','tbd','tba','asap','ok','okay','fine','n/a','none','unknown','not sure','ask customer','pending','wip']){
+  const result=run(h,{...strong,osVersion:phrase});
+  assert.equal(result.ready_to_escalate,false,phrase);assert.ok(result.blocking_issues.some(i=>i.field==='osVersion'),phrase);
+ }
+ assert.match(strong.results,/\bsame\b/);assert.equal(run(h,strong).ready_to_escalate,true);
+ assert.equal(run(h,{...strong,evidence:'No',logReason:'Fine, the customer declined log collection for compliance reasons'}).ready_to_escalate,true);
+});
+test('results copied from troubleshooting block readiness and earn no results credit',()=>{
+ const h=harness();const strong=h.run('samples.strong');const base=run(h,strong);
+ const result=run(h,{...strong,results:strong.troubleshooting});
+ assert.equal(result.status,'blocked');assert.ok(result.blocking_issues.some(i=>i.field==='results'&&/repeats/i.test(i.reason)));
+ assert.ok(result.categories.troubleshooting<=base.categories.troubleshooting-7);
+ assert.ok(!result.strengths.some(s=>s.field==='troubleshooting'||s.field==='overall'));
+});
+test('cross-field duplicates warn, name both fields and credit only the first copy',()=>{
+ const h=harness();const strong=h.run('samples.strong');const base=run(h,strong);
+ const result=run(h,{...strong,impact:strong.problem});
+ assert.ok(result.warnings.some(w=>w.field==='impact'&&/repeats problem statement/i.test(w.reason)));
+ assert.ok(result.categories.completeness<base.categories.completeness);assert.ok(result.score<base.score);
+ assert.ok(!result.warnings.some(w=>w.field==='problem'));
+});
+test('severity, production status and affected systems earn specificity points and satisfy the impact quantity check',()=>{
+ const h=harness();const strong=h.run('samples.strong');const base=run(h,strong);
+ assert.equal(base.score,100);
+ const none=run(h,{...strong,severity:'',production:'',affected:''});
+ assert.equal(base.categories.specificity-none.categories.specificity,7);
+ assert.equal(base.score-run(h,{...strong,severity:''}).score,2);
+ assert.equal(base.score-run(h,{...strong,production:''}).score,2);
+ assert.equal(base.score-run(h,{...strong,affected:''}).score,3);
+ assert.equal(base.score-run(h,{...strong,affected:'ok'}).score,3);
+ const impact='Month-end close cannot be completed while the share is unreachable, and the finance close is late.';
+ assert.ok(run(h,{...strong,impact,affected:''}).warnings.some(w=>w.field==='impact'));
+ assert.ok(!run(h,{...strong,impact,affected:'40 users'}).warnings.some(w=>w.field==='impact'));
+ assert.ok(none.warnings.some(w=>w.field==='affected'));
+});
+test('a short honest entry in real words scores no lower than lorem ipsum',()=>{
+ const h=harness();const form={...baseForm};for(const id of requiredText)form[id]=lorem;
+ const real=run(h,honest), fake=run(h,form);
+ assert.ok(real.score>=fake.score,`${real.score} vs ${fake.score}`);assert.equal(real.blocking_issues.length,0);
+ assert.equal(real.categories.completeness,35);assert.ok(real.categories.troubleshooting>fake.categories.troubleshooting);
+});
+test('outcome credit is proportional to the troubleshooting actions covered',()=>{
+ const h=harness();const strong=h.run('samples.strong');const base=run(h,strong);
+ const partial=run(h,{...strong,results:'1. Both browsers returned the same 503 error page after login and the dashboard never rendered at all.'});
+ assert.ok(partial.categories.troubleshooting<base.categories.troubleshooting);
+ assert.ok(partial.warnings.some(w=>w.field==='results'&&/1 of 5 actions/.test(w.reason)));
+ assert.ok(!partial.strengths.some(s=>s.field==='troubleshooting'));
+});
+test('built-in samples keep their verdicts',()=>{
+ const h=harness();const weak=run(h,h.run('samples.weak')),strong=run(h,h.run('samples.strong'));
+ assert.equal(weak.status,'blocked');assert.equal(strong.score,100);assert.equal(strong.status,'ready');
+ assert.equal(strong.strengths.map(s=>s.field).sort().join(),'evidence,overall,reproduction,troubleshooting');
+ assert.equal(h.run('Object.values(scoreMaxima).reduce((a,b)=>a+b,0)'),100);
+});
+test('escalation text plausibility stays identical to the shared Case Notes helper',()=>{
+ const h=harness(),R=require('../case-rubric-core.js');
+ const strong=h.run('samples.strong');
+ const samplesText=['','x','blah blah blah blah blah blah blah blah','No change.\nNo change.\nNo change.',lorem,honest.troubleshooting,strong.results,strong.troubleshooting,fs.readFileSync(require.resolve('../CASE_NOTES_GUIDE.md'),'utf8')];
+ for(const text of samplesText){h.ctx.fixture=text;assert.equal(h.run('textQuality.filler(fixture)'),R.text.filler(text),text.slice(0,40));}
+ for(const [a,b] of [[strong.results,strong.troubleshooting],[strong.problem,strong.problem],[honest.problem,honest.impact]]){h.ctx.a=a;h.ctx.b=b;assert.equal(h.run('textQuality.similarity(a,b)'),R.text.similarity(a,b));}
+});
+test('Case Notes handoff fills recent changes, production status and gathered logs, and leaves results empty with the import hint',()=>{
+ const note=core.create(core.empty(),'handoff-map',100);
+ Object.assign(note,{issue:'Cluster node evictions',logLocation:'https://example.com/logs',notes:'<p>Collected cluster log</p>'});
+ note.toolkit.workflow={...require('../case-workflow-core.js').defaults(),recentChange:'Patched node 2 on 2026-09-30',severity:'Service unavailable'};
+ const h=harness({imported:core.escalation(note,200)});
+ assert.equal(h.get('changes').value,'Patched node 2 on 2026-09-30');assert.equal(h.get('production').value,'Production down');
+ assert.equal(h.get('evidence').value,'Yes');assert.equal(h.get('results').value,'');
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
+ assert.match(html,/<select id="production">(?:(?!<\/select>)[\s\S])*<option>Production down<\/option>/,'maps onto an existing option');
+ assert.match(html,/<select id="production">(?:(?!<\/select>)[\s\S])*<option>Production degraded<\/option>/);
+ assert.match(html,/left empty on import: document outcomes there/);
+ assert.match(html,/repeated or placeholder text/);assert.match(html,/Severity \(2\), Production status \(2\) and Affected systems \/ users \(3\)/);
 });
