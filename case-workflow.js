@@ -18,7 +18,6 @@ window.CaseWorkflow=(()=>{
     const note=api?.current();if(!note)return;
     const w=note.toolkit.workflow || C.defaults();
     $("workflowFields").disabled=!api.canEdit();
-    $("workflowContext").textContent=[note.request?"SR "+note.request:"Current case",note.platform || "Add platform below",note.os || "Choose OS below",note.toolkit.status].join(" · ");
     document.querySelectorAll("[data-workflow-field]").forEach(el=>{const value=w[el.dataset.workflowField];if(el.type==="checkbox")el.checked=value;else el.value=value;});
     // Retain findings entered in earlier previews, alongside the evidence checklist.
     $("workflowSavedFindings").replaceChildren(...Object.entries(w.results).filter(([,value])=>value.trim()).map(([id,value])=>{
