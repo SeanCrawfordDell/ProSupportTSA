@@ -5,6 +5,7 @@
   const escapeHtml = value => String(value).replace(/[&<>"']/g,char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
   let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release;
   let savedState = null;
+  let summaryCaseId = null;
   let notesPopout, devinIntegration;
   let backupBusy = false, lastBackupSignature = "", lastBackupAt = null;
   try { lastBackupAt = localStorage.getItem("dell-support.last-backup-at"); } catch {}
@@ -13,7 +14,7 @@
   const caseWorkArea = $("caseWorkArea");
   if (caseWorkArea?.prepend && actionDock) caseWorkArea.prepend(actionDock);
   const buttonTooltips = {
-    newNote: "Start a blank case note and begin time tracking.",
+    newNote: "Start a new case with its first dated note and begin time tracking.",
     loadExampleNote: "Load a sample case note you can safely explore.",
     openTraining: "Tutorial Demo and Load Example.",
     openSettingsMenu: "Settings: customize the fields in your case notes.",
@@ -424,6 +425,93 @@
     });
   });
   const selected = () => state.cases.find(note => note.id === state.selected);
+  const summaryOpen = () => !!selected() && summaryCaseId === selected().id;
+  const canEditEntry = () => writable && !copying && !summaryOpen();
+  function renderEntryNavigation() {
+    const note = selected(), tabs = $("caseEntryTabs");
+    if (!tabs) return;
+    tabs.replaceChildren();
+    $("newCaseEntry").disabled = !note || !writable || copying;
+    if (!note) { summaryCaseId = null; return; }
+    const summary = summaryOpen(), entries = CaseNotes.entryList(note);
+    const buttons = [];
+    function tab(label, active, id, action) {
+      const button = document.createElement("button"); button.type="button";
+      button.className="case-entry-tab"; button.textContent=label; button.id=id;
+      button.setAttribute("role","tab"); button.setAttribute("aria-selected",String(active));
+      button.setAttribute("aria-controls",id === "caseSummaryTab" ? "caseSummaryPanel" : "notesSectionBody actionPlanSection");
+      button.tabIndex=active ? 0 : -1; button.disabled=copying;
+      button.addEventListener("click",action);
+      button.addEventListener("keydown",event=>{
+        const index=buttons.indexOf(button); let next;
+        if(event.key==="ArrowRight")next=(index+1)%buttons.length;
+        else if(event.key==="ArrowLeft")next=(index+buttons.length-1)%buttons.length;
+        else if(event.key==="Home")next=0;
+        else if(event.key==="End")next=buttons.length-1;
+        else return;
+        event.preventDefault(); buttons[next].focus(); buttons[next].click();
+      });
+      buttons.push(button); tabs.append(button); return button;
+    }
+    tab("Case Summary",summary,"caseSummaryTab",()=>{
+      if (!save()) return;
+      summaryCaseId=note.id; render(); $("caseSummaryTab")?.focus();
+    });
+    entries.forEach((entry,index)=>{
+      const date=new Date(entry.created), sameDay=entries.filter(item=>new Date(item.created).toDateString()===date.toDateString()).length>1;
+      const label=date.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})+(sameDay ? " · "+date.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"})+" · "+(index+1) : "");
+      const id="case-entry-tab-"+entry.id;
+      const button=tab(label,!summary && entry.id===note.activeEntryId,id,()=>{
+        if (copying || !save()) return;
+        if (!writable) {
+          CaseNotes.selectEntry(note,entry.id); summaryCaseId=null; render(); $(id)?.focus(); return;
+        }
+        const previousSummary=summaryCaseId; summaryCaseId=null;
+        if(!commitCaseChange(candidate=>CaseNotes.selectEntry(candidate.cases.find(item=>item.id===note.id),entry.id)))summaryCaseId=previousSummary;
+        $(id)?.focus();
+      });
+      button.title="Created "+date.toLocaleString()+"; last edited "+new Date(entry.updated).toLocaleString();
+    });
+    $("notesSectionBody").hidden=summary; $("actionPlanSection").hidden=summary;
+    $("caseSummaryPanel").hidden=!summary;
+    if(summary) renderCaseSummary(note,entries);
+    else {
+      const active=entries.find(entry=>entry.id===note.activeEntryId);
+      $("entryCreatedInfo").textContent="Created "+new Date(active.created).toLocaleString()+" · Last edited "+new Date(active.updated).toLocaleString();
+      $("notesSectionBody").setAttribute("aria-labelledby","case-entry-tab-"+active.id);
+    }
+    buttons.find(button=>button.getAttribute?.("aria-selected")==="true")?.scrollIntoView?.({block:"nearest",inline:"nearest"});
+  }
+  function renderCaseSummary(note,entries) {
+    const panel=$("caseSummaryPanel"); panel.replaceChildren();
+    const title=document.createElement("h3"); title.textContent="Case Summary"; panel.append(title);
+    const context=document.createElement("dl"); context.className="case-summary-details";
+    CaseNotes.getEffectiveFields(state).filter(field=>!["notes","next"].includes(field.id) && note[field.id]).forEach(field=>{
+      const label=document.createElement("dt"), value=document.createElement("dd");
+      label.textContent=field.label; value.textContent=note[field.id]; context.append(label,value);
+    });
+    panel.append(context);
+    const overview=document.createElement("p"); overview.className="case-summary-overview";
+    overview.textContent=entries.length+" note"+(entries.length===1 ? "" : "s")+" · Oldest to newest · Total time: "+CaseNotes.duration(CaseNotes.elapsed(note,Date.now())); panel.append(overview);
+    entries.forEach((entry,index)=>{
+      const section=document.createElement("details"); section.className="case-summary-entry"; section.open=true;
+      const heading=document.createElement("summary"); heading.textContent=new Date(entry.created).toLocaleString()+" · Note "+(index+1); section.append(heading);
+      for(const [field,label] of [["notes","Notes"],["next","Action Plan / Next Steps"]]) {
+        const h=document.createElement("h4"),content=document.createElement("div"); h.textContent=label; content.className="case-summary-content";
+        if(entry[field] && window.CaseMarkdown?.renderContent)content.append(window.CaseMarkdown.renderContent(entry[field],note));
+        else content.textContent=CaseNotes.plainText(entry[field]) || "No content recorded.";
+        section.append(h,content);
+      }
+      panel.append(section);
+    });
+  }
+  $("newCaseEntry")?.addEventListener("click",()=>{
+    const note=selected(); if(!note || !writable || copying || !save())return;
+    const previousSummary=summaryCaseId; summaryCaseId=null;
+    if(commitCaseChange(candidate=>CaseNotes.addEntry(candidate.cases.find(item=>item.id===note.id),crypto.randomUUID(),Date.now()))) {
+      setSectionCollapsed("notes",false); setSectionCollapsed("actionPlan",false); $("notesRich").focus();
+    } else summaryCaseId=previousSummary;
+  });
   function status(text, error = false) {
     $("saveStatus").textContent = text;
     $("saveStatus").classList.toggle("error", error);
@@ -432,6 +520,7 @@
   function save() {
     if (!writable || !dirty) return !dirty;
     try {
+      state.cases.forEach(note=>CaseNotes.syncEntry(note));
       const previousVersions = JSON.stringify(state.revisions || {});
       CaseNotes.checkpoint(state,savedState,Date.now());
       try { localStorage.setItem(key, JSON.stringify(state)); }
@@ -554,8 +643,10 @@
     $("emailNote").disabled = $("copyNote").disabled = $("escalateNote").disabled = $("copyDevin").disabled = !writable || copying;
     $("devinTask").disabled = !writable || copying;
     $("stopTimer").disabled = !writable || copying || !selected() || selected().started === null;
-    window.CaseMarkdown?.setEditable(writable && !copying);
-    window.CaseToolkit?.setEditable(writable && !copying);
+    window.CaseMarkdown?.setEditable(canEditEntry());
+    window.CaseToolkit?.setEditable(canEditEntry());
+    if($("newCaseEntry"))$("newCaseEntry").disabled=!selected() || !writable || copying;
+    $("caseEntryTabs")?.querySelectorAll("button").forEach(button=>{button.disabled=copying;});
     notesPopout?.refresh();
     renderHandoff();
     devinIntegration?.refresh();
@@ -590,11 +681,11 @@
     $("troubleshootHandoffText").textContent = note
       ? `Troubleshooting results ready: "${pendingHandoff.title}". Add them to the Troubleshooting notes for this case?`
       : `Troubleshooting results ready: "${pendingHandoff.title}". Open or create a case to add them.`;
-    $("addTroubleshootHandoff").disabled = !note || copying;
+    $("addTroubleshootHandoff").disabled = !note || !canEditEntry();
   }
   $("addTroubleshootHandoff")?.addEventListener("click", () => {
     const note = selected();
-    if (!pendingHandoff || !note || !writable || copying) return;
+    if (!pendingHandoff || !note || !canEditEntry()) return;
     const existing = typeof marked !== "undefined" ? marked.parse(note.notes, { gfm: true, breaks: true }) : note.notes;
     note.notes = existing + "<p>" + escapeHtml(pendingHandoff.text).replace(/\n/g, "<br>") + "</p>";
     const now = Date.now(); CaseNotes.start(state, note, now); note.updated = now;
@@ -682,13 +773,14 @@
         }
       });
     }
-    controls(); history(); tick();
+    renderEntryNavigation(); controls(); history(); tick();
     window.CaseMarkdown?.refresh();
     window.CaseToolkit?.refresh();
     window.CaseRubric?.refresh();
   }
   function newNote() {
     if (!writable || copying || !save()) return;
+    summaryCaseId=null;
     CaseNotes.create(state, crypto.randomUUID(), Date.now()); dirty = true; save(); render();
     $("copyStatus").textContent = "Copy all fields and tracked time as plain text.";
     $("tag").focus();
@@ -1050,6 +1142,7 @@
   
   function onCaseFieldInput(event) {
     if (!writable || copying) return;
+    if (["notes","next"].includes(event.target.id) && !canEditEntry()) return;
     const effectiveFields = CaseNotes.getEffectiveFields(state);
     const fieldIds = effectiveFields.map(f => f.id);
     if (!fieldIds.includes(event.target.id)) return;
@@ -1057,6 +1150,7 @@
     const now = Date.now(); const restarting = note.started === null;
     CaseNotes.start(state, note, now);
     note[event.target.id] = event.target.value; note.updated = now; dirty = true;
+    CaseNotes.syncEntry(note,now);
     status("Unsaved changes");
     $("copyStatus").textContent = "Copy all fields and tracked time as plain text.";
     if (restarting) save();
@@ -1339,10 +1433,10 @@
   window.addEventListener("pageshow", event => { if (event.persisted) acquire(); });
   window.CaseMarkdown?.init({
     current: selected,
-    canEdit: () => writable && !copying,
+    canEdit: canEditEntry,
     update(field, value, images) {
       const note = selected();
-      if (!note || !writable || copying) return;
+      if (!note || !canEditEntry()) return;
       if (images) note.images = images;
       $(field).value = value;
       $(field).dispatchEvent(new Event("input", { bubbles: true }));
@@ -1352,9 +1446,9 @@
   window.CaseToolkit?.init({
     save,
     current: selected,
-    canEdit: () => writable && !copying,
+    canEdit: canEditEntry,
     mutate(change, immediate = true) {
-      const note = selected(); if (!note || !writable || copying) return;
+      const note = selected(); if (!note || !canEditEntry()) return;
       change(note);
       const now = Date.now(); CaseNotes.start(state, note, now); note.updated = now;
       dirty = true; status("Unsaved changes");
@@ -1365,10 +1459,10 @@
   });
   window.LogHelper?.init({
     context: () => { const note=selected(); return {id:note?.id,os:note?.os,platform:note?.platform,symptom:note?.toolkit?.issueType}; },
-    canAdd: () => !!selected() && writable && !copying,
+    canAdd: () => !!selected() && canEditEntry(),
     addLabel: "Add to Next Steps",
     add(text) {
-      const note=selected(); if(!note || !writable || copying)return false;
+      const note=selected(); if(!note || !canEditEntry())return false;
       const escaped=text.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
       note.next=marked.parse(note.next,{gfm:true,breaks:true})+"<p>"+escaped.replace(/\n/g,"<br>")+"</p>";
       $("next").value=note.next;$("next").dispatchEvent(new Event("input",{bubbles:true}));
@@ -1396,11 +1490,11 @@
       snapshot() {
         const note=selected();if(!note||!writable||copying)return null;
         syncFormToNote(note);save();
-        return {caseId:note.id,prompt:DevinPrompt.build($("devinTask").value,"Case Notes",CaseNotes.copyText(note,Date.now(),state.fieldConfig))};
+        return {caseId:note.id,entryId:note.activeEntryId,prompt:DevinPrompt.build($("devinTask").value,"Case Notes",CaseNotes.copyText(note,Date.now(),state.fieldConfig))};
       },
-      canAppend: id => !!selected() && selected().id===id && writable && !copying,
-      appendResponse(id,text) {
-        const note=selected();if(!note||note.id!==id||!writable||copying)return false;
+      canAppend: (id,entryId) => !!selected() && selected().id===id && canEditEntry() && (entryId ? selected().activeEntryId===entryId : selected().entries.length===1),
+      appendResponse(id,text,entryId) {
+        const note=selected();if(!note||note.id!==id||!canEditEntry()||(entryId ? note.activeEntryId!==entryId : note.entries.length!==1))return false;
         syncFormToNote(note);
         const existing=typeof marked!=="undefined"?marked.parse(note.notes,{gfm:true,breaks:true}):note.notes;
         const value=existing+"<p><strong>Devin suggestion (reviewed by agent)</strong></p><p>"+escapeHtml(text).replace(/\n/g,"<br>")+"</p>";

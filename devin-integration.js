@@ -68,8 +68,8 @@ const DevinIntegration = (() => {
     const copyResponse=button('Copy response','devinCopyResponse',async()=>{try{await client.copyPrompt(response.node.value);requestStatus.textContent='Response copied.';}catch(e){requestStatus.textContent=e.message;response.node.focus();response.node.select();}});
     const append=button('Append to Notes','devinAppendResponse',()=>{
       if(!request||request.appended||request.state!=='completed')return;
-      if(!api.canAppend?.(request.caseId)||!api.appendResponse?.(request.caseId,response.node.value)){
-        requestStatus.textContent='The original case is no longer selected or editable, or saving failed. Copy the response or return to that case and retry.';refresh();return;
+      if(!api.canAppend?.(request.caseId,request.entryId)||!api.appendResponse?.(request.caseId,response.node.value,request.entryId)){
+        requestStatus.textContent='The original case or dated note is no longer selected or editable, or saving failed. Copy the response or return to that note and retry.';refresh();return;
       }
       request.appended=true;requestStatus.textContent='Response appended to the original case notes. Check the note’s save status before leaving.';refresh();
     });
@@ -85,7 +85,7 @@ const DevinIntegration = (() => {
       submit.hidden=request?.state!=='preview';submit.disabled=!connected||request?.state!=='preview';
       cancel.hidden=!request?.jobId||!busy;resume.hidden=request?.state!=='interrupted';newRequest.hidden=!request||!!busy||request.state==='preview';
       copyResponse.hidden=request?.state!=='completed';append.hidden=!api.appendResponse||request?.state!=='completed';
-      append.disabled=!!request?.appended||!api.canAppend?.(request?.caseId);
+      append.disabled=!!request?.appended||!api.canAppend?.(request?.caseId,request?.entryId);
       test.disabled=pairing||!client.isPaired();connect.disabled=pairing;disconnect.disabled=pairing||!client.isPaired();
     }
     async function check(newPair){

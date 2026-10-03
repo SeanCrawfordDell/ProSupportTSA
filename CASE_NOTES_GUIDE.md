@@ -1,5 +1,17 @@
 # Case Notes: saving, recovery, and exports
 
+## Dated notes within a case
+
+Use **+ New Case** for a different service request. For another day of work on the same request, use **+ New note** in the Notes heading beside **Pop out**. Each entry has its own notes and action plan, while case details, screenshots, workflow context, and total time remain shared.
+
+Date tabs use the entry's creation date in your local timezone. Multiple entries on the same day include a time and entry number. Editing an old entry does not change its creation date. Switching entries saves current work first. A failed save leaves the current entry and its edits in place.
+
+**Case Summary** shows the shared case details once, followed by all dated notes and action plans from oldest to newest. Each dated section can be collapsed. This is a formatted review of the recorded content, not an AI-generated summary. Select a date tab to resume editing.
+
+Copy to Lightning, HTML email, print/PDF, escalation handoff, and AI review include the complete dated history. The Pop out window retains the date tabs and Case Summary. An in-progress screenshot paste or AI reply remains tied to its source entry.
+
+Existing notes migrate intact into one entry using the original case creation date. Previously combined notes are not automatically split into inferred days. History backups now use version 3 and preserve all entries, screenshots, and the selected entry. Versions 1 and 2 remain importable. Older copies of the app cannot open version 3 backups, so use the current app for restore.
+
 ## Saving and backups
 
 Notes autosave in this browser every ten seconds. Open **Backup & Restore** in the top bar for history backups, settings backups, and restore options. Choose **Set Backup Folder** to select an approved location, preferably a work OneDrive-synced Documents folder. The app creates `ProSupportToolsBackup` there (or uses that folder if selected directly). The same folder button becomes **Reconnect Backup Folder** when permission is needed, or **Change Backup Folder** when connected.

@@ -66,13 +66,13 @@ window.CaseMarkdown = (() => {
     handle.addEventListener("pointerdown", event => {
       if (!api.canEdit()) return;
       event.preventDefault();
-      const caseId = api.current().id;
+      const caseId = api.current().id, entryId = api.current().activeEntryId;
       const rect = image.getBoundingClientRect();
       const startX = event.clientX, startY = event.clientY;
       const ratio = rect.width / Math.max(1, rect.height);
       handle.setPointerCapture(event.pointerId);
       function move(e) {
-        if (!api.canEdit() || api.current()?.id !== caseId) return;
+        if (!api.canEdit() || (api.current()?.id !== caseId || api.current()?.activeEntryId !== entryId)) return;
         const dx = e.clientX - startX, dy = (e.clientY - startY) * ratio;
         applyWidth(rect.width + (Math.abs(dx) >= Math.abs(dy) ? dx : dy));
       }
@@ -80,7 +80,7 @@ window.CaseMarkdown = (() => {
         handle.removeEventListener("pointermove", move);
         handle.removeEventListener("pointerup", end);
         handle.removeEventListener("pointercancel", end);
-        if (api.canEdit() && api.current()?.id === caseId && image.isConnected) {
+        if (api.canEdit() && api.current()?.id === caseId && api.current()?.activeEntryId === entryId && image.isConnected) {
           api.update(field, serialize(field), { ...api.current().images });
         }
       }
@@ -104,7 +104,7 @@ window.CaseMarkdown = (() => {
       heading.setAttribute("style", "font-size:16px;margin:24px 0 8px;color:#163247");
       body.append(heading);
       if (fields.includes(field)) {
-        const content = renderedMarkdown(note[field], note);
+        const content = renderedMarkdown(CaseNotes.exportField(note,field), note);
         content.querySelectorAll("img").forEach(img => {
           const pair = Object.entries(note.images || {}).find(([, image]) => image.data === img.getAttribute("src"));
           if (!pair) { img.replaceWith(document.createTextNode("[Screenshot]")); return; }
@@ -183,14 +183,14 @@ window.CaseMarkdown = (() => {
           else container.textContent = event.clipboardData?.getData("text/plain") || "";
           insert(field, container.innerHTML.replace(/\n/g, "<br>")); return;
         }
-        const caseId = api.current().id;
+        const caseId = api.current().id, entryId = api.current().activeEntryId;
         const selection = window.getSelection();
         const range = selection.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
         $(field + "ImageStatus").textContent = "Adding screenshot…";
         try {
           for (const file of files) {
             const data = await encode(file);
-            if (!api.canEdit() || api.current()?.id !== caseId) throw Error("The case changed. Paste the screenshot again in the intended case.");
+            if (!api.canEdit() || (api.current()?.id !== caseId || api.current()?.activeEntryId !== entryId)) throw Error("The case or dated note changed. Paste the screenshot again in the intended note.");
             const note = api.current(), id = crypto.randomUUID(), name = "Screenshot " + new Date().toLocaleTimeString();
             const images = { ...note.images, [id]: { name, data } };
             // Register the image before serialization converts its URL to a stored reference.
@@ -213,7 +213,7 @@ window.CaseMarkdown = (() => {
       $(field + "Toolbar").querySelectorAll("button").forEach(button => { button.disabled = !editable; });
     });
   }
-  return { init, emailHtml, setEditable, refresh() {
+  return { init, emailHtml, setEditable, renderContent: renderedMarkdown, refresh() {
     if (!api || !api.current()) return;
     fields.forEach(field => {
       resizeHandles.get(field)?.handle.remove(); resizeHandles.delete(field);

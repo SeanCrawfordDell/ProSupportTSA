@@ -85,8 +85,8 @@ test('timestamps survive closure, resume adds time, copy includes every field an
   assert.ok(text.includes('First line\nSecond line'));assert.ok(text.endsWith('00:00:15'));
   assert.throws(()=>C.parse('{bad'));assert.throws(()=>C.parse('{"version":2}'));
 });
-function harness({writeError=false,copyError=false,locked=false,folder=null,aiIntegration=false}={}) {
-  const elements={}, intervals=[], events={};let stored=null, now=1000;
+function harness({writeError=false,copyError=false,locked=false,folder=null,aiIntegration=false,initial=null}={}) {
+  const elements={}, intervals=[], events={};let stored=initial, now=1000;
   const preferences = new Map();
   function element(){
     const classes = new Set();
@@ -456,4 +456,40 @@ test('OS version/build survives backup, exports, handoff, and legacy history mig
  assert.match(C.copyText(note,200),/OS version \/ build:\nWindows Server 2022 build 20348/);
  assert.equal(C.escalation(note,200).osVersion,note.osVersion);
  delete note.osVersion;assert.equal(C.parse(JSON.stringify(state)).cases[0].osVersion,'');
+});
+
+test('dated entry tabs preserve each day and keep a single case through summary and reload',()=>{
+ const h=harness();h.click('newNote');h.edit('notes','First investigation');h.edit('next','Collect logs');
+ h.setTime(86401000);assert.equal(typeof h.get('newCaseEntry').listeners.click,'function');h.click('newCaseEntry');
+ let saved=C.parse(h.stored());assert.equal(saved.cases.length,1);assert.equal(saved.cases[0].entries.length,2);
+ h.edit('notes','Follow-up investigation');h.edit('next','Review logs');
+ const tabs=()=>h.get('caseEntryTabs').children;
+ tabs()[1].listeners.click();assert.equal(h.get('notes').value,'First investigation');assert.equal(h.get('next').value,'Collect logs');
+ tabs()[0].listeners.click();assert.equal(h.get('caseSummaryPanel').hidden,false);assert.equal(h.get('notesSectionBody').hidden,true);
+ tabs()[2].listeners.click();assert.equal(h.get('notes').value,'Follow-up investigation');assert.equal(h.get('caseSummaryPanel').hidden,true);
+ saved=C.parse(h.stored());assert.equal(saved.cases[0].entries[1].next,'Review logs');
+});
+test('failed saves block entry creation and switching without discarding edits',()=>{
+ const h=harness();h.click('newNote');h.edit('notes','Must retain');h.failWrite(true);
+ assert.equal(typeof h.get('newCaseEntry').listeners.click,'function');h.click('newCaseEntry');
+ assert.equal(h.get('notes').value,'Must retain');assert.equal(C.parse(h.stored()).cases[0].entries.length,1);
+ h.failWrite(false);h.setTime(2000);h.click('newCaseEntry');assert.equal(C.parse(h.stored()).cases[0].entries[0].notes,'Must retain');
+});
+test('AI results cannot append to a different dated entry in the same case',()=>{
+ const h=harness({aiIntegration:true});h.click('newNote');const source=h.ctx.ai.snapshot();
+ assert.equal(typeof source.entryId,'string');h.setTime(2000);h.click('newCaseEntry');
+ assert.equal(h.ctx.ai.canAppend(source.caseId,source.entryId),false);
+ assert.equal(h.ctx.ai.appendResponse(source.caseId,'Wrong entry',source.entryId),false);
+ h.get('caseEntryTabs').children[1].listeners.click();
+ assert.equal(h.ctx.ai.canAppend(source.caseId,source.entryId),true);
+});
+
+test('read-only tabs can browse every dated entry and summary without writing storage',()=>{
+ const state=C.empty(),note=C.create(state,'readonly',1000);note.notes='Earlier day';C.addEntry(note,'second',2000);note.notes='Later day';C.syncEntry(note);
+ const initial=JSON.stringify(state),h=harness({locked:true,initial});
+ const tabs=()=>h.get('caseEntryTabs').children;
+ assert.equal(tabs()[1].disabled,false);tabs()[1].listeners.click();assert.equal(h.get('notes').value,'Earlier day');
+ tabs()[0].listeners.click();assert.equal(h.get('caseSummaryPanel').hidden,false);
+ tabs()[2].listeners.click();assert.equal(h.get('notes').value,'Later day');
+ assert.equal(h.stored(),initial);assert.equal(h.get('fields').disabled,true);assert.equal(h.get('newCaseEntry').disabled,true);
 });
