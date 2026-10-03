@@ -1,0 +1,20 @@
+/* Siren mascot shown once after Escalate to DE. It never blocks clicks. */
+.esc-mascot{position:fixed;left:0;bottom:24px;z-index:1000;width:150px;pointer-events:none;animation:esc-run 5.5s linear forwards}
+.esc-mascot-art{display:block;width:100%;height:auto;overflow:visible;animation:esc-bob .35s ease-in-out infinite}
+.esc-mascot-bubble{position:absolute;bottom:100%;left:60%;margin-bottom:4px;padding:6px 12px;border-radius:14px;background:#fff;color:#b42318;border:2px solid #b42318;font:700 14px Inter,"Segoe UI",Arial,sans-serif;white-space:nowrap;box-shadow:0 6px 16px #0003;animation:esc-shout .7s ease-in-out infinite}
+.esc-mascot svg *{transform-box:fill-box}
+.esc-mascot .esc-siren{animation:esc-flash .5s steps(1) infinite}
+.esc-mascot .esc-glow{opacity:0;animation:esc-glow .5s steps(1) infinite}
+.esc-mascot .esc-siren-alt{animation-delay:.25s}
+.esc-mascot .esc-step-a{animation:esc-step .35s ease-in-out infinite}
+.esc-mascot .esc-step-b{animation:esc-step .35s ease-in-out infinite reverse}
+.esc-mascot .esc-arm{transform-origin:0% 100%;animation:esc-shout .7s ease-in-out infinite}
+.esc-mascot .esc-blink{transform-origin:50% 50%;animation:esc-blink 2.2s infinite}
+@keyframes esc-run{0%{transform:translateX(-180px)}100%{transform:translateX(calc(100vw + 40px))}}
+@keyframes esc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes esc-step{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes esc-flash{0%{fill:#e8281a}50%{fill:#7a0f08}}
+@keyframes esc-glow{0%{opacity:.45}50%{opacity:0}}
+@keyframes esc-shout{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(-4deg) scale(1.05)}}
+@keyframes esc-blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@media (prefers-reduced-motion:reduce){.esc-mascot{display:none}}
