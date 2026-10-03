@@ -85,13 +85,13 @@ test('timestamps survive closure, resume adds time, copy includes every field an
   assert.ok(text.includes('First line\nSecond line'));assert.ok(text.endsWith('00:00:15'));
   assert.throws(()=>C.parse('{bad'));assert.throws(()=>C.parse('{"version":2}'));
 });
-function harness({writeError=false,copyError=false,locked=false,folder=null}={}) {
+function harness({writeError=false,copyError=false,locked=false,folder=null,aiIntegration=false}={}) {
   const elements={}, intervals=[], events={};let stored=null, now=1000;
   const preferences = new Map();
   function element(){
     const classes = new Set();
     const el={
-      options:[],_children:[],
+      options:[],_children:[],dataset:{},style:{setProperty(){},removeProperty(){}},
       get children(){return this._children},set children(v){this._children=v},
       querySelectorAll(){return []},
       querySelector(sel){
@@ -102,11 +102,11 @@ function harness({writeError=false,copyError=false,locked=false,folder=null}={})
       get innerHTML(){return this._innerHTML},set innerHTML(v){this._innerHTML=v;if(v==='')this._children=[]},
       hidden:false,disabled:false,textContent:'',className:'',open:false,clickCount:0,
       showModal(){this.open=true;},close(){this.open=false;},click(){this.clickCount++;this.listeners.click?.();},
-      classList:{toggle(name,enabled){if(enabled ?? !classes.has(name))classes.add(name);else classes.delete(name);},contains(name){return classes.has(name);}},listeners:{},setAttribute(){},
+      classList:{toggle(name,enabled){if(enabled ?? !classes.has(name))classes.add(name);else classes.delete(name);},contains(name){return classes.has(name);}},listeners:{},attributes:{},setAttribute(k,v){this.attributes[k]=v;},
       append(...items){for(const item of items)this._children.push(item)},
       appendChild(item){this._children.push(item);return item},
       replaceChildren(...items){this._children=items},
-      addEventListener(k,f){this.listeners[k]=f},focus(){}
+      addEventListener(k,f){this.listeners[k]=f},focus(){this.focused=true;},contains(item){return item===this||this._children.includes(item);}
     };
     return el;
   }
@@ -125,7 +125,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null}={})
     }
   }
   get('fields').querySelector=sel=>sel==='.field-grid'?fieldGrid:null;
-  const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){events[k]=f}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
+  const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
   ctx.CaseSettings = require('../case-settings-core.js');
   ctx.localStorage = {
     getItem(k){return k==='dell-support.case-notes.v1' ? stored : preferences.get(k) ?? null;},
@@ -145,6 +145,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null}={})
       });return request;
     }};
   }
+  if(aiIntegration){ctx.window.DevinConnection={createClient:()=>({})};ctx.window.DevinIntegration={init(api){ctx.ai=api;return {refresh(){}};}};}
   vm.runInNewContext(fs.readFileSync(require.resolve('../case-notes.js'),'utf8'),ctx);
   return {get,events,intervals,ctx,setTime:n=>now=n,stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
 }
@@ -155,6 +156,24 @@ test('missing backups warn on startup and configure opens backup options',async(
   h.click('configureBackups');
   assert.equal(h.get('backupWarningDialog').open,false);
   assert.equal(h.get('backupRestoreMenu').hidden,false);
+});
+test('Settings dropdown opens Customize Fields without changing case data and closes on selection',()=>{
+  const h=harness();h.get('settingsMenuList').hidden=true;
+  assert.ok(h.get('openSettingsMenu').listeners.click,'Settings toggle is wired');
+  const before=h.stored();h.click('openSettingsMenu');
+  assert.equal(h.get('settingsMenuList').hidden,false);
+  assert.equal(h.get('openSettingsMenu').attributes['aria-expanded'],'true');
+  h.click('customizeFields');assert.equal(h.get('fieldCustomizer').open,true);
+  assert.equal(h.get('settingsMenuList').hidden,true);assert.equal(h.stored(),before);
+});
+test('Tools dropdown dismisses on outside click and Escape restores toggle focus',()=>{
+  const h=harness();h.get('toolsMenuList').hidden=true;
+  assert.ok(h.get('openToolsMenu').listeners.click,'Tools toggle is wired');
+  h.click('openToolsMenu');assert.equal(h.get('toolsMenuList').hidden,false);
+  h.events.click({target:{}});assert.equal(h.get('toolsMenuList').hidden,true);
+  h.click('openToolsMenu');h.events.keydown({key:'Escape'});
+  assert.equal(h.get('toolsMenuList').hidden,true);
+  assert.equal(h.get('openToolsMenu').focused,true);
 });
 test('dismissed backup warning stays closed for this visit',async()=>{
   const h=harness();await new Promise(setImmediate);
@@ -277,6 +296,26 @@ test('Copy to AI creates a bounded prompt without stopping time tracking',async(
   assert.match(h.ctx.copied,/Unexpected service restart/);
   assert.match(h.ctx.copied,/untrusted case data/);
   assert.equal(C.parse(h.stored()).cases[0].started,1000);
+});
+test('Devin snapshot captures selected task and latest fields without stopping timer',()=>{
+  const h=harness({aiIntegration:true});h.click('newNote');h.edit('issue','CLI review');h.get('devinTask').value='troubleshoot';
+  assert.ok(h.ctx.ai);const snapshot=h.ctx.ai.snapshot();assert.equal(snapshot.caseId,'1000');
+  assert.match(snapshot.prompt,/CLI review/);assert.match(snapshot.prompt,/Task: Suggest next troubleshooting/);
+  assert.equal(C.parse(h.stored()).cases[0].started,1000);
+});
+test('Devin append protects source case and escapes response while preserving latest edits',()=>{
+  const h=harness({aiIntegration:true});h.click('newNote');const id=h.ctx.ai.snapshot().caseId;
+  h.edit('notes','Latest edits');assert.equal(h.ctx.ai.appendResponse(id,'<script>evil()</script>\nSuggestion'),true);
+  const note=C.parse(h.stored()).cases[0];assert.match(note.notes,/Latest edits/);assert.match(note.notes,/&lt;script&gt;evil\(\)&lt;\/script&gt;/);assert.ok(!note.notes.includes('<script>'));
+  h.setTime(2000);h.click('newNote');assert.equal(h.ctx.ai.canAppend(id),false);assert.equal(h.ctx.ai.appendResponse(id,'Wrong case'),false);
+  assert.ok(!C.parse(h.stored()).cases[0].notes.includes('Wrong case'));
+  const locked=harness({locked:true,aiIntegration:true});assert.equal(locked.ctx.ai.snapshot(),null);assert.equal(locked.ctx.ai.appendResponse(id,'No'),false);
+});
+test('deleting the original case prevents later Devin append',()=>{
+  const h=harness({aiIntegration:true});h.click('newNote');const id=h.ctx.ai.snapshot().caseId;
+  h.get('historyList').children[0].children[1].listeners.click();
+  assert.equal(C.parse(h.stored()).cases.length,0);assert.equal(h.ctx.ai.canAppend(id),false);
+  assert.equal(h.ctx.ai.appendResponse(id,'Deleted case reply'),false);
 });
 test('escalation handoff maps note fields and preserves every detail without stopping time', () => {
   const state=C.empty(), note=C.create(state,'handoff',1000);

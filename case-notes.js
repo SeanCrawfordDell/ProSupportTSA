@@ -5,7 +5,7 @@
   const escapeHtml = value => String(value).replace(/[&<>"']/g,char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
   let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release;
   let savedState = null;
-  let notesPopout;
+  let notesPopout, devinIntegration;
   let backupBusy = false, lastBackupSignature = "", lastBackupAt = null;
   try { lastBackupAt = localStorage.getItem("dell-support.last-backup-at"); } catch {}
   // Keep the case actions available at the top of the workspace while scrolling.
@@ -16,6 +16,8 @@
     newNote: "Start a blank case note and begin time tracking.",
     loadExampleNote: "Load a sample case note you can safely explore.",
     openTraining: "Tutorial Demo and Load Example.",
+    openSettingsMenu: "Settings: customize the fields in your case notes.",
+    openToolsMenu: "Tools hub, troubleshooting guides, and support tool catalogs.",
     openTroubleshoot: "Open step-by-step troubleshooting guides for this case's issue type.",
     tutorialDemo: "See a guided tour of Case Notes and the toolbox.",
     customizeFields: "Choose which case fields appear and their order.",
@@ -238,6 +240,36 @@
   document.addEventListener?.("keydown", event => {
     if (event.key === "Escape" && !$("trainingMenuList")?.hidden) { setTrainingMenu(false); $("openTraining").focus(); }
   });
+  // Small action menus use native buttons/links and the same dismissal pattern as Training.
+  const actionMenus = ["settings", "tools"];
+  function setActionMenu(name, open, focusFirst = false) {
+    const list = $(name + "MenuList"), toggle = $(name === "settings" ? "openSettingsMenu" : "openToolsMenu");
+    if (!list || !toggle) return;
+    list.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+    if (open) {
+      for (const other of actionMenus) if (other !== name) setActionMenu(other, false);
+      setTrainingMenu(false); setBackupMenu(false);
+      if (focusFirst) [...list.querySelectorAll("button, a")].find(item => !item.disabled)?.focus();
+    }
+  }
+  for (const name of actionMenus) {
+    const toggle = $(name === "settings" ? "openSettingsMenu" : "openToolsMenu");
+    toggle?.addEventListener("click", () => setActionMenu(name, $(name + "MenuList").hidden));
+    toggle?.addEventListener("keydown", event => {
+      if (event.key === "ArrowDown") { event.preventDefault(); setActionMenu(name, true, true); }
+    });
+    $(name + "MenuList")?.addEventListener("click", event => {
+      if (event.target?.closest?.("button, a")) setActionMenu(name, false);
+    });
+    document.addEventListener?.("click", event => {
+      const container = $(name + "Menu");
+      if (!$(name + "MenuList")?.hidden && event.target && container?.contains && !container.contains(event.target)) setActionMenu(name, false);
+    });
+    document.addEventListener?.("keydown", event => {
+      if (event.key === "Escape" && !$(name + "MenuList")?.hidden) { setActionMenu(name, false); toggle?.focus(); }
+    });
+  }
   backupFolderButton?.addEventListener("click", async () => {
     try {
       if (!backupFolderHandle || await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted") {
@@ -526,6 +558,7 @@
     window.CaseToolkit?.setEditable(writable && !copying);
     notesPopout?.refresh();
     renderHandoff();
+    devinIntegration?.refresh();
   }
   // Results sent from the Troubleshooting Guides page wait in their own key until added to a case,
   // because only the tab holding the editor lock may write case history.
@@ -934,6 +967,7 @@
   
   $("customizeFields").addEventListener("click", () => {
     if (!writable || copying) return;
+    setActionMenu("settings", false);
     renderFieldCustomizer();
     $("fieldCustomizer").showModal();
     $("customizerStatus").textContent = "";
@@ -1351,5 +1385,32 @@
     },
     resume:acquire
   });
+  if (window.DevinIntegration && window.DevinConnection) {
+    let session;
+    try { session = window.sessionStorage; } catch {}
+    devinIntegration = window.DevinIntegration.init({
+      client: window.DevinConnection.createClient({sessionStorage:session}),
+      sourceLabel:"Case Notes",
+      isPopout: /(?:\?|&)notesWindow=1(?:&|$)/.test(window.location?.search || ""),
+      canSend: () => !!selected() && writable && !copying,
+      snapshot() {
+        const note=selected();if(!note||!writable||copying)return null;
+        syncFormToNote(note);save();
+        return {caseId:note.id,prompt:DevinPrompt.build($("devinTask").value,"Case Notes",CaseNotes.copyText(note,Date.now(),state.fieldConfig))};
+      },
+      canAppend: id => !!selected() && selected().id===id && writable && !copying,
+      appendResponse(id,text) {
+        const note=selected();if(!note||note.id!==id||!writable||copying)return false;
+        syncFormToNote(note);
+        const existing=typeof marked!=="undefined"?marked.parse(note.notes,{gfm:true,breaks:true}):note.notes;
+        const value=existing+"<p><strong>Devin suggestion (reviewed by agent)</strong></p><p>"+escapeHtml(text).replace(/\n/g,"<br>")+"</p>";
+        $("notes").value=value;
+        onCaseFieldInput({target:{id:"notes",value}});
+        window.CaseMarkdown?.refresh();save();
+        // Returning true means appended, even if storage is full: avoid adding it twice.
+        return true;
+      }
+    });
+  }
   acquire();
 })();

@@ -1,6 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const core=require('../case-notes-core.js');
-function harness({stored=null,failStorage=false,failClipboard=false,imported=null}={}) {
+test('Devin escalation snapshot uses latest facts and cannot append notes',()=>{
+ const h=harness({aiIntegration:true});h.get('problem').value='Management UI timeout';
+ assert.ok(h.ctx.ai);const shot=h.ctx.ai.snapshot();assert.equal(shot.caseId,null);assert.match(shot.prompt,/Management UI timeout/);
+ assert.equal(h.ctx.ai.appendResponse,undefined);
+});
+function harness({stored=null,failStorage=false,failClipboard=false,imported=null,aiIntegration=false}={}) {
  const nodes={}, listeners={},timers=[];let copied='',writes=0,confirmAnswer=true;
  class Element {
   constructor(tag='div'){this.tagName=tag.toUpperCase();this.value='';this.textContent='';this.children=[];this.listeners={};this.attributes={};this.hidden=false;this.style={};this.options=[];this.classList={add(){},remove(){},toggle(){}};}
@@ -20,6 +25,7 @@ function harness({stored=null,failStorage=false,failClipboard=false,imported=nul
  get('reviewState').hidden=true;
  const storage={getItem(){if(failStorage)throw Error('blocked');return stored},setItem(k,v){if(failStorage)throw Error('quota');stored=v;writes++}};
  const ctx=vm.createContext({document:{getElementById:get,createElement:t=>new Element(t),createTextNode:t=>t,querySelectorAll:()=>[],addEventListener:(k,f)=>listeners[k]=f},localStorage:storage,sessionStorage:{getItem:()=>imported&&JSON.stringify(imported),removeItem(){imported=null}},location:{hash:imported?'#import=test':'',pathname:'/escalation-quality.html',search:''},history:{replaceState(){}},window:{addEventListener:(k,f)=>listeners[k]=f},setInterval:(f,ms)=>timers.push({f,ms}),confirm:()=>confirmAnswer,navigator:{clipboard:{async writeText(text){if(failClipboard)throw Error('denied');copied=text}}},URLSearchParams,console,CaseToolkitCore:require('../case-toolkit-core.js'),DevinPrompt:require('../devin-prompt-core.js')});
+ if(aiIntegration){ctx.window.DevinConnection={createClient:()=>({})};ctx.window.DevinIntegration={init(api){ctx.ai=api;return {refresh(){}};}};}
  vm.runInContext(fs.readFileSync(require.resolve('../app.js'),'utf8'),ctx);
  return {get,ctx,run:s=>vm.runInContext(s,ctx),async click(id){for(const f of get(id).listeners.click||[])await f()},stored:()=>stored,copied:()=>copied,timers,listeners,setFail:v=>failStorage=v,setConfirm:v=>confirmAnswer=v,writes:()=>writes,externalSave:value=>stored=value};
 }

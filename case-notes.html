@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; connect-src 'self' http://127.0.0.1:43127;">
   <script src="theme.js"></script>
   <title>Case Notes · Dell Pro-Support</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="case-notes.css?v=20260919-support-workflow">
+  <link rel="stylesheet" href="case-notes.css?v=20261003-appearance">
   <link rel="stylesheet" href="escalation-demo.css?v=20260919-support-workflow">
   <script src="vendor/marked.umd.js" defer></script>
   <script src="vendor/purify.min.js" defer></script>
@@ -23,15 +23,18 @@
   <script src="case-rubric.js" defer></script>
   <script src="case-settings-core.js?v=20260918-personal-templates" defer></script>
   <script src="devin-prompt-core.js" defer></script>
+  <script src="devin-connection-core.js?v=20261003" defer></script>
+  <script src="devin-integration.js?v=20261003-one-command" defer></script>
+  <link rel="stylesheet" href="devin-integration.css?v=20261003-one-command">
 <script src="case-toolkit.js?v=20260919-support-workflow" defer></script>
   <link rel="stylesheet" href="log-helper.css?v=20260919-support-workflow">
 <script src="log-helper-core.js?v=20260919-support-workflow" defer></script>
 <script src="log-helper.js?v=20260919-support-workflow" defer></script>
 <script src="troubleshoot-core.js" defer></script>
 <script src="case-notes-popout.js?v=20260919-support-workflow" defer></script>
-<script src="case-notes.js?v=20260919-support-workflow" defer></script>
+<script src="case-notes.js?v=20261003-menus" defer></script>
 <script src="guided-tour.js?v=20260919-support-workflow" defer></script>
-<script src="case-notes-demo.js?v=20260919-support-workflow" defer></script>
+<script src="case-notes-demo.js?v=20261003-menus" defer></script>
 <script src="case-toolbox-icons.js" defer></script>
 <script src="case-toolbox-links.js" defer></script>
 <script src="case-template-manager.js" defer></script>
@@ -44,7 +47,7 @@
   <header id="compactNotesHeader" hidden><h1 id="compactCaseTitle">Notes</h1><button id="returnToCase" class="button secondary" type="button">Return to case</button></header>
   <header class="topbar">
     <a class="brand home-link" href="index.html"><span class="brand-mark">←</span>Support Assistant</a>
-    <nav class="topbar-actions" aria-label="Case Notes actions"><button class="button primary" id="newNote" disabled>+ New Note</button><button class="button secondary" id="customizeFields" disabled>Customize Fields</button><div class="topbar-menu" id="backupMenu"><button class="button secondary" id="openBackupRestore" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="backupRestoreMenu">Backup &amp; Restore <span aria-hidden="true">▾</span></button><div class="topbar-dropdown" id="backupRestoreMenu" hidden>
+    <nav class="topbar-actions" aria-label="Case Notes actions"><div class="topbar-menu" id="backupMenu"><button class="button secondary" id="openBackupRestore" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="backupRestoreMenu">Backup &amp; Restore <span aria-hidden="true">▾</span></button><div class="topbar-dropdown" id="backupRestoreMenu" hidden>
 <p class="dropdown-label">Case history</p>
 <div class="history-backup"><button class="dropdown-item" id="backupHistory" type="button" disabled>Backup Case History</button><button class="dropdown-item" id="restoreHistory" type="button" disabled>Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" class="dropdown-status" role="status"></p></div>
 <p class="dropdown-label">Site configuration</p>
@@ -52,8 +55,8 @@
 <p class="dropdown-label">Backup folder</p>
 <button class="dropdown-item" id="chooseBackupFolder" type="button">Set Backup Folder</button><p id="backupFolderStatus" class="dropdown-status" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration and note backups.</p>
 <p class="dropdown-help">Notes autosave in this browser. With folder access approved, automatic backups run every minute when changes are present while this page is open. Clearing browser data removes local history.</p>
-</div></div><a class="button secondary" id="openTroubleshoot" href="troubleshooting.html">Troubleshoot</a><a class="button secondary" id="requestFeature" href="https://github.com/SeanCrawfordDell/EscalationQuality/issues/new?title=%5BCase%20Notes%5D%20&amp;body=%2A%2AType%3A%2A%2A%20Feature%20request%20%2F%20Bug%20%28delete%20one%29%0A%2A%2APage%3A%2A%2A%20Case%20Notes%0A%0A%2A%2AWhat%20would%20you%20like%2C%20or%20what%20went%20wrong%3F%2A%2A%0A%0A%0A%2A%2ASteps%20to%20reproduce%20%28bugs%20only%29%3A%2A%2A%0A1.%0A%0A%2A%2AExpected%20result%3A%2A%2A%0A%0A%0A_Do%20not%20include%20customer%20names%2C%20Service%20Tags%2C%20SR%20numbers%2C%20logs%2C%20or%20other%20case%20data._" target="_blank" rel="noopener noreferrer" title="Opens a new GitHub issue in a new tab. Do not include customer or case data.">Request feature / Report bug ↗</a><div class="topbar-menu" id="trainingMenu"><button class="button secondary" id="openTraining" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="trainingMenuList">Training <span aria-hidden="true">▾</span></button><div class="topbar-dropdown training-dropdown" id="trainingMenuList" hidden><button class="dropdown-item" id="tutorialDemo" type="button">Tutorial Demo</button><button class="dropdown-item" id="loadExampleNote" disabled>Load Example</button></div></div></nav>
-    <div class="theme-controls" role="group" aria-label="Appearance"><button id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button></div>
+</div></div><div class="topbar-menu" id="toolsMenu"><button class="button secondary" id="openToolsMenu" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="toolsMenuList">Tools <span aria-hidden="true">▾</span></button><div class="topbar-dropdown tools-dropdown" id="toolsMenuList" hidden><a class="dropdown-item" href="tools.html">Tools Hub</a><a class="dropdown-item" id="openTroubleshoot" href="troubleshooting.html">Troubleshooting Guides</a><a class="dropdown-item" href="https://seancrawforddell.github.io/DellSupportoolRepository/#/tools" target="_blank" rel="noopener noreferrer">ISG Tools Catalog ↗</a><a class="dropdown-item" href="https://github.com/DellProSupportGse/Tools" target="_blank" rel="noopener noreferrer">Microsoft Support Tools ↗</a></div></div><a class="button secondary" id="requestFeature" href="https://github.com/SeanCrawfordDell/EscalationQuality/issues/new?title=%5BCase%20Notes%5D%20&amp;body=%2A%2AType%3A%2A%2A%20Feature%20request%20%2F%20Bug%20%28delete%20one%29%0A%2A%2APage%3A%2A%2A%20Case%20Notes%0A%0A%2A%2AWhat%20would%20you%20like%2C%20or%20what%20went%20wrong%3F%2A%2A%0A%0A%0A%2A%2ASteps%20to%20reproduce%20%28bugs%20only%29%3A%2A%2A%0A1.%0A%0A%2A%2AExpected%20result%3A%2A%2A%0A%0A%0A_Do%20not%20include%20customer%20names%2C%20Service%20Tags%2C%20SR%20numbers%2C%20logs%2C%20or%20other%20case%20data._" target="_blank" rel="noopener noreferrer" title="Opens a new GitHub issue in a new tab. Do not include customer or case data.">Request feature / Report bug ↗</a><div class="topbar-menu" id="trainingMenu"><button class="button secondary" id="openTraining" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="trainingMenuList">Training <span aria-hidden="true">▾</span></button><div class="topbar-dropdown training-dropdown" id="trainingMenuList" hidden><button class="dropdown-item" id="tutorialDemo" type="button">Tutorial Demo</button><button class="dropdown-item" id="loadExampleNote" disabled>Load Example</button></div></div></nav>
+    <div class="appearance-actions" role="group" aria-label="Appearance and settings"><div class="theme-controls"><button class="theme-icon-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode"><svg class="theme-moon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></svg><svg class="theme-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button></div><div class="topbar-menu" id="settingsMenu"><button class="button secondary settings-toggle" id="openSettingsMenu" type="button" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settingsMenuList"><svg width="27.5" height="27.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 3 1-1h4l1 1 .5 2 2 .8 1.8-.6 2 3.5-.4 1.3-1.5 1.3v2.4l1.5 1.3.4 1.3-2 3.5-1.8-.6-2 .8-.5 2-1 1h-4l-1-1-.5-2-2-.8-1.8.6-2-3.5.4-1.3 1.5-1.3v-2.4l-1.5-1.3-.4-1.3 2-3.5 1.8.6 2-.8Z"/><circle cx="12" cy="12" r="3"/></svg></button><div class="topbar-dropdown settings-dropdown" id="settingsMenuList" hidden><button class="dropdown-item" id="customizeFields" type="button" disabled>Customize Fields</button></div></div></div>
   </header>
   <main>
     <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div></section>
@@ -72,6 +75,7 @@
           <div class="editor-heading">
             <div class="workspace-title">
               <p class="eyebrow">CASE WORKSPACE</p>
+              <button class="button primary" id="newNote" type="button" disabled>+ New Note</button>
               <span id="saveStatus" role="status">Saved</span>
               <button class="button secondary" type="button" data-toolkit="followup" aria-haspopup="dialog" aria-controls="toolkitDialog" title="Set a follow-up owner, due date, and status for this case." disabled>Set Followup</button>
               <button class="button secondary" id="caseVersions" type="button">Version History</button>
@@ -155,7 +159,7 @@
               <p class="rubric-help">Updates as you write. 85+ is Strong, 60–84 Needs detail. This rule-based check finds missing information; it does not verify technical accuracy or replace your judgment.</p>
             </div>
           </details>
-          <div class="copy-actions" id="copyActions"><nav class="toolkit-nav" aria-label="Case Toolkit"><button class="button secondary" type="button" data-toolkit="customer" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Customer Update</button><button class="button secondary" type="button" data-toolkit="summary" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Handoff Summary</button><button class="button secondary" id="toggleActionDock" type="button" aria-pressed="false">Stop floating</button></nav><p id="copyStatus" role="status">Copy all fields and tracked time as plain text.</p><div class="note-actions"><button class="button secondary" id="emailNote" type="button" disabled>Email to Case</button><button class="button secondary" id="escalateNote" disabled>Escalate to DE</button><button class="button primary" id="copyNote" disabled>Copy to Lightning</button></div><div class="devin-copy"><label class="field">Ask AI to<select id="devinTask"></select></label><button class="button secondary" id="manageAiTasks" type="button">Add your Own AI Prompt/skills</button><button class="button secondary" id="copyDevin" type="button" disabled>Copy to AI</button><p id="devinStatus" role="status">Copies a prompt for AI tools. Review the included case data before pasting.</p></div></div>
+          <div class="copy-actions" id="copyActions"><nav class="toolkit-nav" aria-label="Case Toolkit"><button class="button secondary" type="button" data-toolkit="customer" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Customer Update</button><button class="button secondary" type="button" data-toolkit="summary" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Handoff Summary</button><button class="button secondary" id="toggleActionDock" type="button" aria-pressed="false">Stop floating</button></nav><p id="copyStatus" role="status">Copy all fields and tracked time as plain text.</p><div class="note-actions"><button class="button secondary" id="emailNote" type="button" disabled>Email to Case</button><button class="button secondary" id="escalateNote" disabled>Escalate to DE</button><button class="button primary" id="copyNote" disabled>Copy to Lightning</button></div><div class="devin-copy"><label class="field">Ask AI to<select id="devinTask"></select></label><button class="button secondary" id="manageAiTasks" type="button">Add your Own AI Prompt/skills</button><button class="button secondary" id="copyDevin" type="button" disabled>Copy to AI</button><button class="button secondary" id="sendDevin" type="button" disabled>Send to Devin</button><button class="button secondary" id="aiSettings" type="button">AI Settings</button><p id="devinStatus" role="status">Copies a prompt for AI tools. Review the included case data before pasting.</p></div></div>
         </div>
       </section>
     </div>

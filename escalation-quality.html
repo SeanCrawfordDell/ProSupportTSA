@@ -7,7 +7,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; connect-src 'self' https://github.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; connect-src 'self' https://github.com http://127.0.0.1:43127;">
   <script src="theme.js"></script>
   <title>Domain Engineer Escalation Request</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
@@ -16,12 +16,15 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
   <script src="case-workflow-core.js?v=20260919-support-workflow" defer></script>
   <script src="case-toolkit-core.js?v=20260919-support-workflow" defer></script>
   <script src="devin-prompt-core.js" defer></script>
+  <script src="devin-connection-core.js?v=20261003" defer></script>
+  <script src="devin-integration.js?v=20261003-one-command" defer></script>
+  <link rel="stylesheet" href="devin-integration.css?v=20261003-one-command">
   <link rel="stylesheet" href="log-helper.css?v=20260919-support-workflow">
 <script src="log-helper-core.js?v=20260919-support-workflow" defer></script>
 <script src="log-helper.js?v=20260919-support-workflow" defer></script>
 <link rel="stylesheet" href="escalation-mascot.css">
 <script src="escalation-mascot.js" defer></script>
-<script src="app.js?v=20260919-support-workflow" defer></script>
+<script src="app.js?v=20261003-devin-cli" defer></script>
   <link rel="stylesheet" href="escalation-demo.css?v=20260919-support-workflow">
   <script src="guided-tour.js?v=20260919-support-workflow" defer></script>
   <script src="escalation-demo.js?v=20260919-support-workflow" defer></script>
@@ -117,7 +120,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
           <div id="emptyState"><div class="empty-icon">✓</div><h2>Ready when you are</h2><p>Complete the form and run the review. You’ll receive a transparent score and field-level feedback.</p></div>
           <div id="reviewState" hidden>
             <div class="score-header"><div><p class="eyebrow">READINESS RESULT</p><span class="status-pill" id="statusPill"></span><h2 id="resultTitle"></h2><p id="resultSummary"></p></div><div class="score-ring" id="scoreRing"><strong id="scoreValue">0</strong><small>/ 100</small></div></div>
-            <div class="copy-section" id="copySection" hidden><label class="field">Escalation preview<textarea id="copyPreview" readonly rows="16"></textarea></label><button class="button primary" id="copyButton" type="button">Copy escalation data</button><p id="copyStatus" role="status"></p><div class="devin-copy"><label class="field">Ask AI to<select id="devinTask"></select></label><button class="button secondary" id="manageAiTasks" type="button">Add your Own AI Prompt/skills</button><button class="button secondary" id="copyDevin" type="button">Copy to AI</button><p id="devinStatus" role="status">Copies a prompt for AI tools. Review the included escalation data before pasting.</p></div></div>
+            <div class="copy-section" id="copySection" hidden><label class="field">Escalation preview<textarea id="copyPreview" readonly rows="16"></textarea></label><button class="button primary" id="copyButton" type="button">Copy escalation data</button><p id="copyStatus" role="status"></p><div class="devin-copy"><label class="field">Ask AI to<select id="devinTask"></select></label><button class="button secondary" id="manageAiTasks" type="button">Add your Own AI Prompt/skills</button><button class="button secondary" id="copyDevin" type="button">Copy to AI</button><button class="button secondary" id="sendDevin" type="button" disabled>Send to Devin</button><button class="button secondary" id="aiSettings" type="button">AI Settings</button><p id="devinStatus" role="status">Copies a prompt for AI tools. Review the included escalation data before pasting.</p></div></div>
             <div class="meter"><span id="scoreBar"></span></div>
             <div class="category-grid" id="categoryGrid"></div>
             <div class="feedback-section" id="blockersSection"><h3>Blocking issues <span id="blockerCount"></span></h3><div id="blockers"></div></div>

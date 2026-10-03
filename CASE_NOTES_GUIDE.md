@@ -2,7 +2,7 @@
 
 ## Saving and backups
 
-Notes autosave in this browser every ten seconds. Open **Backup & Restore** beside **Customize Fields** for history backups, settings backups, and restore options. Choose **Set Backup Folder** to select an approved location, preferably a work OneDrive-synced Documents folder. The app creates `ProSupportToolsBackup` there (or uses that folder if selected directly). The same folder button becomes **Reconnect Backup Folder** when permission is needed, or **Change Backup Folder** when connected.
+Notes autosave in this browser every ten seconds. Open **Backup & Restore** in the top bar for history backups, settings backups, and restore options. Choose **Set Backup Folder** to select an approved location, preferably a work OneDrive-synced Documents folder. The app creates `ProSupportToolsBackup` there (or uses that folder if selected directly). The same folder button becomes **Reconnect Backup Folder** when permission is needed, or **Change Backup Folder** when connected.
 
 Once access is approved, changed notes and settings are backed up approximately every minute while Case Notes is open. Browser background throttling can delay this; it is not a background service. **Backup History** saves immediately. The status shows the last successful folder backup; **Reconnect Backup Folder** requests access again when permission expires. Browsers without folder access can download history and settings instead.
 
@@ -18,6 +18,9 @@ Each successful folder backup writes dated history and settings files plus the l
 
 ## Finding and organizing cases
 
+Use **+ New Note** beneath **Case Workspace** to start another case. When no case
+is open, use **Start New Note** in the empty workspace.
+
 Search includes case fields, note content, next steps, custom fields, and support-toolkit text. Matching excerpts appear in results. Search applies to the selected collection and follow-up filter. Pin important recent cases; pinned cases appear first. Sort the rest by creation time, last edit, or follow-up due date.
 
 ## Restoring settings and notes
@@ -32,6 +35,10 @@ Settings include field configuration, toolbox URLs/order/colors/launcher icon/si
 
 ## Custom fields
 
+Open the gear-icon **Settings** menu to the right of the sun/moon theme toggle
+in the top bar and choose **Customize Fields**. The theme icon switches between
+light and dark mode; its tooltip and accessible label identify the next mode.
+
 New field labels support up to 120 characters. Older backups with longer labels remain restorable. Removing a field or resetting custom fields removes its values from recent cases, Archive, Trash, and saved versions after confirmation. Previously exported backup files are not changed. Both plain-text and HTML email exports include custom fields.
 
 ## Personal troubleshooting templates
@@ -44,7 +51,7 @@ Selecting a template does not insert text. **Apply template** appends its notes 
 
 ## Troubleshooting guides
 
-The **Troubleshoot** button in the top bar opens step-by-step guides for Windows Server, Hyper-V, Failover Clustering, Networking, Active Directory and DNS. It opens on the area that matches the case's issue type. Answer one question at a time; each guide ends with a likely cause, recommended actions and Microsoft Learn references.
+Choose **Tools → Troubleshooting Guides** in the top bar for step-by-step guides for Windows Server, Hyper-V, Failover Clustering, Networking, Active Directory and DNS. It opens on the area that matches the case's issue type. Answer one question at a time; each guide ends with a likely cause, recommended actions and Microsoft Learn references. Tools also contains Tools Hub, ISG Tools Catalog, and Microsoft Support Tools.
 
 **Copy summary** copies the questions, your answers and the outcome. **Send to Case Notes** returns to Case Notes, where a banner offers **Add to case** (appended to the Troubleshooting notes of the open case) or **Dismiss**. Unused results expire after 24 hours. Guides are a starting point; check each step against the linked documentation and case evidence.
 
@@ -57,3 +64,23 @@ Review customer information before sharing exports or copying notes into AI tool
 ## Keyboard access
 
 Use Tab and Shift+Tab to move among controls and Enter/Space to activate buttons. **Alt+Shift+F** opens the history panel and focuses search. Focus the toolbox launcher and use **Alt+Arrow keys** to move it. **Edit toolbox** lets you choose the launcher icon (toolbox, dancing paperclips, wizards, T-rex), resize the button from 40 to 120 px, size the icon from 40% to 140% of the button, hide the background circle, and turn the icon animation off; animation also stops when your system asks for reduced motion. Escape closes its menu. Field ordering has Move up/Move down buttons as an alternative to dragging. Screenshot resize handles support arrow keys.
+# Optional Devin CLI connection
+
+On your first full Case Notes visit, an introduction explains optional Devin
+connectivity. Choose **Continue with Copy to AI** to skip setup, or **Set up
+Devin** to connect it. You can reopen the instructions through **AI Settings**.
+
+Direct connection needs native Windows Devin CLI, a signed-in account, Node.js
+22+, and the small Windows connection. In AI Settings select **Copy connection
+command** and paste it into PowerShell. It automatically fetches and starts the
+connection; no ZIP or manual script download is required. Keep the window open.
+Review the linked source and follow your organization's policy for downloaded
+code. Paste its pairing token in AI
+Settings and choose Connect Devin. See [the companion guide](companion/README.md)
+for setup and troubleshooting, including browser local-network permission.
+
+**Copy to AI** continues to copy the selected prompt and current case details
+without the companion. **Send to Devin** shows that same prompt for review
+before submission. Suggestions appear for review; **Append to Notes** requires
+an explicit click and affects only the original, selected, editable case.
+Neither AI action automatically stops your timer or replaces your notes.

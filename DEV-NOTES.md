@@ -30,3 +30,31 @@ Knowledge drafts support formatted copy for OneNote, Markdown downloads, and a c
 Workflow shape: `{id, os:[...], area, title, summary, reviewed, sources:[https...], start, steps}`. A step is either `{prompt, detail?, commands?, answers:[{label, next}]}` (two or more answers) or `{outcome:{cause, fix:[...], links?}}`. `register` rejects dangling answers, cycles, unreachable steps, duplicate ids and non-HTTPS links, and the tests validate every registered workflow.
 
 Send to Case Notes writes `dell-support.troubleshoot-handoff.v1`; only the Case Notes tab holding the editor lock reads it and appends it to the selected case after the user clicks **Add to case**.
+# Optional Devin CLI integration preview
+
+Run `python -m http.server 4187 --bind 127.0.0.1` from this checkout and open
+`http://127.0.0.1:4187/case-notes.html`. Run `node --test tests/*.test.cjs` for
+regression tests. AI Settings generates a one-command bootstrap: on localhost it
+fetches `companion/Connect-Devin.ps1` from that preview server; in production it
+fetches from the repository main branch. The bootstrap downloads only the two
+runtime files into a unique temporary folder. It does not install dependencies
+or register startup tasks. The legacy ZIP packaging script remains for developer
+testing, but the user setup no longer links to it.
+
+The Windows helper uses Node.js 22+ with no npm dependencies. See
+`companion/README.md` for CLI installation, login, pairing, workspace trust,
+and browser permission steps. Allow local preview explicitly with
+`./companion/Start-DevinCompanion.ps1 -AllowOrigin http://127.0.0.1:4187`.
+
+Direct production HTTPS-to-loopback connectivity and real authenticated Devin
+execution require separate validation. No Devin executable is installed on
+the development PC; automated tests use an isolated fake CLI and synthetic
+case data. A real authenticated Devin response and deployed-browser local-network
+permissions still require environment-specific verification.
+
+Devin release checks: 158 Node tests passed, including authentication/origin
+checks, prompt bytes, cleanup, duplicate launch, expiry, CLI incompatibility,
+closed-dialog recovery, cancellation races, and source-case deletion. The ZIP
+was extracted and its endpoint tested with header pairing. Browser checks
+covered Case Notes first visit/revisit, settings, clipboard fallback on both
+pages, synthetic CLI response review/append, and closed-dialog response recovery.

@@ -431,3 +431,12 @@ window.LogHelper?.init({
   addLabel: "Add to escalation",
   add(text) { byId("collectionPlan").value=[value("collectionPlan"),text].filter(Boolean).join("\n\n");byId("collectionPlanPanel").hidden=false;markChanged();return saveDraft(); }
 });
+
+if (window.DevinIntegration && window.DevinConnection) {
+  let session;try{session=window.sessionStorage;}catch{}
+  window.DevinIntegration.init({
+    client:window.DevinConnection.createClient({sessionStorage:session}),
+    sourceLabel:"Domain Engineer Escalation Request",isPopout:false,
+    snapshot:()=>({caseId:null,prompt:DevinPrompt.build(byId("devinTask").value,"Domain Engineer Escalation Request",formatEscalation(reviewData()))})
+  });
+}
