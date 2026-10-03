@@ -1163,15 +1163,16 @@
     if (open) {
       const rect = toolbox.getBoundingClientRect();
       toolbox.style.right = 'auto'; toolbox.style.bottom = 'auto';
-      toolbox.style.left = `${Math.max(124, Math.min(window.innerWidth - 182, rect.left))}px`;
-      toolbox.style.top = `${Math.max(132, Math.min(window.innerHeight - 132, rect.top))}px`;
+      const reach = toolbox.offsetWidth / 2 + 79 + 36, margin = reach + 16 - toolbox.offsetWidth / 2;
+      toolbox.style.left = `${Math.max(margin, Math.min(window.innerWidth - margin - toolbox.offsetWidth, rect.left))}px`;
+      toolbox.style.top = `${Math.max(margin, Math.min(window.innerHeight - margin - toolbox.offsetWidth, rect.top))}px`;
       toolbox.querySelectorAll('[data-toolbox-action]').forEach(button => {
         button.disabled = $({email:'emailNote',escalate:'escalateNote',copy:'copyNote'}[button.dataset.toolboxAction]).disabled;
       });
     }
   };
   toolboxLauncher?.addEventListener("pointerdown", event => { toolboxStart = { x:event.clientX, y:event.clientY, left:toolbox.offsetLeft, top:toolbox.offsetTop }; toolboxMoved = false; toolboxLauncher.setPointerCapture(event.pointerId); });
-  toolboxLauncher?.addEventListener("pointermove", event => { if (!toolboxStart) return; const dx=event.clientX-toolboxStart.x, dy=event.clientY-toolboxStart.y; if (Math.abs(dx)+Math.abs(dy)>5) { toolboxMoved=true; toolbox.style.right="auto"; toolbox.style.bottom="auto"; toolbox.style.left=`${Math.max(8,Math.min(window.innerWidth-66,toolboxStart.left+dx))}px`; toolbox.style.top=`${Math.max(8,Math.min(window.innerHeight-66,toolboxStart.top+dy))}px`; } });
+  toolboxLauncher?.addEventListener("pointermove", event => { if (!toolboxStart) return; const dx=event.clientX-toolboxStart.x, dy=event.clientY-toolboxStart.y; if (Math.abs(dx)+Math.abs(dy)>5) { toolboxMoved=true; toolbox.style.right="auto"; toolbox.style.bottom="auto"; toolbox.style.left=`${Math.max(8,Math.min(window.innerWidth-toolbox.offsetWidth-8,toolboxStart.left+dx))}px`; toolbox.style.top=`${Math.max(8,Math.min(window.innerHeight-toolbox.offsetWidth-8,toolboxStart.top+dy))}px`; } });
   toolboxLauncher?.addEventListener('pointerup', event => { if (!toolboxStart) return; toolboxLauncher.releasePointerCapture(event.pointerId); toolboxStart=null; });
   toolboxLauncher?.addEventListener('pointercancel', () => { toolboxStart=null; toolboxMoved=false; });
   toolboxLauncher?.addEventListener('click', () => { if (toolboxMoved) { toolboxMoved=false; return; } setToolboxOpen(!toolbox.classList.contains('is-open')); });
@@ -1183,8 +1184,8 @@
     if (!event.altKey || !direction) return;
     event.preventDefault(); const rect = toolbox.getBoundingClientRect();
     toolbox.style.right = "auto"; toolbox.style.bottom = "auto";
-    toolbox.style.left = Math.max(8,Math.min(window.innerWidth-66,rect.left+direction[0])) + "px";
-    toolbox.style.top = Math.max(8,Math.min(window.innerHeight-66,rect.top+direction[1])) + "px";
+    toolbox.style.left = Math.max(8,Math.min(window.innerWidth-toolbox.offsetWidth-8,rect.left+direction[0])) + "px";
+    toolbox.style.top = Math.max(8,Math.min(window.innerHeight-toolbox.offsetWidth-8,rect.top+direction[1])) + "px";
   });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") setToolboxOpen(false);

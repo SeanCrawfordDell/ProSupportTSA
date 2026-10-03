@@ -30,6 +30,8 @@ const CaseSettings = (() => {
         let url; try { url = new URL(link.url); } catch { bad(); }
         if (!["http:","https:"].includes(url.protocol) || url.username || url.password) bad();
       });
+      const { icon, size, animate } = box.appearance;
+      if ((icon !== undefined && (typeof icon !== "string" || !/^[a-z0-9-]{1,32}$/.test(icon))) || (size !== undefined && (typeof size !== "number" || !Number.isFinite(size) || size < 40 || size > 120)) || (animate !== undefined && typeof animate !== "boolean")) bad();
       if (box.appearance.order.some(id => typeof id !== "string") || Object.values(box.appearance.colors).some(color => !/^#[a-f0-9]{6}$/i.test(color))) bad();
       result.values["dell-support.toolbox-links.v1"] = JSON.stringify(box.shortcuts);
       result.values["dell-support.toolbox-appearance.v1"] = JSON.stringify(box.appearance);
