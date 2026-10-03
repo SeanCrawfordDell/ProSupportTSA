@@ -16,6 +16,7 @@
     newNote: "Start a blank case note and begin time tracking.",
     loadExampleNote: "Load a sample case note you can safely explore.",
     openTraining: "Tutorial Demo and Load Example.",
+    openTroubleshoot: "Open step-by-step troubleshooting guides for this case's issue type.",
     tutorialDemo: "See a guided tour of Case Notes and the toolbox.",
     customizeFields: "Choose which case fields appear and their order.",
     toggleHistory: "Show or hide the list of saved case notes.",
@@ -524,7 +525,53 @@
     window.CaseMarkdown?.setEditable(writable && !copying);
     window.CaseToolkit?.setEditable(writable && !copying);
     notesPopout?.refresh();
+    renderHandoff();
   }
+  // Results sent from the Troubleshooting Guides page wait in their own key until added to a case,
+  // because only the tab holding the editor lock may write case history.
+  const troubleshootCore = typeof TroubleshootCore !== "undefined" ? TroubleshootCore : null;
+  let pendingHandoff = null;
+  function checkHandoff() {
+    if (!troubleshootCore) return;
+    let raw = null;
+    try { raw = localStorage.getItem(troubleshootCore.handoffKey); } catch {}
+    pendingHandoff = raw ? troubleshootCore.readHandoff(raw) : null;
+    if (raw && !pendingHandoff) clearHandoff();
+    renderHandoff();
+  }
+  function clearHandoff() {
+    pendingHandoff = null;
+    try { localStorage.removeItem(troubleshootCore.handoffKey); } catch {}
+  }
+  // Open the guides on the area matching the case's current issue type (it can change without a full render).
+  $("openTroubleshoot")?.addEventListener("click", () => {
+    const area = troubleshootCore?.issueAreas[selected()?.toolkit?.issueType];
+    $("openTroubleshoot").href = "troubleshooting.html" + (area ? "#area=" + area : "");
+  });
+  function renderHandoff() {
+    const note = selected();
+    const banner = $("troubleshootHandoff");
+    if (!banner) return;
+    banner.hidden = !pendingHandoff || !writable;
+    if (banner.hidden) return;
+    $("troubleshootHandoffText").textContent = note
+      ? `Troubleshooting results ready: "${pendingHandoff.title}". Add them to the Troubleshooting notes for this case?`
+      : `Troubleshooting results ready: "${pendingHandoff.title}". Open or create a case to add them.`;
+    $("addTroubleshootHandoff").disabled = !note || copying;
+  }
+  $("addTroubleshootHandoff")?.addEventListener("click", () => {
+    const note = selected();
+    if (!pendingHandoff || !note || !writable || copying) return;
+    const existing = typeof marked !== "undefined" ? marked.parse(note.notes, { gfm: true, breaks: true }) : note.notes;
+    note.notes = existing + "<p>" + escapeHtml(pendingHandoff.text).replace(/\n/g, "<br>") + "</p>";
+    const now = Date.now(); CaseNotes.start(state, note, now); note.updated = now;
+    dirty = true;
+    if (!save()) return;
+    clearHandoff();
+    $("notes").value = note.notes; window.CaseMarkdown?.refresh();
+    tick(); history(); renderHandoff();
+  });
+  $("dismissTroubleshootHandoff")?.addEventListener("click", () => { clearHandoff(); renderHandoff(); });
   function tick() {
     const note = selected(); if (!note) return;
     const now = Date.now();
@@ -1225,6 +1272,7 @@
   window.addEventListener("pagehide", () => { save(); writable = false; release?.(); release = null; });
   window.addEventListener("storage", event => {
     if (!writable && (event.key === key || event.key === null)) { load(); render(); }
+    if (writable && (event.key === troubleshootCore?.handoffKey || event.key === null)) checkHandoff();
   });
   async function acquire() {
     load(); render();
@@ -1247,7 +1295,7 @@
           }
           state.selected=notesPopout.caseId;
         }
-        writable = true; $("lockNotice").hidden = true; render();
+        writable = true; $("lockNotice").hidden = true; render(); checkHandoff();
         await new Promise(resolve => { release = resolve; });
       });
     } catch {
