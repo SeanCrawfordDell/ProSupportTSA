@@ -300,3 +300,12 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .log-location-row .field { flex:1 1 180px; min-width:0; }
 .log-location-row .button { flex-shrink:0; }
 #requestFeature { text-decoration:none; display:inline-flex; align-items:center; }
+/* Case Notes page actions live in the top bar, right of Support Assistant. */
+.topbar { gap:20px; }
+.topbar-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-right:auto; }
+.topbar-actions .button { padding:7px 12px; font-size:13px; min-height:0; }
+.topbar-actions .button.secondary { background:transparent; color:#e4edf5; border:1px solid #557086; }
+.topbar-actions .button.secondary:hover:not(:disabled) { background:#173e59; }
+.topbar-actions .button:disabled { opacity:.5; }
+@media (max-width:1100px) { .topbar { height:auto; min-height:64px; flex-wrap:wrap; padding-block:10px; } }
+.topbar .theme-controls { margin-left:auto; }
