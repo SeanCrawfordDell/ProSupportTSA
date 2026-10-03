@@ -1,7 +1,6 @@
 .case-workflow { border:1px solid var(--line); border-radius:12px; margin:18px 0; padding:18px; background:var(--feedback-bg); }
 .case-workflow summary { cursor:pointer; font-size:17px; font-weight:750; }
-.case-workflow summary span { display:inline-block; margin-left:12px; color:var(--muted); font-size:12px; font-weight:500; }
-.workflow-context,.workflow-help { color:var(--muted); font-size:13px; line-height:1.6; }
+.workflow-help { color:var(--muted); font-size:13px; line-height:1.6; }
 #workflowTabs,.workflow-actions { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
 #workflowTabs [aria-pressed="true"] { background:var(--blue); color:#fff; border-color:var(--blue); }
 #workflowFields { border:0; padding:0; margin:0; min-width:0; }
@@ -11,5 +10,5 @@
 .workflow-check input { width:18px; height:18px; flex-shrink:0; margin:1px 0 0; }
 #workflowStatus { font-size:13px; margin:10px 0 0; }
 [data-workflow-panel="learn"] > * { margin-bottom:12px; }
-@media(max-width:640px) { #workflowFields .field-grid { grid-template-columns:1fr; } .case-workflow summary span { display:block; margin:8px 0; } }
+@media(max-width:640px) { #workflowFields .field-grid { grid-template-columns:1fr; } }
 @media print { #workflowTabs,#workflowFields button { display:none; } }
