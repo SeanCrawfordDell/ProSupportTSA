@@ -42,7 +42,7 @@ const CaseWorkflowCore = (() => {
   function text(note) {
     const w=note.toolkit?.workflow;if(!w)return "";
     const rows=[];
-    if(w.severity!=="Unspecified")rows.push("Service impact: "+w.severity);
+    if(w.severity!=="Unspecified")rows.push("Production Status: "+w.severity);
     if(w.recentChange)rows.push("Recent changes: "+w.recentChange);
     if(w.repeatOf)rows.push("Related / repeat case: "+w.repeatOf);
     for(const [id,result] of Object.entries(w.results))if(result.trim())rows.push((Object.hasOwn(tools,id)?tools[id][1]:id)+" — recorded result:\n"+result);

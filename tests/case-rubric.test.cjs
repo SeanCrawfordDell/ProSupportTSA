@@ -108,7 +108,7 @@ test('triage is scored separately from issue clarity and the help text explains 
  assert.equal(R.maxima.issue,14);assert.equal(R.maxima.triage,6);assert.equal(R.labels.triage,'Triage');
  assert.equal(Object.values(R.maxima).reduce((a,b)=>a+b,0),100);
  const r=R.score(blank());
- assert.ok(r.gaps.some(g=>g.category==='triage'&&/Set Service impact in Triage, record the Business impact under Handoff Summary/.test(g.text)));
+ assert.ok(r.gaps.some(g=>g.category==='triage'&&/Set Production Status in Triage, record the Business impact under Handoff Summary/.test(g.text)));
  assert.ok(!r.gaps.some(g=>g.category==='issue'&&/impact|recent change/i.test(g.text)));
  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
  assert.match(html,/repeated or placeholder text/);assert.match(html,/every dated entry/);assert.match(html,/Service Tag \(5–10 letters and digits\)/);
@@ -150,7 +150,7 @@ test('text plausibility flags repeated and placeholder text but not long real no
  assert.equal(f(fs.readFileSync(require.resolve('../CASE_NOTES_GUIDE.md'),'utf8')),false);
  assert.equal(f(fs.readFileSync(require.resolve('../DEV-NOTES.md'),'utf8')),false);
 });
-test('handoff maps recent change, service impact and evidence onto the escalation and leaves results empty',()=>{
+test('handoff maps recent change, production status and evidence onto the escalation and leaves results empty',()=>{
  const note=strong();const payload=C.escalation(note,2000);
  assert.equal(payload.changes,'iDRAC firmware update');assert.equal(payload.production,'Service degraded');assert.equal(payload.evidence,'Yes');assert.equal(payload.results,'');
  note.toolkit.workflow.severity='Service unavailable';assert.equal(C.escalation(note,2000).production,'Service unavailable');

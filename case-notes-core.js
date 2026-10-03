@@ -178,7 +178,7 @@ const CaseNotes = (() => {
       if (note[key]) customFieldsData[config.customFields[key]] = note[key];
     });
     const workflow = note.toolkit?.workflow || {}, checks = note.toolkit?.checks || {};
-    // Triage service impact carries straight onto the escalation's Service impact field, which offers the same options; Unspecified stays blank.
+    // Triage Production Status carries straight onto the escalation's Production Status field, which offers the same options; Unspecified stays blank.
     const production = workflow.severity && workflow.severity !== "Unspecified" ? String(workflow.severity) : "";
     const evidence = String(note.logLocation || "").trim() || Object.values(checks).some(Boolean) ? "Yes" : "";
     // Results stay empty on purpose: outcomes must be recorded per action on the escalation page.
