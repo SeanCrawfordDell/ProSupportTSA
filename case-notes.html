@@ -8,7 +8,7 @@
   <title>Case Notes · Dell Pro-Support</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="case-notes.css?v=20261003-dated-entries">
+  <link rel="stylesheet" href="case-notes.css?v=20261003-backup-retention">
   <link rel="stylesheet" href="escalation-demo.css?v=20260919-support-workflow">
   <script src="vendor/marked.umd.js" defer></script>
   <script src="vendor/purify.min.js" defer></script>
@@ -21,7 +21,8 @@
   <script src="case-notes-core.js?v=20261003-content-scoring" defer></script>
   <script src="case-rubric-core.js?v=20261003-content-scoring" defer></script>
   <script src="case-rubric.js?v=20261003-content-scoring" defer></script>
-  <script src="case-settings-core.js?v=20261003-dated-entries" defer></script>
+  <script src="case-backup-core.js?v=20261003-backup-retention" defer></script>
+  <script src="case-settings-core.js?v=20261003-backup-retention" defer></script>
   <script src="devin-prompt-core.js" defer></script>
   <script src="devin-connection-core.js?v=20261003" defer></script>
   <script src="devin-integration.js?v=20261003-dated-entries" defer></script>
@@ -32,7 +33,7 @@
 <script src="log-helper.js?v=20260919-support-workflow" defer></script>
 <script src="troubleshoot-core.js" defer></script>
 <script src="case-notes-popout.js?v=20260919-support-workflow" defer></script>
-<script src="case-notes.js?v=20261003-dated-entries" defer></script>
+<script src="case-notes.js?v=20261003-backup-retention" defer></script>
 <script src="guided-tour.js?v=20260919-support-workflow" defer></script>
 <script src="case-notes-demo.js?v=20261003-menus" defer></script>
 <script src="case-toolbox-icons.js" defer></script>
@@ -49,18 +50,23 @@
     <a class="brand home-link" href="index.html"><span class="brand-mark">←</span>Support Assistant</a>
     <nav class="topbar-actions" aria-label="Case Notes actions"><div class="topbar-menu" id="backupMenu"><button class="button secondary" id="openBackupRestore" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="backupRestoreMenu">Backup &amp; Restore <span aria-hidden="true">▾</span></button><div class="topbar-dropdown" id="backupRestoreMenu" hidden>
 <p class="dropdown-label">Case history</p>
-<div class="history-backup"><button class="dropdown-item" id="backupHistory" type="button" disabled>Backup Case History</button><button class="dropdown-item" id="restoreHistory" type="button" disabled>Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" class="dropdown-status" role="status"></p></div>
+<div class="history-backup"><button class="dropdown-item" id="backupHistory" type="button" disabled>Backup Case History</button><button class="dropdown-item" id="restoreHistory" type="button" disabled aria-haspopup="dialog">Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" class="dropdown-status" role="status"></p></div>
 <p class="dropdown-label">Site configuration</p>
 <div class="backup-location"><button class="dropdown-item" id="downloadSettings" type="button">Backup Site Configuration</button><input id="settingsFile" type="file" accept=".json,application/json" hidden><button class="dropdown-item" id="restoreSettings" type="button" aria-haspopup="dialog">Restore Settings</button></div>
 <p class="dropdown-label">Backup folder</p>
-<button class="dropdown-item" id="chooseBackupFolder" type="button">Set Backup Folder</button><p id="backupFolderStatus" class="dropdown-status" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration and note backups.</p>
-<p class="dropdown-help">Notes autosave in this browser. With folder access approved, automatic backups run every minute when changes are present while this page is open. Clearing browser data removes local history.</p>
+<p id="backupSummary" class="dropdown-status" role="status"></p>
+<button class="dropdown-item" id="chooseBackupFolder" type="button">Set Backup Folder</button>
+<label class="dropdown-field" for="backupRetention"><span>Keep snapshots</span><select id="backupRetention"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="never">Forever (no cleanup)</option></select></label>
+<button class="dropdown-item" id="cleanupBackups" type="button">Clean Up Old Snapshots</button>
+<p id="backupFolderStatus" class="dropdown-status" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration, note snapshots, and an <strong>images</strong> subfolder for screenshots.</p>
+<p class="dropdown-help">Notes autosave in this browser. With folder access approved, <strong>case-history.json</strong> is refreshed every minute while this page is open and changes are present, a dated snapshot is kept once per hour, and older automatic snapshots are removed by the retention setting. Manual backups and safety copies are always kept. Clearing browser data removes local history.</p>
 </div></div><div class="topbar-menu" id="toolsMenu"><button class="button secondary" id="openToolsMenu" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="toolsMenuList">Tools <span aria-hidden="true">▾</span></button><div class="topbar-dropdown tools-dropdown" id="toolsMenuList" hidden><a class="dropdown-item" href="tools.html">Tools Hub</a><a class="dropdown-item" id="openTroubleshoot" href="troubleshooting.html">Troubleshooting Guides</a><a class="dropdown-item" href="https://seancrawforddell.github.io/DellSupportoolRepository/#/tools" target="_blank" rel="noopener noreferrer">ISG Tools Catalog ↗</a><a class="dropdown-item" href="https://github.com/DellProSupportGse/Tools" target="_blank" rel="noopener noreferrer">Microsoft Support Tools ↗</a></div></div><a class="button secondary" id="requestFeature" href="https://github.com/SeanCrawfordDell/EscalationQuality/issues/new?title=%5BCase%20Notes%5D%20&amp;body=%2A%2AType%3A%2A%2A%20Feature%20request%20%2F%20Bug%20%28delete%20one%29%0A%2A%2APage%3A%2A%2A%20Case%20Notes%0A%0A%2A%2AWhat%20would%20you%20like%2C%20or%20what%20went%20wrong%3F%2A%2A%0A%0A%0A%2A%2ASteps%20to%20reproduce%20%28bugs%20only%29%3A%2A%2A%0A1.%0A%0A%2A%2AExpected%20result%3A%2A%2A%0A%0A%0A_Do%20not%20include%20customer%20names%2C%20Service%20Tags%2C%20SR%20numbers%2C%20logs%2C%20or%20other%20case%20data._" target="_blank" rel="noopener noreferrer" title="Opens a new GitHub issue in a new tab. Do not include customer or case data.">Request feature / Report bug ↗</a><div class="topbar-menu" id="trainingMenu"><button class="button secondary" id="openTraining" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="trainingMenuList">Training <span aria-hidden="true">▾</span></button><div class="topbar-dropdown training-dropdown" id="trainingMenuList" hidden><button class="dropdown-item" id="tutorialDemo" type="button">Tutorial Demo</button><button class="dropdown-item" id="loadExampleNote" disabled>Load Example</button></div></div></nav>
     <div class="appearance-actions" role="group" aria-label="Appearance and settings"><div class="theme-controls"><button class="theme-icon-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode"><svg class="theme-moon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></svg><svg class="theme-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button></div><div class="topbar-menu" id="settingsMenu"><button class="button secondary settings-toggle" id="openSettingsMenu" type="button" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settingsMenuList"><svg width="27.5" height="27.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 3 1-1h4l1 1 .5 2 2 .8 1.8-.6 2 3.5-.4 1.3-1.5 1.3v2.4l1.5 1.3.4 1.3-2 3.5-1.8-.6-2 .8-.5 2-1 1h-4l-1-1-.5-2-2-.8-1.8.6-2-3.5.4-1.3 1.5-1.3v-2.4l-1.5-1.3-.4-1.3 2-3.5 1.8.6 2-.8Z"/><circle cx="12" cy="12" r="3"/></svg></button><div class="topbar-dropdown settings-dropdown" id="settingsMenuList" hidden><button class="dropdown-item" id="customizeFields" type="button" disabled>Customize Fields</button></div></div></div>
   </header>
   <main>
     <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div></section>
     <p class="notice" id="lockNotice" role="status">Opening case history…</p>
+    <div class="notice backup-warning" id="backupWarningBanner" role="status" hidden><span id="backupWarningMessage"></span><span class="backup-warning-actions"><button class="button primary" id="configureBackups" type="button">Configure Backups</button><button class="button secondary" id="dismissBackupWarning" type="button">Remind me in a week</button></span></div>
     <div class="notice troubleshoot-handoff" id="troubleshootHandoff" role="status" hidden><span id="troubleshootHandoffText"></span><span class="troubleshoot-handoff-actions"><button class="button primary" id="addTroubleshootHandoff" type="button">Add to case</button><button class="button secondary" id="dismissTroubleshootHandoff" type="button">Dismiss</button></span></div>
     <p class="notice" id="notesWindowStatus" role="status"></p><button class="button secondary" id="compactNotesFallback" type="button" hidden>Use compact view here</button>
     <div class="case-work-area" id="caseWorkArea">
@@ -205,11 +211,21 @@
   <p id="caseRecoveryStatus" role="status"></p>
   <button class="button secondary" id="closeCaseRecovery" type="button">Close</button>
 </dialog>
-<dialog id="backupWarningDialog" class="toolkit-dialog" aria-labelledby="backupWarningTitle" aria-describedby="backupWarningMessage backupWarningHelp">
-<h2 id="backupWarningTitle">Automatic backups need attention</h2>
-<p id="backupWarningMessage"></p>
-<p id="backupWarningHelp">Without folder backups, your latest notes and settings may exist only in this browser. Clearing browser data or losing this device could lose that data. We recommend a work-approved, OneDrive-synced folder for ProSupportToolsBackup. Automatic backups run while Case Notes is open and folder access is approved.</p>
-<div class="backup-location"><button class="button primary" id="configureBackups" type="button">Configure Backups</button><button class="button secondary" id="dismissBackupWarning" type="button">Continue Without Backups</button></div>
+<dialog id="restoreHistoryDialog" class="toolkit-dialog" aria-labelledby="restoreHistoryTitle" aria-describedby="restoreHistoryHelp">
+  <h2 id="restoreHistoryTitle">Restore History</h2>
+  <p id="restoreHistoryHelp">Choose where to restore case history from. You will review a confirmation before anything is replaced. Settings are restored separately.</p>
+  <div class="backup-location">
+    <button class="button" id="restoreHistoryFromFolder" type="button" aria-describedby="restoreHistoryFolderHint">From backup folder</button>
+    <button class="button secondary" id="restoreHistoryFromFile" type="button">Choose a file</button>
+  </div>
+  <p id="restoreHistoryFolderHint" class="history-help"></p>
+  <button class="button secondary" id="cancelRestoreHistory" type="button">Cancel</button>
+</dialog>
+<dialog id="backupBrowserDialog" class="toolkit-dialog" aria-labelledby="backupBrowserTitle" aria-describedby="backupBrowserStatus">
+  <h2 id="backupBrowserTitle">Snapshots in ProSupportToolsBackup</h2>
+  <p id="backupBrowserStatus" class="history-help" role="status"></p>
+  <div id="backupBrowserList" class="backup-browser-list" role="list"></div>
+  <button class="button secondary" id="closeBackupBrowser" type="button">Cancel</button>
 </dialog>
 <dialog id="restoreSettingsDialog" class="toolkit-dialog" aria-labelledby="restoreSettingsTitle" aria-describedby="restoreSettingsHelp">
   <h2 id="restoreSettingsTitle">Restore Settings</h2>
