@@ -418,6 +418,7 @@ try {
     renderActions();
     dirty = true;
     if (saveDraft()) { sessionStorage.removeItem(key); history.replaceState(null,"",location.pathname+location.search); }
+    document.dispatchEvent(new CustomEvent("escalationImported"));
   } catch { byId("draftStatus").textContent = "Case Notes import failed. Return to Case Notes and try again."; }
 })();
 renderActions();
