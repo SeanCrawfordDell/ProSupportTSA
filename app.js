@@ -12,10 +12,49 @@ const required = ["problem", "impact", "timeline", "expected", "country", "os", 
 const labels = {
   serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Production status", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Have you Gathered Logs?", changes: "recent changes"
 };
-const weakPhrases = /^(n\/a|na|none|unknown|not working|broken|issue|problem|see above|same)$/i;
+// Short answers that match one of these as a prefix or whole word are too vague to score (fields under 25 characters only).
+const weakPhrases = /(?:^|[^a-z0-9])(?:n\/a|na|none|unknown|not working|not sure|broken|issue|problem|see above|as above|same|latest|newest|current|tbd|tba|asap|ok|okay|fine|ask customer|pending|wip)(?![a-z0-9])/i;
+const weakLimit = 25;
+const placeholderPattern = /\[(?:add|enter|insert|describe|action missing|result missing)\b[^\]]*\]/i;
 const specificityTerms = /\b(error|code|version|build|firmware|user|device|host|server|client|minute|hour|percent|failed|timeout|intermittent|always|every|since|affected|blocked)\b/i;
 const evidenceTerms = /\b(log|trace|screenshot|diagnostic|timestamp|event|dump|bundle|capture|report|case|attachment|error code)\b/i;
 const resultTerms = /\b(result|observed|confirmed|remained|changed|passed|failed|resolved|returned|showed|revealed|reproduced|did not|no change)\b/i;
+const quantityTerms = /\b(\d+|one|two|three|all|single|multiple|production|customer|user|users|team|hosts?|blocked|degraded|down)\b/i;
+// Free-text fields checked for repeated or placeholder text and for copies of one another (earlier fields keep the credit).
+const textFields = ["problem", "impact", "timeline", "expected", "errors", "reproduction", "troubleshooting", "results", "changes"];
+const shortTextFields = ["osVersion", "affected", "logLocation"];
+
+// Text plausibility, kept identical to CaseRubricCore.text in case-rubric-core.js (this page loads without that module).
+const textQuality = (() => {
+  const placeholderText = /\b(?:lorem ipsum|dolor sit amet|consectetur|adipiscing|asdf|qwerty)\b/i;
+  const markers = /^\s*(?:\d+[.)]|[-*•])\s*/gm;
+  // Whitespace tokens with edge punctuation removed, so versions and addresses such as 7.10.20.00 or 10.0.0.5 stay whole.
+  const tokens = value => String(value || "").toLowerCase().replace(markers, "").split(/\s+/).map(token => token.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")).filter(Boolean);
+  const sentences = value => String(value || "").toLowerCase().replace(markers, "").split(/[!?\n]+|\.(?!\d)/).map(part => tokens(part).join(" ")).filter(Boolean);
+  // Repeated words, repeated sentences, or placeholder text. The word ratio is measured over the first 80 words so long real notes are not penalised.
+  function filler(value) {
+    const raw = String(value || "");
+    if (placeholderText.test(raw)) return true;
+    const list = tokens(raw);
+    if (list.length >= 8) {
+      const window = list.slice(0, 80);
+      if (new Set(window).size / window.length < 0.5 || new Set(list).size < 5) return true;
+    }
+    const lines = sentences(raw);
+    return lines.length >= 3 && new Set(lines).size / lines.length <= 0.5;
+  }
+  // Jaccard similarity of the token sets; short values never count as duplicates.
+  function similarity(a, b) {
+    const left = new Set(tokens(a)), right = new Set(tokens(b));
+    if (left.size < 4 || right.size < 4) return 0;
+    let shared = 0;
+    for (const token of left) if (right.has(token)) shared++;
+    return shared / (left.size + right.size - shared);
+  }
+  const duplicate = (a, b) => similarity(a, b) >= 0.8;
+  const lines = value => String(value || "").split(/\r?\n/).map(line => line.replace(markers, "").trim()).filter(Boolean);
+  return { tokens, filler, similarity, duplicate, lines };
+})();
 
 const samples = {
   weak: { osVersion:"Unknown", supportType:"OEM OS", problem:"System not working", impact:"Users affected", timeline:"Started recently", expected:"It should work", country:"US", tag:"Server", os:"Windows Server", errors:"Unknown", reproduction:"Try to use it", troubleshooting:"Restarted and checked things", results:"No change", evidence:"No", changes:"Unknown" },
@@ -32,7 +71,15 @@ function refreshCaseTitle() {
   byId("caseTitle").value = caseTitle({platform:value("platform"),os:value("os"),problem:value("problem")});
 }
 function addFinding(target, field, reason, kind) { target.push({ field, reason, kind }); }
-function hasDetail(text = "", minimum) { return text.trim().length >= minimum && !weakPhrases.test(text.trim()); }
+function isWeak(text = "") { const value = text.trim(); return value.length > 0 && value.length < weakLimit && weakPhrases.test(value); }
+function hasDetail(text = "", minimum) { return text.trim().length >= minimum && !isWeak(text); }
+const sentence = text => text.charAt(0).toUpperCase() + text.slice(1);
+// Outcome coverage: results lines carrying an observed-result term, measured against the troubleshooting actions.
+function outcomeCoverage(troubleshooting, results) {
+  const actions = Math.max(textQuality.lines(troubleshooting).length, 1);
+  const outcomes = textQuality.lines(results).filter(line => resultTerms.test(line)).length;
+  return { actions, outcomes, ratio: results.trim() ? Math.min(1, outcomes / actions) : 0 };
+}
 function numberedSteps(text) { return (text.match(/(?:^|\n)\s*(?:\d+[.)]|[-•])/g) || []).length; }
 function data() { 
   const formData = Object.fromEntries(fieldIds.map(id => [id, value(id)]));
@@ -56,38 +103,60 @@ function evaluate(input = {}) {
   const blockers = [], warnings = [], strengths = [];
   required.forEach(id => {
     if (!form[id]) addFinding(blockers, id, "Required information is missing.", "blocker");
-    else if (weakPhrases.test(form[id]) || /\[(?:add|enter|insert|describe|action missing|result missing)\b[^\]]*\]/i.test(form[id])) addFinding(blockers, id, "The response is too vague to support an escalation.", "blocker");
+    else if (isWeak(form[id]) || placeholderPattern.test(form[id])) addFinding(blockers, id, "The response is too vague to support an escalation.", "blocker");
   });
 
   for (const [id,options] of [["supportType",supportTypeOptions],["evidence",["Yes","No"]]]) {
     if(form[id] && !options.includes(form[id])) addFinding(blockers,id,"Choose one of the available options.","blocker");
   }
-  if (form.problem && !hasDetail(form.problem, 45)) addFinding(warnings, "problem", "Name the affected component, failure, and scope in concrete terms.", "warning");
-  if (form.impact && (!hasDetail(form.impact, 45) || !/\b(\d+|one|two|three|all|single|multiple|production|customer|user|team|blocked|degraded)\b/i.test(form.impact))) addFinding(warnings, "impact", "Quantify who or what is affected and explain the operational consequence.", "warning");
-  if (form.timeline && !/\b(\d{1,2}[:/]\d{1,2}|\d{4}-\d{2}-\d{2}|utc|am|pm|daily|hourly|every|constant|intermittent|first|last|since)\b/i.test(form.timeline)) addFinding(warnings, "timeline", "Add when the issue began, its frequency, and the latest occurrence.", "warning");
 
-  if (form.reproduction && numberedSteps(form.reproduction) < 2) addFinding(warnings, "reproduction", "Use at least two ordered steps so another technician can reproduce the issue.", "warning");
-  if (form.troubleshooting && numberedSteps(form.troubleshooting) < 2) addFinding(warnings, "troubleshooting", "Separate the troubleshooting actions into distinct steps.", "warning");
-  if (form.results && (!hasDetail(form.results, 55) || !resultTerms.test(form.results))) addFinding(warnings, "results", "Record the observed outcome of each troubleshooting action.", "warning");
+  // Repeated or placeholder text, and fields that copy an earlier field, earn no credit.
+  const discounted = new Set(), repeats = {};
+  for (const id of [...textFields, ...shortTextFields]) {
+    if (form[id] && textQuality.filler(form[id])) { discounted.add(id); addFinding(warnings, id, "This reads as repeated or placeholder text. Replace it with the actual details.", "warning"); }
+  }
+  textFields.forEach((id, index) => {
+    if (!form[id] || discounted.has(id)) return;
+    const source = textFields.slice(0, index).find(other => form[other] && !discounted.has(other) && !repeats[other] && textQuality.duplicate(form[id], form[other]));
+    if (!source) return;
+    repeats[id] = source; discounted.add(id);
+    if (id === "results" && source === "troubleshooting") addFinding(blockers, id, `${sentence(labels.results)} repeats ${labels.troubleshooting}. Record what was observed after each action.`, "blocker");
+    else addFinding(warnings, id, `${sentence(labels[id])} repeats ${labels[source]}. Record distinct information in each field.`, "warning");
+  });
+  const credit = id => !!form[id] && !discounted.has(id);
+  const detail = (id, minimum) => credit(id) && hasDetail(form[id], minimum);
+  const outcomes = outcomeCoverage(form.troubleshooting, form.results);
+
+  if (credit("problem") && !hasDetail(form.problem, 45)) addFinding(warnings, "problem", "Name the affected component, failure, and scope in concrete terms.", "warning");
+  if (credit("impact") && (!hasDetail(form.impact, 45) || !quantityTerms.test(form.impact + " " + form.affected))) addFinding(warnings, "impact", "Quantify who or what is affected and explain the operational consequence.", "warning");
+  if (credit("timeline") && !/\b(\d{1,2}[:/]\d{1,2}|\d{4}-\d{2}-\d{2}|utc|am|pm|daily|hourly|every|constant|intermittent|first|last|since)\b/i.test(form.timeline)) addFinding(warnings, "timeline", "Add when the issue began, its frequency, and the latest occurrence.", "warning");
+
+  if (credit("reproduction") && numberedSteps(form.reproduction) < 2) addFinding(warnings, "reproduction", "Use at least two ordered steps so another technician can reproduce the issue.", "warning");
+  if (credit("troubleshooting") && numberedSteps(form.troubleshooting) < 2) addFinding(warnings, "troubleshooting", "Separate the troubleshooting actions into distinct steps.", "warning");
+  if (credit("results") && (!hasDetail(form.results, 55) || outcomes.ratio < 0.5)) addFinding(warnings, "results", `Record the observed outcome of each troubleshooting action (${outcomes.outcomes} of ${outcomes.actions} actions have one).`, "warning");
   if (!form.errors) addFinding(warnings, "errors", "Provide exact errors and timestamps, or explicitly state that no error is displayed.", "warning");
-  if (form.evidence === "No" && (!form.logReason || weakPhrases.test(form.logReason))) addFinding(blockers, "logReason", "Explain why logs cannot be obtained before escalating.", "blocker");
+  if (form.evidence === "No" && (!form.logReason || isWeak(form.logReason))) addFinding(blockers, "logReason", "Explain why logs cannot be obtained before escalating.", "blocker");
   if (form.evidence === "Yes" && !form.logLocation) addFinding(warnings, "logLocation", "Record where DE can find the collected logs.", "warning");
   if (!form.changes) addFinding(warnings, "changes", "Document recent changes or explicitly state that none are known.", "warning");
+  if (!form.severity || !form.production || !hasDetail(form.affected, 2) || discounted.has("affected")) addFinding(warnings, "affected", "Set Severity and Production status, and record the affected systems or users.", "warning");
 
-  const completedRequired = required.filter(id => form[id] && !blockers.some(item => item.field === id)).length;
+  const completedRequired = required.filter(id => credit(id) && !blockers.some(item => item.field === id)).length;
   const completeness = Math.round(scoreMaxima.completeness * completedRequired / required.length);
-  const coreText = [form.problem, form.impact, form.timeline, form.os, form.osVersion].join(" ");
-  const specificity = Math.min(20, Math.round((Math.min(coreText.length, 500) / 500 * 12) + (specificityTerms.test(coreText) ? 4 : 0) + (/\d/.test(coreText) ? 4 : 0)));
-  const reproduction = Math.min(15, (hasDetail(form.reproduction, 60) ? 6 : form.reproduction ? 2 : 0) + Math.min(numberedSteps(form.reproduction), 5) + (form.expected ? 4 : 0));
-  const evidenceText = [form.errors, form.timeline].join(" ");
-  const evidence = Math.min(15, (hasDetail(form.errors, 20) ? 5 : form.errors ? 1 : 0) + (form.evidence === "Yes" ? 3 + (hasDetail(form.logLocation, 1) ? 2 : 0) : 0) + (evidenceTerms.test(evidenceText) ? 3 : 0) + (/\d/.test(evidenceText) ? 2 : 0));
-  const troubleshooting = Math.min(15, (hasDetail(form.troubleshooting, 60) ? 5 : form.troubleshooting ? 2 : 0) + Math.min(numberedSteps(form.troubleshooting), 4) + (hasDetail(form.results, 60) ? 4 : form.results ? 1 : 0) + (resultTerms.test(form.results) ? 2 : 0));
+  // Specificity: 13 points for concrete detail in the core text, 7 for Severity (2), Production status (2) and Affected systems / users (3).
+  const coreText = ["problem", "impact", "timeline", "os", "osVersion"].filter(credit).map(id => form[id]).join(" ");
+  const context = (hasDetail(form.severity, 1) ? 2 : 0) + (hasDetail(form.production, 1) ? 2 : 0) + (hasDetail(form.affected, 2) && !discounted.has("affected") ? 3 : 0);
+  const specificity = Math.min(scoreMaxima.specificity, Math.round(Math.min(coreText.length, 500) / 500 * 7) + (specificityTerms.test(coreText) ? 3 : 0) + (/\d/.test(coreText) ? 3 : 0) + context);
+  const reproduction = Math.min(15, (detail("reproduction", 60) ? 6 : credit("reproduction") ? 2 : 0) + (credit("reproduction") ? Math.min(numberedSteps(form.reproduction), 5) : 0) + (credit("expected") ? 4 : 0));
+  const evidenceText = ["errors", "timeline"].filter(credit).map(id => form[id]).join(" ");
+  const evidence = Math.min(15, (detail("errors", 20) ? 5 : credit("errors") ? 1 : 0) + (form.evidence === "Yes" ? 3 + (credit("logLocation") && hasDetail(form.logLocation, 1) ? 2 : 0) : 0) + (evidenceTerms.test(evidenceText) ? 3 : 0) + (/\d/.test(evidenceText) ? 2 : 0));
+  // Troubleshooting: actions (4 + up to 4 steps), results detail (3), and outcomes paired with actions (4; full credit at 50% coverage).
+  const troubleshooting = Math.min(15, (detail("troubleshooting", 60) ? 4 : credit("troubleshooting") ? 1 : 0) + (credit("troubleshooting") ? Math.min(numberedSteps(form.troubleshooting), 4) : 0) + (detail("results", 60) ? 3 : credit("results") ? 1 : 0) + (credit("results") ? Math.round(4 * Math.min(1, outcomes.ratio / 0.5)) : 0));
   const categories = { completeness, specificity, reproducibility:reproduction, evidence, troubleshooting };
   const score = Object.values(categories).reduce((sum, item) => sum + item, 0);
 
-  if (score >= 80 && blockers.length === 0) strengths.push({ field:"overall", reason:"The escalation provides enough structured context for a senior technician to begin investigation.", kind:"strength" });
-  if (numberedSteps(form.reproduction) >= 3) strengths.push({ field:"reproduction", reason:"Reproduction steps are clearly separated and actionable.", kind:"strength" });
-  if (numberedSteps(form.troubleshooting) >= 3 && hasDetail(form.results, 80)) strengths.push({ field:"troubleshooting", reason:"Actions and observed results provide a useful investigation trail.", kind:"strength" });
+  if (score >= 80 && blockers.length === 0 && discounted.size === 0) strengths.push({ field:"overall", reason:"The escalation provides enough structured context for a senior technician to begin investigation.", kind:"strength" });
+  if (credit("reproduction") && numberedSteps(form.reproduction) >= 3) strengths.push({ field:"reproduction", reason:"Reproduction steps are clearly separated and actionable.", kind:"strength" });
+  if (credit("troubleshooting") && credit("results") && numberedSteps(form.troubleshooting) >= 3 && hasDetail(form.results, 80) && outcomes.ratio >= 0.5) strengths.push({ field:"troubleshooting", reason:"Actions and observed results provide a useful investigation trail.", kind:"strength" });
   if (form.evidence === "Yes") strengths.push({ field:"evidence", reason:"Logs have been gathered for review.", kind:"strength" });
 
   return { ...readiness(score, blockers), score, categories, blocking_issues:blockers, warnings, strengths };

@@ -177,8 +177,14 @@ const CaseNotes = (() => {
     Object.keys(config.customFields).forEach(key => {
       if (note[key]) customFieldsData[config.customFields[key]] = note[key];
     });
+    const workflow = note.toolkit?.workflow || {}, checks = note.toolkit?.checks || {};
+    // Triage service impact maps onto the escalation's production status; other severities carry no production meaning.
+    const production = { "Service unavailable": "Production down", "Service degraded": "Production degraded" }[workflow.severity] || "";
+    const evidence = String(note.logLocation || "").trim() || Object.values(checks).some(Boolean) ? "Yes" : "";
+    // Results stay empty on purpose: outcomes must be recorded per action on the escalation page.
     return { problem: note.issue, tag: note.tag, os: note.os, country: note.country,
-      osVersion: note.osVersion || "", serviceRequest: note.request, platform: note.platform || "", supportType: normalizeSupportType(note.supportType || ""), logLocation: note.logLocation || "", impact: note.toolkit?.impact || "", checks: note.toolkit?.checks || {}, issueType: note.toolkit?.issueType || "general",
+      osVersion: note.osVersion || "", serviceRequest: note.request, platform: note.platform || "", supportType: normalizeSupportType(note.supportType || ""), logLocation: note.logLocation || "", impact: note.toolkit?.impact || "", checks, issueType: note.toolkit?.issueType || "general",
+      changes: String(workflow.recentChange || ""), production, evidence, results: "",
       troubleshooting: plainImages(exportField(note,"notes")), nextSteps: plainImages(exportField(note,"next")), sourceNote: copyText(note, now, config), customFields: customFieldsData };
   }
   // Preserve custom IDs accepted before dated entries reserved these names.

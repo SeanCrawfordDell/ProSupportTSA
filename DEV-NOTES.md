@@ -30,6 +30,17 @@ Knowledge drafts support formatted copy for OneNote, Markdown downloads, and a c
 Workflow shape: `{id, os:[...], area, title, summary, reviewed, sources:[https...], start, steps}`. A step is either `{prompt, detail?, commands?, answers:[{label, next}]}` (two or more answers) or `{outcome:{cause, fix:[...], links?}}`. `register` rejects dangling answers, cycles, unreachable steps, duplicate ids and non-HTTPS links, and the tests validate every registered workflow.
 
 Send to Case Notes writes `dell-support.troubleshoot-handoff.v1`; only the Case Notes tab holding the editor lock reads it and appends it to the selected case after the user clicks **Add to case**.
+
+## Content scoring (Case Notes rubric and Escalation readiness)
+
+Both rule-based scorers measure content rather than presence and length. `CaseRubricCore.text` (`case-rubric-core.js`) holds the shared plausibility helper; `app.js` carries an identical copy named `textQuality` because the Escalation page loads without the Case Notes modules, and `tests/escalation.test.cjs` asserts the two stay in step. Rules:
+
+- Filler: a field reads as repeated or placeholder text when the first 80 words have a unique-word ratio under 0.5, fewer than 5 distinct words appear, at least half of 3+ sentences repeat, or it contains lorem-ipsum / keyboard-mash markers. Filler earns no credit and is flagged; on Case Notes it also keeps the note below Strong.
+- Duplication: scored text fields are compared pairwise (token Jaccard ≥ 0.8, both sides at least 4 tokens). The earlier field keeps the credit, the later one is flagged with both names. Escalation Results that copy Troubleshooting block readiness.
+- Outcomes: step lines are counted against lines carrying an outcome term; credit is proportional and full at 50% coverage. Case Notes steps without outcomes keep the note below Strong.
+- Escalation weak phrases (`see above`, `latest`, `n/a`, `ok`, ...) block only fields under 25 characters, matched as a prefix or whole word. Severity (2), Production status (2) and Affected systems / users (3) are scored inside Specificity (13 points remain for text detail).
+- Case Notes details apply format checks (Service Tag 5–10 alphanumerics, Service Request 6+ digits, OS version contains a digit, Log Location is a link or path) worth half credit on mismatch; Issue Description is no longer counted there. Triage (6) is its own row and accepts impact / change written in the Issue text; owner and date in the Action Plan count for Next steps. Template prompt labels followed by an answer of three characters or fewer are dropped by `clean()`. Troubleshooting and Next steps score every dated entry together.
+- Handoff (`CaseNotes.escalation`): `workflow.recentChange` → `changes`, `workflow.severity` → `production` (Service unavailable → Production down, Service degraded → Production degraded), `evidence` is "Yes" when a Log Location is set or an evidence checkbox is ticked, and `results` stays empty so outcomes are recorded on the escalation page.
 # Optional Devin CLI integration preview
 
 Run `python -m http.server 4187 --bind 127.0.0.1` from this checkout and open

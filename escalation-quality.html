@@ -24,7 +24,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 <script src="log-helper.js?v=20260919-support-workflow" defer></script>
 <link rel="stylesheet" href="escalation-mascot.css">
 <script src="escalation-mascot.js" defer></script>
-<script src="app.js?v=20261003-devin-cli" defer></script>
+<script src="app.js?v=20261003-content-scoring" defer></script>
   <link rel="stylesheet" href="escalation-demo.css?v=20260919-support-workflow">
   <script src="guided-tour.js?v=20260919-support-workflow" defer></script>
   <script src="escalation-demo.js?v=20260919-support-workflow" defer></script>
@@ -64,7 +64,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
         </section>
         <section class="panel" id="sourceNotePanel" hidden>
           <h2>Imported from Case Notes</h2>
-          <p>Review the populated fields and complete the remaining escalation details below.</p>
+          <p>Review the populated fields and complete the remaining escalation details below. Results and observations is left empty on import: document outcomes there, or use the paired action rows below.</p>
           <label class="field">Original case note<textarea id="sourceNote" readonly rows="12"></textarea></label>
         </section>
         <section class="panel">
@@ -129,7 +129,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
             <details><summary>Review JSON</summary><pre id="jsonOutput"></pre></details>
           </div>
         </section>
-        <section class="panel rubric"><h3>How readiness is scored</h3><dl><div><dt>Completeness</dt><dd>35</dd></div><div><dt>Specificity</dt><dd>20</dd></div><div><dt>Reproducibility</dt><dd>15</dd></div><div><dt>Evidence</dt><dd>15</dd></div><div><dt>Troubleshooting</dt><dd>15</dd></div></dl><p>Ready requires 75+ points and no blocking issues. Completeness checks the current required fields. Detail, reproduction steps, gathered evidence and its location, and investigation outcomes earn the remaining points. A collection plan alone earns no evidence credit. Service Tag is optional. This rule-based check identifies information gaps; it does not verify technical accuracy or replace technician judgment.</p></section>
+        <section class="panel rubric"><h3>How readiness is scored</h3><dl><div><dt>Completeness</dt><dd>35</dd></div><div><dt>Specificity</dt><dd>20</dd></div><div><dt>Reproducibility</dt><dd>15</dd></div><div><dt>Evidence</dt><dd>15</dd></div><div><dt>Troubleshooting</dt><dd>15</dd></div></dl><p>Ready requires 75+ points and no blocking issues. Completeness checks the current required fields; a field that reads as repeated or placeholder text, or copies another field, earns no credit (the first copy keeps it) and is flagged. Short vague answers such as “see above”, “latest”, “n/a” or “ok” block readiness. Specificity gives 13 points for concrete detail in the problem, impact, timeline and OS fields, plus 7 for Severity (2), Production status (2) and Affected systems / users (3). Reproduction steps, gathered evidence and its location, and troubleshooting actions paired with observed outcomes earn the remaining points: outcome credit is proportional and is full when at least half of the actions have a recorded result. Results that copy the troubleshooting text block readiness. A collection plan alone earns no evidence credit. Service Tag is optional. This rule-based check identifies information gaps; it does not verify technical accuracy or replace technician judgment.</p></section>
       </aside>
     </div>
   </main>
