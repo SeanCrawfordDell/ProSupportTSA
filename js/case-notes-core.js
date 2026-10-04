@@ -8,6 +8,9 @@ const CaseNotes = (() => {
   // Earlier versions stored short codes; map them to the current entitlement options.
   const legacySupportTypes = { "OEM": "OEM OS", "PSP": "ProSupport Plus Bring Your own License", "No OS Support": "No Software Support" };
   const normalizeSupportType = value => Object.hasOwn(legacySupportTypes, value) ? legacySupportTypes[value] : value;
+  // Case properties a custom field ID may not take. case-settings-core.js keeps a copy (a test checks they match).
+  const reservedFieldIds = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt", "entries", "activeEntryId"]);
+  const imageDataPattern = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
   const empty = () => ({ version: 3, selected: null, cases: [], archive: [], trash: [], revisions: {}, fieldConfig: { order: [...defaultFieldOrder], customFields: {} } });
   function migrateEntries(note) {
     note.activeEntryId = "initial-" + note.id;
@@ -248,7 +251,7 @@ const CaseNotes = (() => {
       }
       migrateLegacyFieldConfig(config, legacyNotes);
     }
-    const reserved = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt", "entries", "activeEntryId"]);
+    const reserved = reservedFieldIds;
     if (!config.customFields || typeof config.customFields !== "object" || Array.isArray(config.customFields) || !Array.isArray(config.order)) throw Error("Invalid field configuration");
     for (const [id,label] of Object.entries(config.customFields)) {
       if (!/^[a-zA-Z0-9_-]+$/.test(id) || reserved.has(id) || Object.hasOwn(fields,id) || typeof label !== "string" || !label.trim()) throw Error("Invalid custom field");
@@ -284,7 +287,7 @@ const CaseNotes = (() => {
       if (!entryIds.has(note.activeEntryId)) throw Error("Invalid active note entry");
       syncEntry(note);
       if (!Object.hasOwn(note, "images")) note.images = {};
-      if (!note.images || typeof note.images !== "object" || Array.isArray(note.images) || !Object.entries(note.images).every(([id, image]) => /^[a-zA-Z0-9-]+$/.test(id) && image && typeof image.name === "string" && typeof image.data === "string" && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(image.data))) throw Error("Invalid screenshots");
+      if (!note.images || typeof note.images !== "object" || Array.isArray(note.images) || !Object.entries(note.images).every(([id, image]) => /^[a-zA-Z0-9-]+$/.test(id) && image && typeof image.name === "string" && typeof image.data === "string" && imageDataPattern.test(image.data))) throw Error("Invalid screenshots");
       Toolkit.validate(note);
       ids.add(note.id); if (note.started !== null) running++;
     }
@@ -322,7 +325,7 @@ const CaseNotes = (() => {
   function addCustomField(state, fieldId, fieldLabel) {
     if (typeof fieldLabel !== "string" || !fieldLabel.trim() || fieldLabel.length > 120) throw Error("Field labels must contain 1–120 characters.");
     if (!/^[a-zA-Z0-9_-]+$/.test(fieldId)) throw Error("Invalid field ID");
-    if (["id","created","updated","started","elapsed","lastSession","images","toolkit","pinned","deletedAt","entries","activeEntryId","__proto__","constructor","prototype"].includes(fieldId)) throw Error("Reserved field ID");
+    if (reservedFieldIds.has(fieldId)) throw Error("Reserved field ID");
     if (fields[fieldId] || state.fieldConfig.customFields[fieldId]) throw Error("Field already exists");
     state.fieldConfig.customFields[fieldId] = fieldLabel;
     state.fieldConfig.order.push(fieldId);
@@ -359,6 +362,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { migrateLegacyFieldConfig, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
+  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;

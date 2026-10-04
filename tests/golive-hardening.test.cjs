@@ -22,3 +22,16 @@ test('every page refuses to render inside another site\'s frame',()=>{
     assert.ok(html.indexOf('js/theme.js')<html.indexOf('<body'),page+' loads theme.js in the head');
   }
 });
+test('every local script and stylesheet in Case Notes carries the same cache version',()=>{
+  const html=read('case-notes.html');
+  const refs=[...html.matchAll(/(?:src|href)="((?:js|css|vendor)\/[^"]+)"/g)].map(m=>m[1]);
+  assert.ok(refs.length>30);
+  const versions=new Set(refs.map(ref=>/\?v=([^"&]+)$/.exec(ref)?.[1]));
+  assert.ok(!versions.has(undefined),'missing ?v= on '+refs.filter(r=>!r.includes('?v=')).join(', '));
+  assert.equal(versions.size,1,'mixed versions: '+[...versions].join(', '));
+});
+test('settings restore reserves the same custom field IDs as case history',()=>{
+  const C=require('../js/case-notes-core.js');
+  const listed=JSON.parse(/const reserved = new Set\((\[[^\]]*\])\)/.exec(read('js/case-settings-core.js'))[1]);
+  assert.deepEqual(new Set(listed),C.reservedFieldIds);
+});

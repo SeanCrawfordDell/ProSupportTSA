@@ -430,28 +430,31 @@
       setBackupFolderStatus("A backup is already in progress. Try Backup Site Configuration again when it finishes.");
       return;
     }
-    const folder = backupFolderHandle;
-    backupBusy = true;
-    try {
-      if (folder && !await ensureBackupFolderPermission()) {
-        setBackupFolderStatus("Settings were not exported: folder access was not approved. Reconnect Backup Folder and try again.");
-        return;
-      }
-      const config = settingsSnapshot();
-      if (!folder) {
-        downloadFile(config,"customer-config.json","application/json");
-        setBackupFolderStatus("No backup folder connected. Settings download started. Use Set Backup Folder to save future exports directly there.");
-        return;
-      }
-      const datedName = CaseBackup.fileName("settings", "manual", Date.now());
-      for (const name of [datedName, CaseBackup.LATEST_SETTINGS]) await writeFile(folder, name, config);
-      lastSettingsSignature = settingsSignatureOf(config); try { localStorage.setItem(settingsSignatureKey, lastSettingsSignature); } catch {}
-      setBackupFolderStatus("Settings saved to ProSupportToolsBackup/customer-config.json, with a dated settings copy. Case-note backups were not changed.");
-    } catch {
-      setBackupFolderStatus(folder
-        ? "Settings backup did not finish. Check backup folder access and available disk space, then try again."
-        : "Settings backup failed. Check browser storage and download access.");
-    } finally { backupBusy = false; }
+    // Queued with the other folder writes so an automatic backup cannot run at the same time.
+    await queueBackup(async () => {
+      const folder = backupFolderHandle;
+      backupBusy = true;
+      try {
+        if (folder && !await ensureBackupFolderPermission()) {
+          setBackupFolderStatus("Settings were not exported: folder access was not approved. Reconnect Backup Folder and try again.");
+          return;
+        }
+        const config = settingsSnapshot();
+        if (!folder) {
+          downloadFile(config,"customer-config.json","application/json");
+          setBackupFolderStatus("No backup folder connected. Settings download started. Use Set Backup Folder to save future exports directly there.");
+          return;
+        }
+        const datedName = CaseBackup.fileName("settings", "manual", Date.now());
+        for (const name of [datedName, CaseBackup.LATEST_SETTINGS]) await writeFile(folder, name, config);
+        lastSettingsSignature = settingsSignatureOf(config); try { localStorage.setItem(settingsSignatureKey, lastSettingsSignature); } catch {}
+        setBackupFolderStatus("Settings saved to ProSupportToolsBackup/customer-config.json, with a dated settings copy. Case-note backups were not changed.");
+      } catch {
+        setBackupFolderStatus(folder
+          ? "Settings backup did not finish. Check backup folder access and available disk space, then try again."
+          : "Settings backup failed. Check browser storage and download access.");
+      } finally { backupBusy = false; }
+    });
   });
   $("settingsFile")?.addEventListener("change", async () => {
     const file = $("settingsFile").files[0]; $("settingsFile").value = "";
@@ -743,10 +746,10 @@
     const filter = $("followupFilter").value || "all";
     const collection = ["archive","trash"].includes($("caseCollection")?.value) ? $("caseCollection").value : "cases";
     const sort = $("caseSort")?.value || "created";
+    const now = Date.now();
     const matches = (state[collection] || []).filter(note => {
       const status = note.toolkit?.status || "Open";
-      const overdue = !!note.toolkit?.due && status !== "Completed" && Date.parse(note.toolkit.due) < Date.now();
-      return CaseNotes.searchText(note).toLowerCase().includes(query) && (filter === "all" || filter === "overdue" && overdue || filter === "active" && status !== "Completed" || filter === "completed" && status === "Completed");
+      return (!query || CaseNotes.searchText(note).toLowerCase().includes(query)) && (filter === "all" || filter === "overdue" && CaseToolkitCore.overdue(note, now) || filter === "active" && status !== "Completed" || filter === "completed" && status === "Completed");
     }).sort((a,b) => Number(!!b.pinned)-Number(!!a.pinned) || (sort === "due" ? (Date.parse(a.toolkit?.due) || Infinity)-(Date.parse(b.toolkit?.due) || Infinity) : b[sort === "updated" ? "updated" : "created"]-a[sort === "updated" ? "updated" : "created"]));
     $("caseCount").textContent = collection === "cases" ? `${state.cases.length} / 100` : `${state[collection].length} ${collection === "archive" ? "archived" : "in Trash"}`;
     $("historyList").replaceChildren(...matches.map(note => {
@@ -759,7 +762,7 @@
       button.append(title, issue, meta);
       if (note.toolkit) {
         const badge = document.createElement("small");
-        const late = note.toolkit.due && note.toolkit.status !== "Completed" && Date.parse(note.toolkit.due) < Date.now();
+        const late = CaseToolkitCore.overdue(note, now);
         badge.className = late ? "followup-badge overdue" : "followup-badge";
         badge.textContent = `${late ? "Overdue · " : ""}${note.toolkit.status}${note.toolkit.owner ? " · " + note.toolkit.owner : ""}${note.toolkit.due ? " · " + new Date(note.toolkit.due).toLocaleString() : ""}`;
         button.append(badge);
@@ -782,17 +785,13 @@
         if (!save()) return;
         if (collection === "trash" && !await confirmSafetySnapshot("delete")) return;
         if (!writable || copying || !save()) return;
-        const updated = JSON.parse(JSON.stringify(state));
-        if (collection === "trash") { updated.trash = updated.trash.filter(item => item.id !== note.id); delete updated.revisions[note.id]; }
-        else CaseNotes.move(updated,note.id,collection,"trash",Date.now());
-        try {
-          localStorage.setItem(key, JSON.stringify(updated));
-        } catch {
-          report("Could not delete the case. Check browser storage and try again. Your case has not been removed.");
-          return;
-        }
-        state = updated; savedState = JSON.parse(JSON.stringify(state)); dirty = false; status("Saved"); render();
-        report(collection === "trash" ? `${caseName} was permanently deleted.` : `${caseName} moved to Trash. Choose Trash in the case list to restore it.`);
+        const permanent = collection === "trash";
+        if (!commitCaseChange(candidate => {
+          if (permanent) { candidate.trash = candidate.trash.filter(item => item.id !== note.id); delete candidate.revisions[note.id]; }
+          else CaseNotes.move(candidate,note.id,collection,"trash",Date.now());
+        }, "Could not delete the case. Check browser storage and try again. Your case has not been removed.")) return;
+        status("Saved");
+        report(permanent ? `${caseName} was permanently deleted.` : `${caseName} moved to Trash. Choose Trash in the case list to restore it.`);
         $("copyStatus").textContent = "";
       });
       row.append(button, remove);
@@ -817,14 +816,14 @@
     }));
     if (!matches.length) $("historyList").textContent = query ? "No matching cases." : "No cases yet.";
   }
-  function commitCaseChange(change) {
+  function commitCaseChange(change, failure = "Could not save this change. Your saved notes were kept. Free browser storage or export a backup and retry.") {
     if (!writable || copying || !save()) return false;
     try {
       let candidate = JSON.parse(JSON.stringify(state)); change(candidate);
       candidate = CaseNotes.parse(JSON.stringify(candidate));
       localStorage.setItem(key,JSON.stringify(candidate));
       state = candidate; savedState = JSON.parse(JSON.stringify(state)); render(); return true;
-    } catch { report("Could not save this change. Your saved notes were kept. Free browser storage or export a backup and retry."); return false; }
+    } catch { report(failure); return false; }
   }
   function showStoredCase(note,collection) {
     $("caseRecoveryTitle").textContent = collection === "trash" ? "Case in Trash" : "Archived Case";
@@ -890,8 +889,9 @@
     note.notes = existing + "<p>" + escapeHtml(pendingHandoff.text).replace(/\n/g, "<br>") + "</p>";
     const now = Date.now(); CaseNotes.start(state, note, now); note.updated = now;
     dirty = true;
-    if (!save()) return;
+    // The results are in the note now; if this save fails, autosave and Retry save keep trying, so never add them twice.
     clearHandoff();
+    save();
     $("notes").value = note.notes; window.CaseMarkdown?.refresh();
     tick(); history(); renderHandoff();
   });
