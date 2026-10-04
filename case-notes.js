@@ -19,7 +19,8 @@
     newNote: "Start a new case with its first dated note and begin time tracking.",
     loadExampleNote: "Load a sample case note you can safely explore.",
     openTraining: "Tutorial Demo and Load Example.",
-    openSettingsMenu: "Settings: customize the fields in your case notes.",
+    openSettingsMenu: "Settings: customize case fields and manage backups.",
+    openBackupRestore: "Back up, restore, and clean up case history and site configuration.",
     openToolsMenu: "Tools hub, troubleshooting guides, and support tool catalogs.",
     openTroubleshoot: "Open step-by-step troubleshooting guides for this case's issue type.",
     tutorialDemo: "See a guided tour of Case Notes and the toolbox.",
@@ -355,29 +356,22 @@
       setBackupFolderStatus(error?.message || "Could not restore settings. Confirm customer-config.json exists in ProSupportToolsBackup.");
     }
   }
-  // Backup & Restore is a dropdown in the top bar; it stays open while its actions report status.
+  // Backup & Restore lives under the Settings gear and opens as a dialog that stays open while its actions report status.
   function setBackupMenu(open, focusFirst = false) {
-    const menu = $("backupRestoreMenu"), toggle = $("openBackupRestore");
-    if (!menu || !toggle) return;
-    menu.hidden = !open;
-    toggle.setAttribute("aria-expanded", String(open));
+    const menu = $("backupRestoreMenu");
+    if (!menu) return;
     if (open) {
+      if (!menu.open) menu.showModal();
       void refreshBackupFolderButton(); void refreshBackupSummary();
       if (focusFirst) [...menu.querySelectorAll("button")].find(item => !item.disabled)?.focus();
-    }
+    } else if (menu.open) menu.close();
   }
   $("openBackupRestore")?.addEventListener("click", async () => {
-    const opening = $("backupRestoreMenu").hidden;
-    setBackupMenu(opening);
-    if (opening) await refreshBackupFolderButton();
+    setActionMenu("settings", false);
+    setBackupMenu(true, true);
+    await refreshBackupFolderButton();
   });
-  document.addEventListener?.("click", event => {
-    const menu = $("backupMenu");
-    if (menu && !$("backupRestoreMenu").hidden && event.target && menu.contains && !menu.contains(event.target)) setBackupMenu(false);
-  });
-  document.addEventListener?.("keydown", event => {
-    if (event.key === "Escape" && !$("backupRestoreMenu")?.hidden) { setBackupMenu(false); $("openBackupRestore").focus(); }
-  });
+  $("closeBackupRestore")?.addEventListener("click", () => setBackupMenu(false));
   // Training dropdown: Tutorial Demo and Load Example. Closes after a choice, outside click, or Escape.
   function setTrainingMenu(open, focusFirst = false) {
     const menu = $("trainingMenuList"), toggle = $("openTraining");
@@ -404,7 +398,7 @@
     toggle.setAttribute("aria-expanded", String(open));
     if (open) {
       for (const other of actionMenus) if (other !== name) setActionMenu(other, false);
-      setTrainingMenu(false); setBackupMenu(false);
+      setTrainingMenu(false);
       if (focusFirst) [...list.querySelectorAll("button, a")].find(item => !item.disabled)?.focus();
     }
   }

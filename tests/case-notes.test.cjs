@@ -158,7 +158,7 @@ test('missing backups show an inline banner on startup and configure opens backu
   assert.match(h.get('backupWarningMessage').textContent,/not configured/);
   h.click('configureBackups');
   assert.equal(h.get('backupWarningBanner').hidden,true);
-  assert.equal(h.get('backupRestoreMenu').hidden,false);
+  assert.equal(h.get('backupRestoreMenu').open,true);
   const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
   assert.ok(!html.includes('id="backupWarningDialog"'),'the modal nag is gone');assert.ok(html.includes('id="backupWarningBanner"'));
 });
@@ -215,16 +215,20 @@ test('a saved folder that needs permission asks on the next click outside the ba
   await new Promise(setImmediate);const inMenu={};menuClick.get('backupMenu').append(inMenu);
   await menuClick.events.click({target:inMenu});
 });
-test('backup dropdown opens and closes without changing notes',async()=>{
+test('Backup & Restore lives under Settings and opens a dialog without changing notes',async()=>{
   const h=harness();const before=h.stored();
-  h.get('backupRestoreMenu').hidden=true;
+  h.get('settingsMenuList').hidden=true;h.click('openSettingsMenu');assert.equal(h.get('settingsMenuList').hidden,false);
   await h.click('openBackupRestore');
-  assert.equal(h.get('backupRestoreMenu').hidden,false);
-  assert.equal(h.get('openBackupRestore').attributes?.['aria-expanded'] ?? 'true','true');
+  assert.equal(h.get('settingsMenuList').hidden,true,'settings menu closes when the dialog opens');
+  assert.equal(h.get('backupRestoreMenu').open,true);
   assert.equal(h.get('chooseBackupFolder').textContent,'Set Backup Folder');
-  await h.click('openBackupRestore');
-  assert.equal(h.get('backupRestoreMenu').hidden,true);
+  h.click('closeBackupRestore');
+  assert.equal(h.get('backupRestoreMenu').open,false);
   assert.equal(h.stored(),before);
+  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+  assert.ok(!html.includes('id="backupMenu"'),'no separate top bar menu');
+  assert.match(html,/id="settingsMenuList"[^>]*>(?:(?!<\/div>).)*id="openBackupRestore"/s,'entry sits inside the Settings dropdown');
+  assert.match(html,/<dialog id="backupRestoreMenu"/);
 });
 test('folder control reconnects a saved folder then offers change folder',async()=>{
   let permission='prompt',requests=0;
