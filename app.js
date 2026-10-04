@@ -249,7 +249,7 @@ function render(result) {
 
 
 const draftKey = "dell-support.escalation-draft.v1";
-let actions = [], checks = {}, issueType = "general", dirty = false, lastReviewed = "", persistedDraft = null;
+let actions = [], checks = {}, issueType = "general", dirty = false, lastReviewed = "", persistedDraft = null, touring = false;
 const byId = id => document.getElementById(id);
 function readActions() {
   return [...byId("actionRows").children].map(row => ({action:row.querySelector(".action-text").value, result:row.querySelector(".result-text").value}));
@@ -286,7 +286,8 @@ function markChanged() {
   }
 }
 function saveDraft() {
-  if (!dirty) return true;
+  // While the tour shows the sample, the technician's own draft stays in storage untouched.
+  if (touring || !dirty) return true;
   try {
     if (localStorage.getItem(draftKey) !== persistedDraft) {
       byId("draftStatus").textContent = "Save paused — this draft changed in another tab. Copy your current details from the preview before reloading.";
@@ -352,6 +353,24 @@ for (const kind of ["weak","strong"]) byId(kind === "weak" ? "loadWeak" : "loadS
   if (hasWork() && !confirm("Replace the current escalation draft with the sample?")) return;
   populate(samples[kind]); actions = []; checks = {}; issueType = "general"; renderActions(); markChanged(); runReview();
 });
+// The guided tour runs on the reviewed strong sample so every panel has content, then puts the technician's draft back.
+window.EscalationExample = {
+  open() {
+    saveDraft();
+    const state = snapshot(), previous = {state, reviewed:!!lastReviewed && lastReviewed === JSON.stringify(state), dirty, status:byId("draftStatus").textContent};
+    touring = true;
+    populate(samples.strong); actions = []; checks = {}; issueType = "general"; renderActions(); markChanged(); runReview();
+    return previous;
+  },
+  restore(previous) {
+    if (!previous) return;
+    const {state} = previous;
+    populate(state.fields); actions = state.actions; checks = state.checks; issueType = state.issueType; renderActions();
+    resetReview(); touring = false; dirty = previous.dirty;
+    if (previous.reviewed) runReview(); else byId("copyButton").disabled = true;
+    byId("copyStatus").textContent = ""; byId("draftStatus").textContent = previous.status;
+  }
+};
 byId("clearForm").addEventListener("click", () => {
   if (hasWork() && !confirm("Clear this escalation and its saved draft?")) return;
   populate({}); actions = []; checks = {}; issueType = "general"; renderActions(); resetReview(); dirty = true; saveDraft(); byId("problem").focus();

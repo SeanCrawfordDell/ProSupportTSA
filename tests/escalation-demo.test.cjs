@@ -32,7 +32,7 @@ test('Skip and Escape clean up highlighted and expanded state',()=>{
 test('tour configurations cover the current evidence workflow and generated DE title',()=>{
  function config(file){let captured;vm.runInNewContext(fs.readFileSync(require.resolve(file),'utf8'),{GuidedTour:{create:options=>captured=options}});return captured;}
  const notes=config('../case-notes-demo.js'),de=config('../escalation-demo.js');
- assert.ok(notes.steps.some(s=>s.stage==='evidence'));assert.ok(notes.steps.some(s=>s.stage==='resolve'));assert.equal(de.steps[0].target,'#caseTitle');
+ assert.ok(notes.steps.some(s=>s.stage==='evidence'));assert.ok(notes.steps.some(s=>s.stage==='resolve'));assert.equal(de.steps[1].target,'#caseTitle','the generated title follows the welcome step');
  for(const tour of [notes,de])for(const step of tour.steps){assert.ok(step.target);assert.ok(step.what);assert.ok(step.why);}
 });
 test('onStart prepares the page and onFinish receives its result once',()=>{
@@ -56,4 +56,22 @@ test('Case Notes tour covers every area of the tool and points at real controls'
  const targets=captured.steps.map(s=>s.target).join(' ');
  for(const area of ['#caseHistory','.timer','#workflowTabs','diagnose','evidence','resolve','learn','#caseDetailsSection','#caseEntryTabs','#newCaseEntry','#caseSummaryTab','#notesSection','#popoutNotes','#actionPlanSection','#noteRubric','.toolkit-nav','.note-actions','.devin-copy','#toolboxLauncher','#toolsMenu','#trainingMenu','#requestFeature','#themeToggle','#customizeFields','#openBackupRestore'])
   assert.ok(targets.includes(area),'tour covers '+area);
+});
+test('Escalation tour covers the current form and points at real controls',()=>{
+ let captured;vm.runInNewContext(fs.readFileSync(require.resolve('../escalation-demo.js'),'utf8'),{GuidedTour:{create:options=>captured=options}});
+ const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../site-topbar.js'),'utf8'),{window,document:{getElementById:()=>null}});
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8')+window.SiteTopbar.markup('escalation');
+ assert.equal(typeof captured.onStart,'function');assert.equal(typeof captured.onFinish,'function');
+ for(const {target,container} of captured.steps){
+  for(const selector of [target.split(' ').pop(),container].filter(Boolean)){
+   if(selector.startsWith('#'))assert.ok(html.includes(`id="${selector.slice(1)}"`),selector);
+   else assert.match(html,new RegExp(`class="[^"]*\\b${selector.slice(1)}\\b`),selector);
+  }
+ }
+ const targets=captured.steps.map(s=>s.target).join(' '),text=captured.steps.map(s=>s.what).join(' ');
+ for(const area of ['#caseTitle','#sourceNotePanel','#problem','#platform','#reproducible','#troubleshooting','#evidence','#openLogHelper','#changes','#addAction','.form-actions','#scoreRing','#categoryGrid','#strengthsSection','#copySection','.devin-copy','#trainingMenu','#toolsMenu','#settingsMenu','#requestFeature','#themeToggle'])
+  assert.ok(targets.includes(area),'tour covers '+area);
+ for(const field of ['Severity','Service Impact','Affected Systems / Users','Customer Country','time zone','Exact errors and timestamps','Log Location','Reason logs cannot be obtained','Recent changes'])
+  assert.ok(text.includes(field),'tour explains '+field);
+ assert.doesNotMatch(text,/Service Tag field|Expected behavior|Issue Description/,'no removed fields');
 });
