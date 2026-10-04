@@ -145,3 +145,10 @@ button:focus-visible, a:focus-visible { outline:3px solid #4a9eff; outline-offse
 @media(max-width:650px) { .action-row { grid-template-columns:1fr; } }
 
 #logReasonField[hidden] { display:none; }
+/* Hidden until focused: the first Tab on a page jumps past the top bar to the content. */
+.skip-link { position:absolute; left:16px; top:-48px; z-index:100; padding:8px 12px; border-radius:6px; background:var(--panel-bg); color:var(--ink); border:2px solid var(--blue); }
+.skip-link:focus { top:12px; }
+.rubric-points { margin:12px 0 0; padding-left:18px; font-size:12px; line-height:1.5; color:var(--rubric-dt); }
+.rubric-points li { margin-bottom:4px; }
+.rubric-details { margin-top:10px; }
+.rubric-details summary { font-size:12px; font-weight:700; color:var(--blue); cursor:pointer; }
