@@ -43,6 +43,13 @@
   .copy-actions .devin-copy { grid-template-columns:minmax(0,1fr); }
   .editor :where(input,textarea,select,button,[contenteditable]) { scroll-margin-top:46vh; }
 }
+/* On phones and short laptop screens a floating dock would cover much of the editor; it scrolls with the page there
+   and the floating toolbox keeps Email, Escalate and Copy within reach. */
+@media(max-width:899px), (max-height:779px) {
+  .copy-actions, .copy-actions.is-floating { position:static; max-height:none; overflow:visible; background:var(--panel-bg); box-shadow:none; }
+  .editor :where(input,textarea,select,button,[contenteditable]) { scroll-margin-top:0; }
+  #toggleActionDock { display:none; }
+}
 @media(max-width:650px) { .field-grid { grid-template-columns:minmax(0,1fr); } .hero { flex-wrap:wrap; } .timer { flex-shrink:1; } }
 @media print {
   body.printing-case > :not(#casePrint) { display:none!important; }
@@ -130,7 +137,7 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 #welcome { text-align:center; padding:85px 20px; color:var(--muted); }
 #welcome h2 { margin-top:20px; color:var(--ink); }
 @media(max-width:800px) { .notes-layout { grid-template-columns:1fr; } .copy-actions.workspace-width { width:auto; margin-left:0; } #historyList { max-height:190px; } #welcome { padding:40px 10px; } }
-@media(max-width:500px) { .copy-actions { position:sticky; top:8px; margin:12px 0 20px; display:flex; align-items:stretch; flex-direction:column; } .hero>button { margin-top:18px; } }
+@media(max-width:500px) { .copy-actions { margin:12px 0 20px; display:flex; align-items:stretch; flex-direction:column; } .hero>button { margin-top:18px; } }
 
 .hero-actions { display:flex; gap:12px; flex-wrap:wrap; }
 .field-customizer-dialog { max-width:600px; width:90%; }
