@@ -112,13 +112,19 @@ test('required logs is a Yes checkbox; unchecked hides Log Location and asks for
 test('unchecked boxes alone do not count as work or produce a copy',()=>{
  const h=harness();h.run('populate({})');
  assert.equal(h.run('hasWork()'),false);assert.equal(h.run('formatEscalation(reviewData())'),'');
- h.get('reproducible').checked=true;assert.equal(h.run('hasWork()'),true);
+ h.get('evidence').checked=true;assert.equal(h.run('hasWork()'),true);
 });
-test('reproducible is a checkbox; checking it shows required reproduction steps',()=>{
+test('reproducible is a required Yes/No select; Yes shows required reproduction steps',()=>{
  const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
- assert.match(html,/<input type="checkbox" id="reproducible"[^>]*>Is this issue reproducible\?<\/label>\s*<label class="field wide" id="reproductionField" hidden>Reproduction steps <b>Required<\/b><textarea id="reproduction"/);
- const h=harness();assert.equal(h.get('reproducible').checked,false);assert.equal(h.get('reproductionField').hidden,true);
- h.get('reproducible').checked=true;for(const f of h.get('reproducible').listeners.change)f();
+ assert.match(html,/<label class="field">Is this issue reproducible\? <b>Required<\/b><select id="reproducible" required[^>]*><option value="">Select an answer<\/option><option>Yes<\/option><option>No<\/option><\/select><\/label>\s*<label class="field wide" id="reproductionField" hidden>Reproduction steps <b>Required<\/b><textarea id="reproduction"/);
+ const h=harness();assert.equal(h.get('reproducible').value,'');assert.equal(h.get('reproductionField').hidden,true);
+ const unanswered=h.run('evaluate({...samples.strong,reproducible:""})');
+ assert.ok(unanswered.blocking_issues.some(item=>item.field==='reproducible'),'the answer is required');
+ assert.equal(unanswered.ready_to_escalate,false);
+ assert.ok(h.run('evaluate({...samples.strong,reproducible:"Maybe"})').blocking_issues.some(item=>item.field==='reproducible'),'only Yes or No is accepted');
+ h.get('reproducible').value='No';for(const f of h.get('reproducible').listeners.change)f();
+ assert.equal(h.get('reproductionField').hidden,true);
+ h.get('reproducible').value='Yes';for(const f of h.get('reproducible').listeners.change)f();
  assert.equal(h.get('reproductionField').hidden,false);
  const blocked=h.run('evaluate({...samples.strong,reproducible:"Yes",reproduction:""})');
  assert.ok(blocked.blocking_issues.some(item=>item.field==='reproduction'),'steps are required when reproducible');
@@ -130,17 +136,18 @@ test('reproducible is a checkbox; checking it shows required reproduction steps'
  // Steps typed before unchecking are kept in the draft but neither scored nor copied.
  h.run('populate({...samples.strong,reproducible:"No"})');assert.equal(h.get('reproductionField').hidden,true);
  const copy=h.run('formatEscalation(reviewData())');assert.match(copy,/IS THIS ISSUE REPRODUCIBLE\?:\nNo/);assert.doesNotMatch(copy,/REPRODUCTION STEPS/);
- h.run('populate(samples.strong)');assert.equal(h.get('reproducible').checked,true,'samples with steps count as reproducible');
+ h.run('populate(samples.strong)');assert.equal(h.get('reproducible').value,'Yes','the strong sample is reproducible');
  assert.match(h.run('formatEscalation(reviewData())'),/IS THIS ISSUE REPRODUCIBLE\?:\nYes\n\nREPRODUCTION STEPS:/);
 });
-test('drafts saved before the reproducible question keep their steps',()=>{
+test('drafts and imports without a reproducible answer keep their steps; without steps the question stays unanswered',()=>{
  const h=harness();h.run('populate(samples.strong);markChanged();saveDraft()');
  const old=JSON.parse(h.stored());delete old.fields.reproducible;
  const restored=harness({stored:JSON.stringify(old)});
- assert.equal(restored.get('reproducible').checked,true);assert.equal(restored.get('reproductionField').hidden,false);
+ assert.equal(restored.get('reproducible').value,'Yes');assert.equal(restored.get('reproductionField').hidden,false);
  assert.ok(restored.get('reproduction').value.startsWith('1.'));
  const noSteps=JSON.parse(h.stored());delete noSteps.fields.reproducible;noSteps.fields.reproduction='';
- assert.equal(harness({stored:JSON.stringify(noSteps)}).get('reproducible').checked,false);
+ const unanswered=harness({stored:JSON.stringify(noSteps)});assert.equal(unanswered.get('reproducible').value,'');assert.equal(unanswered.get('reproductionField').hidden,true);
+ const imported=harness();imported.run('populate({problem:"x",reproduction:""})');assert.equal(imported.get('reproducible').value,'','a Case Notes import must be answered by the technician');
 });
 
 test('senior assistance is excluded from scoring and export; total remains 100',()=>{
@@ -229,7 +236,7 @@ test('incomplete action pairs receive no fabricated outcome credit or overall re
 // --- Content scoring: fixtures from the scoring review (items 9-15) ---
 const lorem='Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident 1.';
 const requiredText=['problem','impact','timeline','changes','reproduction','troubleshooting','results','osVersion'];
-const baseForm={evidence:'Yes',supportType:'OEM OS',country:'US',os:'Windows Server',severity:'Sev 2',production:'Service unavailable',affected:'1 host'};
+const baseForm={evidence:'Yes',reproducible:'Yes',supportType:'OEM OS',country:'US',os:'Windows Server',severity:'Sev 2',production:'Service unavailable',affected:'1 host'};
 const honest={...baseForm,problem:'Hyper-V host crashes.',impact:'Production down for all users.',timeline:'Started 2026-10-01, happens daily',changes:'None',reproduction:'1. Start VMs\n2. Wait',troubleshooting:'1. Rebooted\n2. Checked logs',results:'No change observed.',osVersion:'Windows Server 2022'};
 function run(h,form){h.ctx.fixture=form;return h.run('evaluate(fixture)');}
 test('lorem ipsum in every required field is flagged as placeholder text and is not Ready',()=>{
