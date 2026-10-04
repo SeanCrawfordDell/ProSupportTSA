@@ -92,7 +92,7 @@ test('Case Notes and Escalation Quality share one helper with identical behavior
  const versions=['../case-notes.html','../escalation-quality.html'].map(page=>/log-helper\.js\?v=([^"]+)"/.exec(fs.readFileSync(require.resolve(page),'utf8'))[1]);
  assert.equal(versions[0],versions[1],'both pages load the same helper version');
  for(const script of ['../js/case-notes.js','../js/app.js']){
-  const init=/LogHelper\?\.init\(\{([\s\S]*?)\n  ?\}\);/.exec(fs.readFileSync(require.resolve(script),'utf8'))[1];
+  const init=/LogHelper\?\.init\(\{([\s\S]*?)\n\s*\}\);/.exec(fs.readFileSync(require.resolve(script),'utf8'))[1];
   assert.ok(!/canAdd|addLabel|add\(/.test(init),script+' passes only page context');
  }
  const markup=ui().window.LogHelper.markup;

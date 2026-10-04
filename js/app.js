@@ -377,19 +377,6 @@ byId("copyButton").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(text); byId("copyStatus").textContent = "Escalation copied."; saveDraft(); }
   catch { byId("copyStatus").textContent = "Copy failed. Retry or select and copy the preview manually."; byId("copyPreview").focus(); byId("copyPreview").select(); }
 });
-byId("copyDevin").addEventListener("click", async () => {
-  const text = DevinPrompt.build(byId("devinTask").value, "Domain Engineer Escalation Request", formatEscalation(reviewData()));
-  try {
-    await navigator.clipboard.writeText(text);
-    byId("devinStatus").textContent = "Copied for AI. Paste the prompt into your AI tool, then review its suggestions before applying them.";
-    saveDraft();
-  } catch {
-    byId("devinStatus").textContent = "Could not copy the AI prompt. Allow clipboard access and try again.";
-  }
-});
-
-// AI task picker and the "Add your own" dialog are shared with Case Notes.
-DevinPrompt.mountTaskManager(byId, { document, confirm: message => confirm(message) });
 setInterval(saveDraft, 10000);
 document.addEventListener("visibilitychange", () => { if (document.hidden) saveDraft(); });
 window.addEventListener("pagehide", saveDraft);
@@ -434,11 +421,3 @@ window.LogHelper?.init({
   context: () => ({id:"escalation",os:value("os"),platform:value("platform"),symptom:issueType})
 });
 
-if (window.DevinIntegration && window.DevinConnection) {
-  let session;try{session=window.sessionStorage;}catch{}
-  window.DevinIntegration.init({
-    client:window.DevinConnection.createClient({sessionStorage:session}),
-    sourceLabel:"Domain Engineer Escalation Request",isPopout:false,
-    snapshot:()=>({caseId:null,prompt:DevinPrompt.build(byId("devinTask").value,"Domain Engineer Escalation Request",formatEscalation(reviewData()))})
-  });
-}
