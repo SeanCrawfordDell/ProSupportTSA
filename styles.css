@@ -36,8 +36,6 @@ h2,h3,p { margin-top:0; }
 .field b { justify-self:start; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--field-badge-text); background:var(--field-badge-bg); padding:3px 6px; border-radius:4px; }
 .field small { color:var(--field-small); font-weight:400; }
 /* Yes/No questions shown as a checkbox beside their label. */
-.check-field { display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; }
-.check-field input[type="checkbox"] { width:20px; height:20px; margin:0; padding:0; flex:none; accent-color:var(--blue); cursor:pointer; }
 #reproductionField[hidden], #logReasonField[hidden], #logLocationField[hidden] { display:none; }
 input,textarea,select { width:100%; border:1px solid var(--input-border); border-radius:8px; padding:11px 12px; color:var(--input-text); background:var(--input-bg); outline:none; transition:border-color .15s,box-shadow .15s; font-weight:400; }
 select { cursor:pointer; }

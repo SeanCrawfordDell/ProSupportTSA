@@ -11,14 +11,11 @@ const fieldIds = ["problem", "impact", "timeline", "country", "os", "errors", "r
 const required = ["problem", "severity", "production", "affected", "impact", "timeline", "country", "os", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "supportType", "osVersion"];
 // A plain "none" is an acceptable answer for Recent changes, unlike other required fields.
 const noChanges = /^(?:none(?: known)?|no(?: known| recent)? changes?(?: known)?|nothing changed)\.?$/i;
-// Yes/No questions shown as checkboxes; they keep "Yes"/"No" values so drafts, imports, and copies are unchanged.
-const checkboxFields = ["evidence"];
 // Reproduction steps are required, shown, scored, and copied only when the issue is answered as reproducible.
 const isReproducible = form => form.reproducible === "Yes";
 const hasLogs = form => form.evidence === "Yes";
 const requiredFor = form => required.filter(id => id !== "reproduction" || isReproducible(form));
-// An unchecked box is the default answer, not content: a form with only "No" answers counts as empty.
-const hasContent = form => fieldIds.some(id => checkboxFields.includes(id) ? form[id] === "Yes" : form[id]);
+const hasContent = form => fieldIds.some(id => form[id]);
 const labels = {
   platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected Systems / Users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", country: "customer country", os: "OS/Solution", errors: "exact errors and timestamps", reproducible: "Is this issue reproducible?", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Do you have the Required Logs for this Escalation?", changes: "recent changes"
 };
@@ -75,7 +72,7 @@ Object.assign(samples.strong, {reproducible:"Yes", platform:"PowerEdge R750", su
 
 function value(id) {
   const input = document.getElementById(id);
-  return checkboxFields.includes(id) ? (input.checked ? "Yes" : "No") : input.value.trim();
+  return input.value.trim();
 }
 function caseTitle(form) {
   return [form.platform, form.os, form.problem].map(text => String(text || "").replace(/\s+/g," ").trim()).filter(Boolean).join(" | ");
@@ -323,7 +320,6 @@ function updateLogReasonVisibility() {
 function populate(fields) {
   fieldIds.forEach(id => {
     const input = byId(id), raw = typeof fields[id] === "string" ? fields[id] : "", text = id === "supportType" ? normalizeSupportType(raw) : id === "production" ? normalizeServiceImpact(raw) : raw;
-    if (checkboxFields.includes(id)) { input.checked = text === "Yes"; return; }
     // Drafts, samples, and imports from before the reproducible question count as reproducible when they have steps; otherwise it stays unanswered.
     if (id === "reproducible" && typeof fields.reproducible !== "string" && fields.reproduction?.trim?.()) { input.value = "Yes"; return; }
     if (input.tagName === "SELECT" && text && ![...input.options].some(option => option.value === text)) { const option = document.createElement("option"); option.value = text; option.textContent = text; input.append(option); }
@@ -350,7 +346,7 @@ function runReview() {
 }
 byId("escalationForm").addEventListener("input", markChanged);
 byId("escalationForm").addEventListener("change", markChanged);
-for (const id of [...checkboxFields, "reproducible"]) byId(id).addEventListener("change", updateLogReasonVisibility);
+for (const id of ["evidence", "reproducible"]) byId(id).addEventListener("change", updateLogReasonVisibility);
 byId("addAction").addEventListener("click", () => { actions = readActions(); actions.push({action:"",result:""}); renderActions(); markChanged(); byId("actionRows").lastElementChild.querySelector("textarea").focus(); });
 byId("escalationForm").addEventListener("submit", event => { event.preventDefault(); runReview(); byId("resultTitle").setAttribute("tabindex","-1"); byId("resultTitle").focus(); });
 for (const kind of ["weak","strong"]) byId(kind === "weak" ? "loadWeak" : "loadStrong").addEventListener("click", () => {
