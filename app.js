@@ -13,11 +13,12 @@ const required = ["problem", "impact", "timeline", "expected", "country", "os", 
 const checkboxFields = ["evidence", "reproducible"];
 // Reproduction steps are required only when the issue is reproducible. A form without the answer is treated as reproducible.
 const isReproducible = form => form.reproducible !== "No";
+const hasLogs = form => form.evidence === "Yes";
 const requiredFor = form => required.filter(id => id !== "reproduction" || isReproducible(form));
 // An unchecked box is the default answer, not content: a form with only "No" answers counts as empty.
 const hasContent = form => fieldIds.some(id => checkboxFields.includes(id) ? form[id] === "Yes" : form[id]);
 const labels = {
-  serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproducible: "Is this issue reproducible?", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Have you Gathered Logs?", changes: "recent changes"
+  serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproducible: "Is this issue reproducible?", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Do you have the Required Logs for this Escalation?", changes: "recent changes"
 };
 // Short answers that match one of these as a prefix or whole word are too vague to score (fields under 25 characters only).
 const weakPhrases = /(?:^|[^a-z0-9])(?:n\/a|na|none|unknown|not working|not sure|broken|issue|problem|see above|as above|same|latest|newest|current|tbd|tba|asap|ok|okay|fine|ask customer|pending|wip)(?![a-z0-9])/i;
@@ -118,6 +119,7 @@ function evaluate(input = {}) {
   form.production = normalizeServiceImpact(form.production);
   // Steps for an issue marked not reproducible are hidden on the page and never scored or copied.
   if (!isReproducible(form)) form.reproduction = "";
+  if (!hasLogs(form)) form.logLocation = "";
   const blockers = [], warnings = [], strengths = [], requiredFields = requiredFor(form);
   requiredFields.forEach(id => {
     if (!form[id]) addFinding(blockers, id, "Required information is missing.", "blocker");
@@ -267,7 +269,7 @@ function reviewData() {
 function formatEscalation(form) {
   if (!hasContent(form)) return "";
   const order = ["serviceRequest", "tag", "platform", "os", "osVersion", "supportType", "country", "severity", "production", "affected", "problem", "impact", "timeline", "expected", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "logReason", "collectionPlan", "changes", "sourceNote"];
-  const sections = order.filter(id => form[id] && (id !== "logReason" || form.evidence === "No") && (id !== "reproduction" || isReproducible(form))).map(id => `${labels[id].toUpperCase()}:\n${form[id]}`);
+  const sections = order.filter(id => form[id] && (id !== "logReason" || form.evidence === "No") && (id !== "logLocation" || hasLogs(form)) && (id !== "reproduction" || isReproducible(form))).map(id => `${labels[id].toUpperCase()}:\n${form[id]}`);
   const title=caseTitle(form);
   if(title)sections.unshift("CASE TITLE:\n"+title);
   return sections.join("\n\n");
@@ -314,6 +316,7 @@ function renderActions() {
 }
 function updateLogReasonVisibility() {
   byId("logReasonField").hidden = value("evidence") !== "No";
+  byId("logLocationField").hidden = value("evidence") !== "Yes";
   byId("reproductionField").hidden = value("reproducible") !== "Yes";
 }
 function populate(fields) {
