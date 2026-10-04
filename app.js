@@ -8,17 +8,14 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 let formHasData = false;
 
 const fieldIds = ["problem", "impact", "timeline", "country", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
-const required = ["problem", "severity", "production", "affected", "impact", "timeline", "country", "os", "reproduction", "troubleshooting", "results", "evidence", "changes", "supportType", "osVersion"];
+const required = ["problem", "severity", "production", "affected", "impact", "timeline", "country", "os", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "supportType", "osVersion"];
 // A plain "none" is an acceptable answer for Recent changes, unlike other required fields.
 const noChanges = /^(?:none(?: known)?|no(?: known| recent)? changes?(?: known)?|nothing changed)\.?$/i;
-// Yes/No questions shown as checkboxes; they keep "Yes"/"No" values so drafts, imports, and copies are unchanged.
-const checkboxFields = ["evidence", "reproducible"];
-// Reproduction steps are required only when the issue is reproducible. A form without the answer is treated as reproducible.
-const isReproducible = form => form.reproducible !== "No";
+// Reproduction steps are required, shown, scored, and copied only when the issue is answered as reproducible.
+const isReproducible = form => form.reproducible === "Yes";
 const hasLogs = form => form.evidence === "Yes";
 const requiredFor = form => required.filter(id => id !== "reproduction" || isReproducible(form));
-// An unchecked box is the default answer, not content: a form with only "No" answers counts as empty.
-const hasContent = form => fieldIds.some(id => checkboxFields.includes(id) ? form[id] === "Yes" : form[id]);
+const hasContent = form => fieldIds.some(id => form[id]);
 const labels = {
   platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected Systems / Users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", country: "customer country", os: "OS/Solution", errors: "exact errors and timestamps", reproducible: "Is this issue reproducible?", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Do you have the Required Logs for this Escalation?", changes: "recent changes"
 };
@@ -67,15 +64,15 @@ const textQuality = (() => {
 })();
 
 const samples = {
-  weak: { osVersion:"Unknown", supportType:"OEM OS", problem:"System not working", impact:"Users affected", timeline:"Started recently", country:"US", os:"Windows Server", errors:"Unknown", reproduction:"Try to use it", troubleshooting:"Restarted and checked things", results:"No change", evidence:"No", changes:"Unknown" },
+  weak: { reproducible:"Yes", osVersion:"Unknown", supportType:"OEM OS", problem:"System not working", impact:"Users affected", timeline:"Started recently", country:"US", os:"Windows Server", errors:"Unknown", reproduction:"Try to use it", troubleshooting:"Restarted and checked things", results:"No change", evidence:"No", changes:"Unknown" },
   strong: { problem:"PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.", impact:"The infrastructure team cannot use the UI to complete a scheduled firmware compliance review for host DC2-HV-047. One of 24 hosts is affected; production workloads continue running, but the maintenance window closes at 22:00 UTC.", timeline:"First observed 2026-09-10 at 14:18 UTC after the monthly credential rotation. Reproduces on every login attempt. Last confirmed at 16:42 UTC.", country:"US", os:"Windows Server", errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Yes", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known." }
 };
 
-Object.assign(samples.strong, {platform:"PowerEdge R750", supportType:"OEM OS", osVersion:"Windows Server 2022; iDRAC 7.10.30.00", severity:"Sev 3", production:"Service degraded", affected:"1 of 24 hosts; infrastructure team", logLocation:"Case attachments: Lifecycle Controller log and browser trace"});
+Object.assign(samples.strong, {reproducible:"Yes", platform:"PowerEdge R750", supportType:"OEM OS", osVersion:"Windows Server 2022; iDRAC 7.10.30.00", severity:"Sev 3", production:"Service degraded", affected:"1 of 24 hosts; infrastructure team", logLocation:"Case attachments: Lifecycle Controller log and browser trace"});
 
 function value(id) {
   const input = document.getElementById(id);
-  return checkboxFields.includes(id) ? (input.checked ? "Yes" : "No") : input.value.trim();
+  return input.value.trim();
 }
 function caseTitle(form) {
   return [form.platform, form.os, form.problem].map(text => String(text || "").replace(/\s+/g," ").trim()).filter(Boolean).join(" | ");
@@ -323,11 +320,8 @@ function updateLogReasonVisibility() {
 function populate(fields) {
   fieldIds.forEach(id => {
     const input = byId(id), raw = typeof fields[id] === "string" ? fields[id] : "", text = id === "supportType" ? normalizeSupportType(raw) : id === "production" ? normalizeServiceImpact(raw) : raw;
-    if (checkboxFields.includes(id)) {
-      // Drafts, samples, and imports from before the reproducible question count as reproducible when they have steps.
-      input.checked = id === "reproducible" && typeof fields.reproducible !== "string" ? !!fields.reproduction?.trim?.() : text === "Yes";
-      return;
-    }
+    // Drafts, samples, and imports from before the reproducible question count as reproducible when they have steps; otherwise it stays unanswered.
+    if (id === "reproducible" && typeof fields.reproducible !== "string" && fields.reproduction?.trim?.()) { input.value = "Yes"; return; }
     if (input.tagName === "SELECT" && text && ![...input.options].some(option => option.value === text)) { const option = document.createElement("option"); option.value = text; option.textContent = text; input.append(option); }
     input.value = text;
   });
@@ -352,7 +346,7 @@ function runReview() {
 }
 byId("escalationForm").addEventListener("input", markChanged);
 byId("escalationForm").addEventListener("change", markChanged);
-for (const id of checkboxFields) byId(id).addEventListener("change", updateLogReasonVisibility);
+for (const id of ["evidence", "reproducible"]) byId(id).addEventListener("change", updateLogReasonVisibility);
 byId("addAction").addEventListener("click", () => { actions = readActions(); actions.push({action:"",result:""}); renderActions(); markChanged(); byId("actionRows").lastElementChild.querySelector("textarea").focus(); });
 byId("escalationForm").addEventListener("submit", event => { event.preventDefault(); runReview(); byId("resultTitle").setAttribute("tabindex","-1"); byId("resultTitle").focus(); });
 for (const kind of ["weak","strong"]) byId(kind === "weak" ? "loadWeak" : "loadStrong").addEventListener("click", () => {
@@ -500,7 +494,7 @@ try {
   if (raw) {
     const draft = JSON.parse(raw);
     if (draft.fields && draft.fields.collectionPlan === undefined) draft.fields.collectionPlan = "";
-    if (draft.fields && draft.fields.reproducible === undefined) draft.fields.reproducible = draft.fields.reproduction?.trim?.() ? "Yes" : "No";
+    if (draft.fields && draft.fields.reproducible === undefined) draft.fields.reproducible = draft.fields.reproduction?.trim?.() ? "Yes" : "";
     if (draft.version !== 1 || !draft.fields || !fieldIds.every(id => typeof draft.fields[id] === "string") || !Array.isArray(draft.actions) || !draft.actions.every(row => row && typeof row.action === "string" && typeof row.result === "string") || !draft.checks || typeof draft.checks !== "object" || !Object.values(draft.checks).every(v => typeof v === "boolean") || !Object.hasOwn(CaseToolkitCore.templates,draft.issueType)) throw Error("Invalid draft");
     populate(draft.fields); actions = draft.actions; checks = draft.checks; issueType = draft.issueType; byId("draftStatus").textContent = "Saved draft restored";
   }
