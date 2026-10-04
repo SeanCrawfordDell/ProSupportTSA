@@ -3,7 +3,6 @@
   const resources = [
     {id:'escalation', title:'DE Escalation Request', description:'Review escalation readiness before the handoff.', href:'escalation-quality.html', category:'ESCALATION READINESS'},
     {id:'case-notes', title:'Case Notes', description:'Capture investigation details and next steps.', href:'case-notes.html', category:'CASE DOCUMENTATION'},
-    {id:'troubleshooting', title:'Troubleshooting Guides', description:'Step-by-step guides for Windows Server, Hyper-V, clustering, networking, AD and DNS.', href:'troubleshooting.html', category:'TROUBLESHOOTING'},
     {id:'trends', title:'Support Trends', description:'See evidence gaps and recurring issue patterns.', href:'support-trends.html', category:'CASE QUALITY'},
     {id:'catalog', title:'ISG Tools Catalog', description:'Browse shared ISG support tools and requests.', href:'https://seancrawforddell.github.io/DellSupportoolRepository/#/tools', category:'SUPPORT TOOL CATALOG'},
     {id:'microsoft-tools', title:'Microsoft Support Tools', description:'Open the DellProSupportGse tools repository.', href:'https://github.com/DellProSupportGse/Tools', category:'TOOLS'},
@@ -22,7 +21,7 @@
     const pageId = pageIds[location.pathname.split('/').pop()];
     // One pin button per hub page, in the hero: every card on these pages pins the same page.
     if (pageId) document.querySelector('.resource-hero')?.insertAdjacentHTML('beforeend', `<button class="pin-button" type="button" data-pin-id="${pageId}">Pin to toolkit</button>`);
-    const hubs = { 'tools.html':['troubleshooting', 'catalog', 'microsoft-tools'], 'case-management.html':['escalation', 'case-notes'] };
+    const hubs = { 'tools.html':['catalog', 'microsoft-tools'], 'case-management.html':['escalation', 'case-notes'] };
     const hubResources = hubs[location.pathname.split('/').pop()];
     if (hubResources) {
       const grid = document.querySelector('.editable-grid');

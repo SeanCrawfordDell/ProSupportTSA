@@ -86,12 +86,6 @@ Built-in templates can be renamed and edited; **Reset to default** restores thei
 
 Selecting a template does not insert text. **Apply template** appends its notes and next steps, preserving existing notes and screenshots. Template customizations are personal to this browser and included in **Backup Settings**, full folder backups, and **Restore Settings**. Older settings files without template data leave current customizations unchanged.
 
-## Troubleshooting guides
-
-Choose **Tools → Troubleshooting Guides** in the top bar for step-by-step guides for Windows Server, Hyper-V, Failover Clustering, Networking, Active Directory and DNS. It opens on the area that matches the case's issue type. Answer one question at a time; each guide ends with a likely cause, recommended actions and Microsoft Learn references. Tools also contains Tools Hub, ISG Tools Catalog, and Microsoft Support Tools.
-
-**Copy summary** copies the questions, your answers and the outcome. **Send to Case Notes** returns to Case Notes, where a banner offers **Add to case** (appended to the Troubleshooting notes of the open case) or **Dismiss**. Unused results expire after 24 hours. Guides are a starting point; check each step against the linked documentation and case evidence.
-
 ## Sharing and printing
 
 **Print / PDF** opens the browser print dialog. Choose Save as PDF if available.

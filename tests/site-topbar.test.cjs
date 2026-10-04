@@ -35,7 +35,7 @@ test('Case Notes and Escalation Quality render the same top bar',()=>{
  const shared=list=>list.filter(id=>!['loadExampleNote','loadWeak','loadStrong'].includes(id));
  assert.deepEqual(shared(ids(notes)),shared(ids(escalation)),'same menus and controls in the same order');
  for(const markup of [notes,escalation]){
-  assert.ok(/Tools Hub[\s\S]*Troubleshooting Guides[\s\S]*ISG Tools Catalog[\s\S]*Microsoft Support Tools/.test(markup));
+  assert.ok(/Tools Hub[\s\S]*ISG Tools Catalog[\s\S]*Microsoft Support Tools/.test(markup));
   assert.ok(/id="tutorialDemo"[^>]*>Tutorial Demo/.test(markup));
   assert.ok(/Customize Fields[\s\S]*Backup &amp; Restore/.test(markup));
   assert.ok(/Request feature \/ Report bug/.test(markup));
@@ -86,9 +86,9 @@ test('menus stay open while the tutorial is showing them',()=>{
  assert.equal(h.get('settingsMenuList').hidden,true);
 });
 
-test('Troubleshooting and Support Trends use the shared bar without a tutorial menu',()=>{
- const {window}=harness('troubleshooting'),T=window.SiteTopbar;
- for(const [page,file] of [['troubleshooting','../troubleshooting.html'],['trends','../support-trends.html']]){
+test('Support Trends uses the shared bar without a tutorial menu',()=>{
+ const {window}=harness('trends'),T=window.SiteTopbar;
+ for(const [page,file] of [['trends','../support-trends.html']]){
   const markup=T.markup(page);
   assert.ok(!markup.includes('openTraining'));assert.match(markup,/Tools Hub/);assert.match(markup,/href="case-notes.html#backup-restore"/);
   const html=fs.readFileSync(require.resolve(file),'utf8');

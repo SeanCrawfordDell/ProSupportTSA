@@ -23,14 +23,6 @@ The notes Pop out button opens a compact browser window with the existing rich e
 
 Knowledge drafts support formatted copy for OneNote, Markdown downloads, and a clipboard-based Obsidian handoff. Agents must review/redact drafts and choose an approved destination. Obsidian handoff success cannot be confirmed by the browser; no automatic OneNote publishing or screenshot bundling is included.
 
-## Troubleshooting guides
-
-`troubleshooting.html` runs decision-tree guides from `troubleshoot-core.js` (engine, validation, summary text, Case Notes handoff) and data files such as `troubleshoot-data-windows.js`. To add guides for another OS, add it to `osList` in the core, create `troubleshoot-data-<os>.js` that calls `TroubleshootCore.register(...)`, and load it in `troubleshooting.html` and `tests/troubleshoot.test.cjs`.
-
-Workflow shape: `{id, os:[...], area, title, summary, reviewed, sources:[https...], start, steps}`. A step is either `{prompt, detail?, commands?, answers:[{label, next}]}` (two or more answers) or `{outcome:{cause, fix:[...], links?}}`. `register` rejects dangling answers, cycles, unreachable steps, duplicate ids and non-HTTPS links, and the tests validate every registered workflow.
-
-Send to Case Notes writes `dell-support.troubleshoot-handoff.v1`; only the Case Notes tab holding the editor lock reads it and appends it to the selected case after the user clicks **Add to case**.
-
 ## Content scoring (Case Notes rubric and Escalation readiness)
 
 Both rule-based scorers measure content rather than presence and length. `CaseRubricCore.text` (`case-rubric-core.js`) holds the shared plausibility helper; `app.js` carries an identical copy named `textQuality` because the Escalation page loads without the Case Notes modules, and `tests/escalation.test.cjs` asserts the two stay in step. Rules:
