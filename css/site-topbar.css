@@ -1,5 +1,5 @@
 /* Shared top bar for Case Notes and Escalation Quality, rendered by site-topbar.js. */
-.topbar #requestFeature, .topbar #openTroubleshoot { text-decoration:none; display:inline-flex; align-items:center; }
+.topbar #requestFeature { text-decoration:none; display:inline-flex; align-items:center; }
 .topbar { gap:20px; }
 .topbar-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-right:auto; }
 .topbar-actions .button, .topbar-actions .button.primary, .topbar-actions .button.secondary { height:40px; min-height:0; padding:0 14px; border:0; border-radius:5px; background:transparent; box-shadow:none; color:#b8cad4; font-size:14px; font-weight:650; text-decoration:none; display:inline-flex; align-items:center; }

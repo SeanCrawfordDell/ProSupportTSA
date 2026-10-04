@@ -1,5 +1,5 @@
 "use strict";
-// Shared top bar for Case Notes, the escalation page, Troubleshooting and Support Trends. Every page renders it from this file, so the
+// Shared top bar for Case Notes, the escalation page and Support Trends. Every page renders it from this file, so the
 // menus always match. Place <header class="topbar" id="siteTopbar" data-page="…"></header> followed
 // by this script (not deferred), so the controls exist before the page's own scripts run.
 window.SiteTopbar = (() => {
@@ -15,12 +15,10 @@ window.SiteTopbar = (() => {
       training: [["tutorialDemo", "Tutorial Demo"], ["loadWeak", "Load Weak Example"], ["loadStrong", "Load Strong Example"]],
       settingsHere: false
     },
-    "troubleshooting": { name: "Troubleshooting Guides", training: [], settingsHere: false },
     "trends": { name: "Support Trends", training: [], settingsHere: false }
   };
   const tools = [
     ["tools.html", "Tools Hub"],
-    ["troubleshooting.html", "Troubleshooting Guides", "openTroubleshoot"],
     ["https://seancrawforddell.github.io/DellSupportoolRepository/#/tools", "ISG Tools Catalog ↗", "", true],
     ["https://github.com/DellProSupportGse/Tools", "Microsoft Support Tools ↗", "", true]
   ];
