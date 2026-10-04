@@ -130,6 +130,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
   const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
   ctx.CaseSettings = require('../case-settings-core.js');
   ctx.CaseBackup = require('../case-backup-core.js');
+  ctx.CaseExample = require('../case-example-core.js');
   ctx.localStorage = {
     getItem(k){return k==='dell-support.case-notes.v1' ? stored : preferences.get(k) ?? null;},
     setItem(k,v){if(writeError)throw Error('full');if(k==='dell-support.case-notes.v1')stored=v;else preferences.set(k,v);},
@@ -197,6 +198,30 @@ test('dismissed backup warning snoozes for a week across visits',async()=>{
   later.ctx.localStorage.setItem('dell-support.backup-warning-snoozed-until',String(snoozed));
   await new Promise(setImmediate);assert.equal(later.get('backupWarningBanner').hidden,false);
 });
+test('Load Example adds a separate sample case with three dated notes and keeps the current case',()=>{
+  const h=harness();h.setTime(Date.parse('2026-10-04T15:00:00'));h.click('newNote');h.edit('tag','MINE123');
+  const mine=JSON.parse(h.stored()).selected;
+  h.click('loadExampleNote');
+  let saved=JSON.parse(h.stored());
+  assert.equal(saved.selected,h.ctx.CaseExample.ID);
+  assert.equal(saved.cases.find(n=>n.id===mine).tag,'MINE123','your own case is unchanged');
+  const sample=saved.cases.find(n=>n.id===h.ctx.CaseExample.ID);
+  assert.equal(sample.entries.length,3);assert.equal(new Set(sample.entries.map(e=>new Date(e.created).toDateString())).size,3);
+  assert.match(h.get('copyStatus').textContent,/Sample case loaded/);
+  let asked=0;h.ctx.confirm=()=>{asked++;return false;};h.click('loadExampleNote');
+  assert.equal(asked,1,'reloading asks before resetting the sample');
+  assert.equal(JSON.parse(h.stored()).cases.filter(n=>n.id===h.ctx.CaseExample.ID).length,1,'never duplicated');
+});
+test('the tour opens the sample case and returns to the case that was open',()=>{
+  const h=harness();h.setTime(Date.parse('2026-10-04T15:00:00'));h.click('newNote');const mine=JSON.parse(h.stored()).selected;
+  const previous=h.ctx.window.CaseNotesExample.open();
+  assert.equal(previous,mine);assert.equal(JSON.parse(h.stored()).selected,h.ctx.CaseExample.ID);
+  h.ctx.window.CaseNotesExample.restore(previous);
+  assert.equal(JSON.parse(h.stored()).selected,mine);
+  let asked=0;h.ctx.confirm=()=>{asked++;return true;};
+  h.ctx.window.CaseNotesExample.open();assert.equal(asked,0,'an existing sample is reused without prompting');
+  assert.equal(JSON.parse(h.stored()).cases.filter(n=>n.id===h.ctx.CaseExample.ID).length,1);
+});
 test('Remind me in a week warns about data loss before snoozing',async()=>{
   const h=harness();h.get('backupWarningBanner').hidden=true;await new Promise(setImmediate);
   h.click('dismissBackupWarning');
@@ -230,7 +255,7 @@ test('a saved folder that needs permission asks on the next click outside the ba
   assert.equal(h.get('backupWarningBanner').hidden,true);
   await h.events.click({target:{}});assert.equal(requests,1,'only the first click asks');
   const menuClick=harness({folder:{queryPermission:async()=>'prompt',requestPermission:async()=>{throw Error('should not be asked from inside the menu');}}});
-  await new Promise(setImmediate);const inMenu={};menuClick.get('backupMenu').append(inMenu);
+  await new Promise(setImmediate);const inMenu={};menuClick.get('backupRestoreMenu').append(inMenu);
   await menuClick.events.click({target:inMenu});
 });
 test('Backup & Restore lives under Settings and opens a dialog without changing notes',async()=>{

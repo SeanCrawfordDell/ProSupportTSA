@@ -372,6 +372,8 @@
     await refreshBackupFolderButton();
   });
   $("closeBackupRestore")?.addEventListener("click", () => setBackupMenu(false));
+  // The tutorial opens dropdowns to show their items; its Next clicks must not close them again.
+  const tourRunning = () => !!document.body?.classList?.contains?.("tour-running");
   // Training dropdown: Tutorial Demo and Load Example. Closes after a choice, outside click, or Escape.
   function setTrainingMenu(open, focusFirst = false) {
     const menu = $("trainingMenuList"), toggle = $("openTraining");
@@ -384,7 +386,7 @@
   $("trainingMenuList")?.addEventListener("click", event => { if (event.target?.closest?.("button")) setTrainingMenu(false); });
   document.addEventListener?.("click", event => {
     const menu = $("trainingMenu");
-    if (menu && !$("trainingMenuList").hidden && event.target && menu.contains && !menu.contains(event.target)) setTrainingMenu(false);
+    if (menu && !tourRunning() && !$("trainingMenuList").hidden && event.target && menu.contains && !menu.contains(event.target)) setTrainingMenu(false);
   });
   document.addEventListener?.("keydown", event => {
     if (event.key === "Escape" && !$("trainingMenuList")?.hidden) { setTrainingMenu(false); $("openTraining").focus(); }
@@ -413,7 +415,7 @@
     });
     document.addEventListener?.("click", event => {
       const container = $(name + "Menu");
-      if (!$(name + "MenuList")?.hidden && event.target && container?.contains && !container.contains(event.target)) setActionMenu(name, false);
+      if (!tourRunning() && !$(name + "MenuList")?.hidden && event.target && container?.contains && !container.contains(event.target)) setActionMenu(name, false);
     });
     document.addEventListener?.("keydown", event => {
       if (event.key === "Escape" && !$(name + "MenuList")?.hidden) { setActionMenu(name, false); toggle?.focus(); }
@@ -499,7 +501,7 @@
     permissionClickArmed = true;
     document.addEventListener?.("click", async event => {
       if (!permissionClickArmed || !backupFolderHandle) return;
-      if (event?.target && $("backupMenu")?.contains?.(event.target)) return;
+      if (event?.target && $("backupRestoreMenu")?.contains?.(event.target)) return;
       permissionClickArmed = false;
       try {
         if (await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted") return;
@@ -1157,75 +1159,65 @@
   $("newNote").addEventListener("click", newNote);
   $("startNote").addEventListener("click", newNote);
   
-  function populate(data) {
-    Object.entries(data).forEach(([id, value]) => {
-      if (id === "notes") {
-        const richEditor = $("notesRich");
-        const textarea = $("notes");
-        if (richEditor && textarea) {
-          richEditor.innerHTML = value;
-          textarea.value = value;
-        }
-      } else if (id === "next") {
-        const richEditor = $("nextRich");
-        const textarea = $("next");
-        if (richEditor && textarea) {
-          richEditor.innerHTML = value;
-          textarea.value = value;
-        }
-      } else {
-        const input = $(id);
-        if (input) {
-          input.value = value;
-        }
-      }
+  // A small mock FLEP screenshot for the sample case. Returns null where canvas is unavailable.
+  function exampleScreenshot() {
+    try {
+      const canvas = document.createElement("canvas"); canvas.width = 640; canvas.height = 200;
+      const g = canvas.getContext?.("2d"); if (!g) return null;
+      g.fillStyle = "#ffffff"; g.fillRect(0, 0, 640, 200);
+      g.fillStyle = "#0b3b5c"; g.fillRect(0, 0, 640, 30);
+      g.fillStyle = "#ffffff"; g.font = "bold 13px Segoe UI, Arial, sans-serif"; g.fillText("FLEP · System log · HV-NODE-02 · Event ID 27", 12, 20);
+      g.fillStyle = "#e8eef3"; g.fillRect(0, 30, 640, 24);
+      g.fillStyle = "#1d2b36"; g.font = "bold 12px Segoe UI, Arial, sans-serif";
+      [["Time", 12], ["Source", 110], ["Event ID", 210], ["Message", 290]].forEach(([text, x]) => g.fillText(text, x, 47));
+      g.font = "12px Segoe UI, Arial, sans-serif";
+      ["08:17:05", "09:42:13", "11:58:40", "14:21:09", "16:03:52"].forEach((time, row) => {
+        const y = 54 + row * 28;
+        if (row % 2) { g.fillStyle = "#f6f8fa"; g.fillRect(0, y, 640, 28); }
+        g.fillStyle = "#1d2b36";
+        [[time, 12], ["b57nd60a", 110], ["27", 210], ["Network link is disconnected (NIC port 2)", 290]].forEach(([text, x]) => g.fillText(text, x, y + 18));
+      });
+      const data = canvas.toDataURL("image/png");
+      return /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(data) ? { name: "flep-event-27.png", data } : null;
+    } catch { return null; }
+  }
+  const exampleExists = () => ["cases","archive","trash"].some(collection => (state[collection] || []).some(note => note.id === CaseExample.ID));
+  // Adds the sample case, or resets it when it already exists. Your other cases are unchanged.
+  function loadExampleNote({ confirmReset = true } = {}) {
+    if (!writable || copying || !save()) return false;
+    if (confirmReset && exampleExists() && !confirm("Reset the sample case? Any changes you made to it will be replaced.")) return false;
+    const now = Date.now(), image = exampleScreenshot();
+    summaryCaseId = null;
+    const loaded = commitCaseChange(candidate => {
+      for (const collection of ["cases","archive","trash"]) candidate[collection] = (candidate[collection] || []).filter(note => note.id !== CaseExample.ID);
+      if (candidate.revisions) delete candidate.revisions[CaseExample.ID];
+      CaseNotes.create(candidate, CaseExample.ID, now);
+      Object.assign(candidate.cases.find(note => note.id === CaseExample.ID), CaseExample.build({ now, customFields: candidate.fieldConfig.customFields, image }));
     });
+    if (loaded) $("copyStatus").textContent = "Sample case loaded with three dated notes. Explore or edit it freely; archive or delete it from Recent cases when you are done.";
+    return loaded;
   }
-  
-  function loadExampleNote() {
-    console.log("loadExampleNote called, writable:", writable, "copying:", copying);
-    if (!writable || copying) {
-      console.log("Button disabled - writable:", writable, "copying:", copying);
-      return;
+  // The tutorial opens the sample case so every control has content, then returns to the case you had open.
+  window.CaseNotesExample = {
+    open() {
+      if (!writable || copying || !save()) return null;
+      const previous = state.selected;
+      if (!state.cases.some(note => note.id === CaseExample.ID)) return loadExampleNote({ confirmReset:false }) ? previous : null;
+      summaryCaseId = null;
+      if (previous !== CaseExample.ID && !commitCaseChange(candidate => { candidate.selected = CaseExample.ID; })) return null;
+      return previous;
+    },
+    restore(previous) {
+      if (!writable || copying || !save() || previous === undefined || previous === state.selected) return;
+      if (previous !== null && !state.cases.some(note => note.id === previous)) return;
+      summaryCaseId = null;
+      commitCaseChange(candidate => { candidate.selected = previous; });
     }
-    
-    // Check if there's already data in the form
-    const currentTag = $("tag")?.value || "";
-    const currentIssue = $("issue")?.value || "";
-    const hasData = currentTag || currentIssue;
-    
-    if (hasData && !confirm("Replace the current case with an example? This will overwrite your current work.")) return;
-    
-    const exampleData = {
-      tag: "ABC1234",
-      platform: "PowerEdge R750",
-      request: "123456789",
-      os: "Windows Server",
-      osVersion: "Windows Server 2022",
-      country: "US",
-      supportType: "OEM OS",
-      logLocation: "Case attachments: Lifecycle Controller log and browser network trace",
-      issue: "PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.",
-      notes: "1. Tested Chrome and Edge to exclude browser cache issues.<br>2. Tested from a second workstation on VLAN 120 - same result.<br>3. Restarted iDRAC management controller - UI returned for 12 minutes, then 503 returned.<br>4. Exported Lifecycle Controller log showing RAC0182 errors before each failure.<br>5. Compared settings with healthy host DC2-HV-046 - all settings match except firmware version.",
-      next: "1. Upgrade iDRAC firmware from 7.10.20.00 to 7.10.30.00 on affected host.<br>2. Monitor for 24 hours after firmware update to confirm issue is resolved.<br>3. If issue persists, escalate to Dell engineering for further investigation."
-    };
-    
-    console.log("Populating example data");
-    populate(exampleData);
-    // Keep the selected case in step with the form so the example is saved and scored.
-    const exampleNote = selected();
-    if (exampleNote) { Object.assign(exampleNote, exampleData); exampleNote.updated = Date.now(); }
-    dirty = true;
-    save();
-    // Don't call render() since we've already populated the form directly
-    // render() would overwrite our values with the saved note data
-    $("copyStatus").textContent = "Example case note loaded. You can modify it before saving.";
-    console.log("Example loaded successfully");
-  }
+  };
   
   const loadExampleBtn = $("loadExampleNote");
   if (loadExampleBtn) {
-    loadExampleBtn.addEventListener("click", loadExampleNote);
+    loadExampleBtn.addEventListener("click", () => loadExampleNote());
   }
   
   // Field customization
