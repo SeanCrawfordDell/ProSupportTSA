@@ -1,11 +1,6 @@
-/*
-Secure code generated utilizing Code Guardian.
-Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-001.4, CG-INPUT-001.5, CG-INPUT-001.6, CG-INPUT-001.7, CG-INPUT-001.8
-*/
 "use strict";
 
 
-let formHasData = false;
 
 const fieldIds = ["problem", "impact", "timeline", "country", "timezone", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
 const required = ["problem", "severity", "production", "affected", "impact", "timeline", "country", "timezone", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "changes", "supportType", "osVersion"];
@@ -93,7 +88,6 @@ function outcomeCoverage(troubleshooting, results) {
 function numberedSteps(text) { return (text.match(/(?:^|\n)\s*(?:\d+[.)]|[-•])/g) || []).length; }
 function data() { 
   const formData = Object.fromEntries(fieldIds.map(id => [id, value(id)]));
-  formHasData = hasContent(formData);
   return formData;
 }
 
@@ -232,7 +226,7 @@ function render(result) {
     const item = document.createElement("div");
     item.className = "category";
     const label = document.createElement("span");
-    label.textContent = name.replace("_", " ");
+    label.textContent = name;
     const scoreText = document.createElement("strong");
     scoreText.textContent = `${score} / ${maxima[name]}`;
     item.append(label, scoreText);
@@ -242,6 +236,8 @@ function render(result) {
   renderList("warnings", "warningsSection", "warningCount", result.warnings);
   renderList("strengths", "strengthsSection", null, result.strengths);
   document.getElementById("jsonOutput").textContent = JSON.stringify(result, null, 2);
+  // Raw review output is a developer aid: shown only with ?debug in the address.
+  document.getElementById("jsonPanel").hidden = !new URLSearchParams(location.search).has("debug");
   document.getElementById("copySection").hidden = false;
   document.getElementById("copyPreview").value = formatEscalation(reviewData());
   document.getElementById("copyButton").disabled = !result.ready_to_escalate;
@@ -273,7 +269,7 @@ function formatEscalation(form) {
 }
 function markChanged() {
   refreshCaseTitle();
-  dirty = true; formHasData = true; lastReviewed = "";
+  dirty = true; lastReviewed = "";
   byId("draftStatus").textContent = "Unsaved changes";
   byId("copyButton").disabled = true;
   byId("copyStatus").textContent = "";

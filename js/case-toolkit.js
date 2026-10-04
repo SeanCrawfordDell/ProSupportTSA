@@ -21,27 +21,13 @@ window.CaseToolkit = (() => {
     const date=new Date(iso), pad=n=>String(n).padStart(2,"0");
     return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
-  function refreshChecklist() {
-    const note=api?.current();if(!note)return;
-    const data=core.ensure(note);
-    if(!$("logChecklist"))return;
-    $("logChecklistIntro").textContent=note.os ? `Suggested evidence for ${note.os} · ${core.templates[data.issueType]?.name || 'Custom template'}.` : "Select OS/Solution above for product-specific collection guidance.";
-    $("logChecklist").replaceChildren(...core.checklist(note).map(item=>{
-      const row=document.createElement("div");row.className="checklist-item";
-      const label=document.createElement("label"),check=document.createElement("input");check.type="checkbox";check.checked=!!data.checks[item.id];check.disabled=!api.canEdit();
-      check.addEventListener("change",()=>api.mutate(current=>{core.ensure(current).checks[item.id]=check.checked;}));
-      label.append(check,document.createTextNode(item.text));row.append(label);
-      if(item.url){const link=document.createElement("a");link.href=item.url;link.textContent=item.label+" ↗";link.target="_blank";link.rel="noopener noreferrer";row.append(link);}
-      return row;
-    }));
-  }
   function refresh() {
     window.CaseWorkflow?.refresh();
     const note=api?.current();if(!note)return;
     const data=core.ensure(note);
     for(const [id,key] of Object.entries(bindings))$(id).value=data[key];
     $("followupDue").value=localDate(data.due);
-    notify("");$("templateStatus").textContent="";refreshTemplates();refreshChecklist();
+    notify("");$("templateStatus").textContent="";refreshTemplates();
   }
   async function copyDraft(key) {
     const note=api.current();if(!note || !api.canEdit())return;
@@ -74,7 +60,7 @@ window.CaseToolkit = (() => {
       $(id).addEventListener("input",()=>{
         if(!api.canEdit())return;
         api.mutate(note=>{core.ensure(note)[key]=$(id).value;},false);
-        if(key==="issueType") { $("templateStatus").textContent=""; refreshTemplates();refreshChecklist(); }
+        if(key==="issueType") { $("templateStatus").textContent=""; refreshTemplates(); }
       });
     });
     $("followupDue").addEventListener("change",()=>{
@@ -107,7 +93,7 @@ window.CaseToolkit = (() => {
     $("copyCustomer").addEventListener("click",()=>copyDraft("customerDraft"));
     $("copySummary").addEventListener("click",()=>copyDraft("summaryDraft"));
   }
-  return {init,refresh,refreshChecklist,refreshTemplates,canEdit:()=>!!api?.canEdit(),setEditable(value){window.CaseWorkflow?.setEditable(value);$("toolkitFields").disabled=!value;
+  return {init,refresh,refreshTemplates,canEdit:()=>!!api?.canEdit(),setEditable(value){window.CaseWorkflow?.setEditable(value);$("toolkitFields").disabled=!value;
     $("caseIssueType").disabled=!value || !api?.current();
     $("manageTemplates").disabled=!value;
     refreshTemplates();

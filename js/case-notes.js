@@ -1427,7 +1427,6 @@
     $("copyStatus").textContent = "";
     if (restarting) save();
     tick(); history();
-    if (event.target.id === "os") window.CaseToolkit?.refreshChecklist();
   }
   $("noteForm").addEventListener("input", onCaseFieldInput);
   // OS/Solution lives in Triage, outside the main case-details form.

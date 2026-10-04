@@ -11,6 +11,8 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     # Loopback only, on the port the docs and the Devin companion preview expect.
     PORT = 4187
+    # Allow an immediate restart while the previous socket is still in TIME_WAIT.
+    socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("127.0.0.1", PORT), NoCacheHandler) as httpd:
         print(f"Serving http://127.0.0.1:{PORT}/ with caching disabled")
         httpd.serve_forever()
