@@ -80,3 +80,14 @@ test('per-tool command copy exports only the command and reports clipboard failu
   else assert.equal(h.copied(),'Get-ClusterLog -TimeSpan 30 -UseLocalTime -Destination .');
  }
 });
+test('Case Notes shows the plan without an add button',()=>{
+ const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8'),js=fs.readFileSync(require.resolve('../case-notes.js'),'utf8');
+ assert.ok(!html.includes('id="helperAdd"'));assert.ok(!html.includes('Add to Next Steps'));assert.ok(!/addLabel/.test(js));
+ const elements={},node=()=>({value:'',textContent:'',children:[],listeners:{},options:[],append(...items){this.children.push(...items)},replaceChildren(...items){this.children=items},addEventListener(k,f){this.listeners[k]=f},showModal(){this.open=true},close(){this.open=false},focus(){},select(){}});
+ const get=id=>id==='helperAdd'?null:(elements[id]??=node());get('os').options=[{value:'Windows Server',textContent:'Windows Server'}];
+ const window={};
+ vm.runInNewContext(fs.readFileSync(require.resolve('../log-helper.js'),'utf8'),{window,document:{getElementById:get,createElement:node},LogHelperCore:core,navigator:{clipboard:{async writeText(){}}}});
+ window.LogHelper.init({context:()=>({id:'one',os:'Windows Server',platform:'PowerEdge R750',symptom:'network'})});
+ get('openLogHelper').listeners.click();
+ assert.equal(get('logHelperDialog').open,true);assert.match(get('helperPlanText').value,/Packet Monitor/);
+});

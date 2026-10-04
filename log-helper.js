@@ -26,7 +26,7 @@ window.LogHelper = (() => {
         return section;
       }));
       $("helperPlanText").value=LogHelperCore.text(activePlan);
-      added=false;$("helperStatus").textContent="";$("helperAdd").disabled=!api.canAdd();
+      added=false;$("helperStatus").textContent="";if($("helperAdd"))$("helperAdd").disabled=!api.canAdd?.();
     }
     $("openLogHelper").addEventListener("click",()=>{
       const context=api.context();sourceId=context.id;
@@ -37,7 +37,7 @@ window.LogHelper = (() => {
       $("helperContext").textContent=Object.hasOwn(LogHelperCore.symptoms,context.symptom)
         ? "Based on this case's Issue type: "+LogHelperCore.symptoms[context.symptom]+". Overrides below affect this plan only."
         : "No matching built-in Issue type (custom or unspecified). Showing General investigation; choose a collection scenario below without changing your case.";
-      $("helperAdd").textContent=api.addLabel;
+      if($("helperAdd"))$("helperAdd").textContent=api.addLabel;
       render();dialog.showModal();
     });
     for(const id of ["helperOS","helperSymptom"]) $(id).addEventListener("change",render);
@@ -48,7 +48,8 @@ window.LogHelper = (() => {
       try{await navigator.clipboard.writeText($("helperPlanText").value);$("helperStatus").textContent="Collection plan copied.";}
       catch{$("helperStatus").textContent="Copy failed. Expand Plain text plan to select and copy it manually.";$("helperPlain").open=true;$("helperPlanText").focus();$("helperPlanText").select();}
     });
-    $("helperAdd").addEventListener("click",()=>{
+    // Pages without an add button (Case Notes) show the plan only.
+    $("helperAdd")?.addEventListener("click",()=>{
       if(added)return;
       if(!api.canAdd() || api.context().id!==sourceId){$("helperStatus").textContent="The case changed or is read-only. Reopen the helper for the current case.";return;}
       const saved=api.add($("helperPlanText").value);
