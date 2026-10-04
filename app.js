@@ -8,13 +8,13 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 let formHasData = false;
 
 const fieldIds = ["problem", "impact", "timeline", "country", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
-const required = ["problem", "severity", "production", "affected", "impact", "timeline", "country", "os", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "supportType", "osVersion"];
+const required = ["problem", "severity", "production", "affected", "impact", "timeline", "country", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "changes", "supportType", "osVersion"];
 // A plain "none" is an acceptable answer for Recent changes, unlike other required fields.
 const noChanges = /^(?:none(?: known)?|no(?: known| recent)? changes?(?: known)?|nothing changed)\.?$/i;
-// Reproduction steps are required, shown, scored, and copied only when the issue is answered as reproducible.
+// Reproduction steps are required, shown, scored, and copied only when the issue is answered as reproducible; Log Location likewise only when logs were gathered.
 const isReproducible = form => form.reproducible === "Yes";
 const hasLogs = form => form.evidence === "Yes";
-const requiredFor = form => required.filter(id => id !== "reproduction" || isReproducible(form));
+const requiredFor = form => required.filter(id => (id !== "reproduction" || isReproducible(form)) && (id !== "logLocation" || hasLogs(form)));
 const hasContent = form => fieldIds.some(id => form[id]);
 const labels = {
   platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected Systems / Users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", country: "customer country", os: "OS/Solution", errors: "exact errors and timestamps", reproducible: "Is this issue reproducible?", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Do you have the Required Logs for this Escalation?", changes: "recent changes"
@@ -155,7 +155,6 @@ function evaluate(input = {}) {
   if (credit("results") && (!hasDetail(form.results, 55) || outcomes.ratio < 0.5)) addFinding(warnings, "results", `Record the observed outcome of each troubleshooting action (${outcomes.outcomes} of ${outcomes.actions} actions have one).`, "warning");
   if (!form.errors) addFinding(warnings, "errors", "Provide exact errors and timestamps, or explicitly state that no error is displayed.", "warning");
   if (form.evidence === "No" && (!form.logReason || isWeak(form.logReason))) addFinding(blockers, "logReason", "Explain why logs cannot be obtained before escalating.", "blocker");
-  if (form.evidence === "Yes" && !form.logLocation) addFinding(warnings, "logLocation", "Record where DE can find the collected logs.", "warning");
   if (credit("affected") && !hasDetail(form.affected, 2)) addFinding(warnings, "affected", "Record which systems or users are affected, with counts.", "warning");
 
   const completedRequired = requiredFields.filter(id => credit(id) && !blockers.some(item => item.field === id)).length;
