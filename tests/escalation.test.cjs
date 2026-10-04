@@ -123,6 +123,14 @@ test('customer working time zone is a required select beside Customer Country an
  h.run('markChanged();saveDraft()');const old=JSON.parse(h.stored());delete old.fields.timezone;
  const restored=harness({stored:JSON.stringify(old)});assert.equal(restored.get('problem').value,h.get('problem').value,'drafts saved before the question still restore');assert.equal(restored.get('timezone').value,'');
 });
+test('Issue and impact pairs fields of matching height and paired controls line up',()=>{
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8'),css=fs.readFileSync(require.resolve('../styles.css'),'utf8');
+ const section=html.match(/<h2>Issue and impact<\/h2>[\s\S]*?<\/section>/)[0];
+ const order=[...section.matchAll(/<label class="(field(?: wide)?)">[^<]*<b>Required<\/b><(\w+) id="(\w+)"/g)].map(m=>`${m[3]}:${m[2]}${m[1].includes('wide')?':wide':''}`);
+ assert.deepEqual(order,['problem:textarea:wide','severity:select','production:select','affected:input:wide','impact:textarea','timeline:textarea','country:select','timezone:select']);
+ assert.match(css,/\.field-grid > \.field \{ align-content:end; \}/,'a wrapped label must not push its control below its neighbour');
+ assert.match(css,/\.field input:not\(\[type="checkbox"\]\),\.field select \{ min-height:41px; \}/,'inputs and selects share a height');
+});
 test('required badges keep their size beside taller fields',()=>{
  const css=fs.readFileSync(require.resolve('../styles.css'),'utf8');
  assert.match(css,/\.field \{ display:grid; align-content:start;/,'grid rows must not stretch to fill a taller cell');

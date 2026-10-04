@@ -34,12 +34,16 @@ h2,h3,p { margin-top:0; }
 /* Keep rows packed at the top so a field beside a taller neighbour does not stretch its badge. */
 .field { display:grid; align-content:start; gap:7px; color:var(--field-color); font-size:13px; font-weight:700; }
 .field.wide { grid-column:1/-1; }
+/* Side-by-side fields line up their controls even when one label wraps onto a second line. */
+.field-grid > .field { align-content:end; }
 .field b { justify-self:start; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--field-badge-text); background:var(--field-badge-bg); padding:3px 6px; border-radius:4px; }
 .field small { color:var(--field-small); font-weight:400; }
 /* Yes/No questions shown as a checkbox beside their label. */
 #reproductionField[hidden], #logReasonField[hidden], #logLocationField[hidden] { display:none; }
 input,textarea,select { width:100%; border:1px solid var(--input-border); border-radius:8px; padding:11px 12px; color:var(--input-text); background:var(--input-bg); outline:none; transition:border-color .15s,box-shadow .15s; font-weight:400; }
 select { cursor:pointer; }
+/* Text inputs render 2px shorter than selects; match them so side-by-side fields line up. */
+.field input:not([type="checkbox"]),.field select { min-height:41px; }
 textarea { min-height:88px; resize:vertical; line-height:1.45; }
 input:focus,textarea:focus,select:focus { border-color:#4a8ff0; box-shadow:0 0 0 3px rgba(23,105,224,.12); }
 .invalid { border-color:#d92d20; box-shadow:0 0 0 3px rgba(217,45,32,.08); }
