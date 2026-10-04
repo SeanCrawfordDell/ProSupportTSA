@@ -19,6 +19,8 @@
 .tour-running #copyActions { position:static!important; }
 .tour-running .results-shell { position:static!important; }
 .tour-running #floatingToolbox { visibility:hidden; }
+/* Except for the tour step that introduces it. */
+.tour-running #floatingToolbox:has(.tour-target) { visibility:visible; }
 .tour-shield { position:fixed; inset:0; z-index:10000; }
 .tour-spotlight { position:fixed; z-index:10001; border:3px solid #60a5fa; border-radius:12px; box-shadow:0 0 0 9999px rgb(5 16 30 / 65%); pointer-events:none; }
 #featureDemo.guided-tour { position:fixed; inset:auto 16px 16px auto; margin:0; width:min(400px,calc(100vw - 32px)); max-height:60dvh; padding:20px; z-index:10002; }

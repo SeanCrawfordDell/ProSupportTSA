@@ -42,7 +42,18 @@
     try { pins = JSON.parse(localStorage.getItem('dell-support.pinned-resources.v1') || '[]'); } catch {}
     const selected = resources.filter(resource => pins.includes(resource.id));
     section.hidden = !selected.length;
-    pinnedGrid.innerHTML = selected.map(resource => `<a class="tool-card active" href="${resource.href}"><p class="category">${resource.category}</p><h3>${resource.title}</h3><p>${resource.description}</p><div class="card-action">Open resource <span aria-hidden="true">↗</span></div></a>`).join('');
+    // Same structure as the catalog cards: a stretched heading link, so the card is one clean link for screen readers.
+    pinnedGrid.replaceChildren(...selected.map(resource => {
+      const card = document.createElement('article'), category = document.createElement('p'), heading = document.createElement('h3');
+      const link = document.createElement('a'), description = document.createElement('p'), action = document.createElement('div');
+      card.className = 'tool-card active'; category.className = 'category'; category.textContent = resource.category;
+      link.className = 'card-link'; link.href = resource.href; link.textContent = resource.title;
+      if (/^https?:/.test(resource.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+      heading.append(link); description.textContent = resource.description;
+      action.className = 'card-action'; action.textContent = 'Open resource ↗';
+      card.append(category, heading, description, action);
+      return card;
+    }));
   };
   window.addEventListener('pinnedresourceschanged', renderPins);
   setTimeout(renderPins, 0);

@@ -8,10 +8,13 @@ window.CaseWorkflow=(()=>{
     el.style.height="auto";el.style.height=el.scrollHeight+el.offsetHeight-el.clientHeight+"px";
   }
   const fitAll=()=>document.querySelectorAll("#workflowFields textarea.auto-grow").forEach(fit);
-  function edit(change) {
+  // Typing is saved by the page's autosave like the other case fields; discrete actions save at once.
+  // Only failures are announced, so screen readers are not interrupted on every keystroke.
+  function edit(change,immediate=true) {
     if(!api?.canEdit() || !api.current())return;
     api.mutate(note=>change(C.ensure(note),note),false);
-    const ok=api.save();notify(ok?"Workflow saved with this case.":"Save failed. Keep this tab open and use Retry save.");
+    const ok=immediate?api.save():true;
+    if(!ok)notify("Save failed. Keep this tab open and use Retry save.");
     refreshGaps();return ok;
   }
   function refreshGaps() {
@@ -30,7 +33,7 @@ window.CaseWorkflow=(()=>{
     $("workflowSavedFindings").replaceChildren(...Object.entries(w.results).filter(([,value])=>value.trim()).map(([id,value])=>{
       const label=document.createElement("label"),result=document.createElement("textarea");
       label.className="field";label.append(document.createTextNode("Saved finding · "+(C.tools[id]?.[1] || id)));
-      result.value=value;result.maxLength=50000;result.addEventListener("input",()=>edit(data=>{data.results[id]=result.value;}));label.append(result);return label;
+      result.value=value;result.maxLength=50000;result.addEventListener("input",()=>edit(data=>{data.results[id]=result.value;},false));label.append(result);return label;
     }));
     $("workflowEvidence").replaceChildren(...CaseToolkitCore.checklist(note).map(item=>{
       const row=document.createElement("label"),check=document.createElement("input"),span=document.createElement("span");row.className="workflow-check";check.type="checkbox";check.checked=!!note.toolkit.checks[item.id];span.textContent=item.text;
@@ -47,7 +50,7 @@ window.CaseWorkflow=(()=>{
     }));
     document.querySelectorAll("#workflowFields textarea.auto-grow").forEach(el=>el.addEventListener("input",()=>fit(el)));
     $("workflow")?.addEventListener("toggle",fitAll);
-    document.querySelectorAll("[data-workflow-field]").forEach(el=>el.addEventListener("input",()=>{if(el.dataset.workflowField==="knowledge")exports?.invalidate();edit(w=>{w[el.dataset.workflowField]=el.type==="checkbox"?el.checked:el.value;});}));
+    document.querySelectorAll("[data-workflow-field]").forEach(el=>el.addEventListener("input",()=>{if(el.dataset.workflowField==="knowledge")exports?.invalidate();edit(w=>{w[el.dataset.workflowField]=el.type==="checkbox"?el.checked:el.value;},el.type==="checkbox" || el.tagName==="SELECT");}));
     $("workflowFollowup").addEventListener("click",()=>document.querySelector('[data-toolkit="followup"]').click());
     $("workflowComplete").addEventListener("click",()=>{if(C.gaps(api.current()).length)return;if(edit((w,n)=>{n.toolkit.status="Completed";})){refresh();notify("Case marked completed in this browser. Use Copy to Lightning to transfer the case record.");}});
     $("workflowGenerate").addEventListener("click",()=>{

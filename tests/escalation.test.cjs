@@ -115,7 +115,7 @@ test('required logs is a required Yes/No select; No asks for the reason, Yes sho
 });
 test('customer working time zone is a required select beside Customer Country and is copied',()=>{
  const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
- assert.match(html,/<select id="country" required>[\s\S]*?<\/select><\/label>\s*<label class="field">What Timezone Does the Customer Want to Work In\? <b>Required<\/b><select id="timezone" required><option value="">Select time zone<\/option><option>/);
+ assert.match(html,/<select id="country" required aria-required="true">[\s\S]*?<\/select><\/label>\s*<label class="field">What Timezone Does the Customer Want to Work In\? <b>Required<\/b><select id="timezone" required aria-required="true"><option value="">Select time zone<\/option><option>/);
  const h=harness();
  const missing=h.run('evaluate({...samples.strong,timezone:""})');
  assert.ok(missing.blocking_issues.some(item=>item.field==='timezone'&&item.reason==='Required information is missing.'));assert.equal(missing.ready_to_escalate,false);
@@ -414,7 +414,7 @@ test('Case Notes handoff fills recent changes, service impact and gathered logs,
  const triage=options(notesHtml.match(/<select data-workflow-field="severity">[\s\S]*?<\/select>/)[0]).filter(o=>o!=='Unspecified');
  const escalation=options(html.match(/<select id="production"[^>]*>[\s\S]*?<\/select>/)[0]);
  assert.deepEqual(escalation,triage);assert.deepEqual(triage,['Service unavailable','Service degraded','Deployment','How-to / planning']);
- assert.match(html,/<label class="field">Service Impact <b>Required<\/b><select id="production" required>/);assert.match(notesHtml,/<label class="field">Service Impact<select data-workflow-field="severity">/);
+ assert.match(html,/<label class="field">Service Impact <b>Required<\/b><select id="production" required aria-required="true">/);assert.match(notesHtml,/<label class="field">Service Impact<select data-workflow-field="severity">/);
  for(const severity of triage){note.toolkit.workflow.severity=severity;assert.equal(core.escalation(note,200).production,severity);}
  note.toolkit.workflow.severity='Unspecified';assert.equal(core.escalation(note,200).production,'');
  assert.match(html,/left empty on import: document outcomes there/);

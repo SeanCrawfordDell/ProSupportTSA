@@ -48,7 +48,7 @@ test('Case Notes and Escalation Quality render the same top bar',()=>{
  assert.match(escalation,/<a class="dropdown-item" id="openBackupRestore" href="case-notes.html#backup-restore"/);
  // Feedback issues are labelled with the page they came from.
  assert.match(notes,/title=%5BCase%20Notes%5D%20&amp;body=[^"]*Page%3A\*\*%20Case%20Notes/);
- assert.match(escalation,/title=%5BEscalation%20Quality%5D%20&amp;body=[^"]*Page%3A\*\*%20Escalation%20Quality/);
+ assert.match(escalation,/title=%5BDE%20Escalation%20Request%5D%20&amp;body=[^"]*Page%3A\*\*%20DE%20Escalation%20Request/);
 });
 test('both pages load the shared top bar and keep no copy of their own',()=>{
  for(const [file,page] of [['../case-notes.html','case-notes'],['../escalation-quality.html','escalation']]){
@@ -84,4 +84,15 @@ test('menus stay open while the tutorial is showing them',()=>{
  assert.equal(h.get('settingsMenuList').hidden,false);
  h.body.classList.has.delete('tour-running');h.docEvents.click({target:h.document.body});
  assert.equal(h.get('settingsMenuList').hidden,true);
+});
+
+test('Troubleshooting and Support Trends use the shared bar without a tutorial menu',()=>{
+ const {window}=harness('troubleshooting'),T=window.SiteTopbar;
+ for(const [page,file] of [['troubleshooting','../troubleshooting.html'],['trends','../support-trends.html']]){
+  const markup=T.markup(page);
+  assert.ok(!markup.includes('openTraining'));assert.match(markup,/Tools Hub/);assert.match(markup,/href="case-notes.html#backup-restore"/);
+  const html=fs.readFileSync(require.resolve(file),'utf8');
+  assert.match(html,new RegExp(`<header class="topbar" id="siteTopbar" data-page="${page}"></header>\\s*<script src="js/site-topbar\\.js\\?v=[^"]+"></script>`));
+ }
+ assert.match(T.markup('case-notes'),/Tutorial &amp; examples/);
 });

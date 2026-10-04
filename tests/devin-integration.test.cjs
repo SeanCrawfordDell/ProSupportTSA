@@ -34,23 +34,25 @@ function harness({storageBlocked=false,isPopout=false,seen=false,href,clipboardB
   return {nodes,api,client,local,scheduled,docListeners,submissions,copied,appended,holdPoll:()=>{hold=true;},releasePoll:()=>resolveHeld(),missingJob:()=>{missing=true;},changeCase:()=>{caseId='case-b';},changePrompt:()=>{prompt='Changed case';},blockAppend:()=>{allowAppend=false;}};
 }
 async function flush(h){const pending=h.scheduled.splice(0);for(const f of pending)await f();}
-test('introduction waits for existing backup dialog instead of being lost',async()=>{
-  const h=harness();const existing={tagName:'DIALOG',open:true};h.nodes.set('backupWarningDialog',existing);
-  await flush(h);assert.equal(h.nodes.get('devinIntro').open,false);
-  existing.open=false;h.docListeners.close?.();await flush(h);assert.equal(h.nodes.get('devinIntro').open,true);
-});
-test('first visit offers optional setup once and Escape records acknowledgment',async()=>{
-  const h=harness();await flush(h);assert.equal(h.nodes.get('devinIntro').open,true);
+test('first visit shows an inline hint, never an automatic dialog',async()=>{
+  const h=harness();await flush(h);assert.equal(h.nodes.get('devinIntro').open,false);
+  assert.equal(h.nodes.get('devinHint').hidden,false);
+  await h.nodes.get('devinHintMore').click();assert.equal(h.nodes.get('devinIntro').open,true);
   h.nodes.get('devinIntro').listeners.cancel({preventDefault(){}});assert.equal(h.nodes.get('devinIntro').open,false);
-  assert.equal(h.local.get('dell-support.devin-onboarding.v1'),'1');
+  assert.equal(h.local.get('dell-support.devin-onboarding.v1'),'1');assert.equal(h.nodes.get('devinHint').hidden,true);
   h.api.openSettings();assert.equal(h.nodes.get('devinSetup').open,true);
+});
+test('dismissing the hint records acknowledgment',async()=>{
+  const h=harness();await h.nodes.get('devinHintDismiss').click();
+  assert.equal(h.nodes.get('devinHint').hidden,true);assert.equal(h.local.get('dell-support.devin-onboarding.v1'),'1');
 });
 test('setup copies a connection command without sending case data or showing a ZIP link',async()=>{
   const h=harness({seen:true});h.api.openSettings();
   assert.ok(h.nodes.get('devinCopyConnectionCommand'),'one-command setup is available');
   await h.nodes.get('devinCopyConnectionCommand').click();
   assert.equal(h.copied.length,1);
-  assert.match(h.copied[0],/https:\/\/raw\.githubusercontent\.com\/SeanCrawfordDell\/EscalationQuality\/main\/companion\/Connect-Devin\.ps1/);
+  assert.match(h.copied[0],/https:\/\/raw\.githubusercontent\.com\/SeanCrawfordDell\/EscalationQuality\/[0-9a-f]{40}\/companion\/Connect-Devin\.ps1'\)\)\) -SourceBase 'https:\/\/raw\.githubusercontent\.com\/SeanCrawfordDell\/EscalationQuality\/[0-9a-f]{40}\/companion'$/);
+  assert.equal(h.copied[0].includes('/main/'),false,'never a moving branch');
   assert.equal(h.copied[0].includes('Original case'),false);
   assert.equal(h.submissions.length,0);
   const walk=n=>[n,...n.children.flatMap(walk)];
@@ -71,10 +73,10 @@ test('blocked clipboard leaves the connection command visible for manual copying
   assert.equal(h.submissions.length,0);
 });
 test('popout and acknowledged visits do not show introduction',async()=>{
-  for(const options of [{isPopout:true},{seen:true}]){const h=harness(options);await flush(h);assert.equal(h.nodes.get('devinIntro').open,false);assert.equal(h.submissions.length,0);}
+  for(const options of [{isPopout:true},{seen:true}]){const h=harness(options);await flush(h);assert.equal(h.nodes.get('devinIntro').open,false);assert.equal(h.nodes.has('devinHint'),false);assert.equal(h.submissions.length,0);}
 });
 test('blocked storage still permits continuing with clipboard and reopening setup',async()=>{
-  const h=harness({storageBlocked:true});await flush(h);await h.nodes.get('devinIntroSkip').click();
+  const h=harness({storageBlocked:true});await flush(h);await h.nodes.get('devinHintMore').click();await h.nodes.get('devinIntroSkip').click();
   assert.equal(h.nodes.get('devinIntro').open,false);h.api.openSettings();assert.equal(h.nodes.get('devinSetup').open,true);
 });
 async function connect(h){h.api.openSettings();h.nodes.get('devinPairingToken').value='b'.repeat(64);await h.nodes.get('devinConnect').click();h.nodes.get('devinSetup').close();}
@@ -118,4 +120,14 @@ test('late poll after cancellation cannot overwrite a new case prompt or respons
   h.releasePoll();await waiting;
   assert.equal(h.nodes.get('devinPromptText').value,'Changed case');assert.equal(h.nodes.get('devinCopyResponse').hidden,true);
   await h.nodes.get('devinAppendResponse').click();assert.equal(h.appended.length,0);
+});
+
+test('pinned bootstrap checksums match the committed runtime files',()=>{
+  const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+  const ps=fs.readFileSync(path.join(__dirname,'../companion/Connect-Devin.ps1'),'utf8');
+  for(const file of ['server.cjs','devin-runner.cjs']){
+    const expected=ps.match(new RegExp("'"+file.replace('.','\\.')+"'\\s*=\\s*'([0-9a-f]{64})'"))?.[1];
+    const actual=crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'../companion',file))).digest('hex');
+    assert.equal(expected,actual,file+' checksum in Connect-Devin.ps1 is out of date');
+  }
 });

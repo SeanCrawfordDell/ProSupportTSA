@@ -63,6 +63,9 @@ button:disabled { cursor:not-allowed; opacity:.55; }
 .notice { padding:12px 16px; border:1px solid var(--line); border-radius:8px; color:var(--muted); background:var(--panel-bg); font-size:13px; }
 .editor-heading { flex-wrap:wrap; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:8px; gap:8px 16px; }
 #saveStatus { color:var(--muted); font-size:12px; }
+.page-status { color:var(--ink); border-left:4px solid var(--blue); }
+.recovery-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.recovery-actions[hidden] { display:none; }
 #saveStatus.error { color:var(--red); }
 .timer { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:12px; margin-left:auto; text-align:right; min-width:0; }
 .timer span { display:block; color:var(--muted); font-size:11px; margin-bottom:4px; }
@@ -100,10 +103,12 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .floating-toolbox .toolbox-radial button:nth-child(3){--angle:150deg}
 .floating-toolbox.is-open .toolbox-radial button{visibility:visible;opacity:1;transform:translate(-50%,-50%) rotate(var(--angle)) translateX(108px) rotate(calc(-1 * var(--angle))) scale(1)}
 .floating-toolbox .toolbox-radial button:disabled{opacity:.45;cursor:not-allowed}
-.floating-toolbox .toolbox-radial button:focus-visible,.toolbox-launcher:focus-visible{outline:3px solid #73caff;outline-offset:4px}
+.floating-toolbox .toolbox-radial button:focus-visible,.toolbox-launcher:focus-visible{outline:3px solid var(--blue);outline-offset:4px}
 @media(prefers-reduced-motion:reduce){.floating-toolbox .toolbox-radial button,.floating-toolbox .toolbox-launcher svg{transition:none}}
 .copy-actions p { color:var(--muted); font-size:12px; line-height:1.6; margin:0; }
-.copy-actions>#copyStatus { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+/* Results of Copy, Email and similar actions; hidden until there is something to report. */
+.copy-actions>#copyStatus { grid-column:1 / -1; color:var(--ink); font-size:13px; padding:6px 10px; border-left:3px solid var(--blue); background:var(--section-number-bg); border-radius:4px; }
+.copy-actions>#copyStatus:empty { display:none; }
 .copy-actions button { flex-shrink:0; }
 @media (min-width:1500px) and (min-height:780px) {
   .case-work-area.action-rail { display:grid; grid-template-columns:290px minmax(0, 1fr) 270px; gap:16px 22px; align-items:start; }
@@ -125,7 +130,14 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 #welcome { text-align:center; padding:85px 20px; color:var(--muted); }
 #welcome h2 { margin-top:20px; color:var(--ink); }
 @media(max-width:800px) { .notes-layout { grid-template-columns:1fr; } .copy-actions.workspace-width { width:auto; margin-left:0; } #historyList { max-height:190px; } #welcome { padding:40px 10px; } }
-@media(max-width:500px) { .copy-actions { position:sticky; top:8px; margin:12px 0 20px; display:flex; align-items:stretch; flex-direction:column; } .hero>button { margin-top:18px; } }
+/* Placed after the base .copy-actions rules so it wins. On phones and short laptop screens a floating dock would cover much of the editor; it scrolls with the page there
+   and the floating toolbox keeps Email, Escalate and Copy within reach. */
+@media(max-width:899px), (max-height:779px) {
+  .copy-actions, .copy-actions.is-floating { position:static; max-height:none; overflow:visible; background:var(--panel-bg); box-shadow:none; }
+  .editor :where(input,textarea,select,button,[contenteditable]) { scroll-margin-top:0; }
+  #toggleActionDock { display:none; }
+}
+@media(max-width:500px) { .copy-actions { margin:12px 0 20px; display:flex; align-items:stretch; flex-direction:column; } .hero>button { margin-top:18px; } }
 
 .hero-actions { display:flex; gap:12px; flex-wrap:wrap; }
 .field-customizer-dialog { max-width:600px; width:90%; }
@@ -350,7 +362,8 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .backup-dialog .dropdown-field select { max-width:60%; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--panel-bg); color:var(--ink); font:inherit; }
 .backup-browser-list { display:grid; gap:6px; max-height:50vh; margin:12px 0 16px; overflow:auto; }
 .backup-entry { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--ink); font:500 13px Inter,"Segoe UI",Arial,sans-serif; text-align:left; cursor:pointer; }
-.backup-entry:hover, .backup-entry:focus-visible { border-color:var(--blue); background:var(--secondary-hover); color:var(--blue); outline:none; }
+.backup-entry:hover, .backup-entry:focus-visible { border-color:var(--blue); background:var(--secondary-hover); color:var(--blue); }
+.backup-entry:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
 .backup-dialog { width:min(460px, calc(100vw - 32px)); padding:18px 12px 16px; }
 .backup-dialog h2 { margin:0 10px 6px; font-size:18px; }
 .backup-dialog #closeBackupRestore { margin:12px 10px 0; }

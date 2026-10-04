@@ -5,31 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Dell Pro-Support Technical Support Assistant: a central workspace for technical support tools and escalation readiness.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
-  <script src="js/theme.js"></script>
-  <script defer src="js/landing.js"></script>
+  <script src="js/theme.js?v=20261004-golive"></script>
+  <script defer src="js/landing.js?v=20261004-golive"></script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
   <title>Dell Pro-Support Technical Support Assistant</title>
-  <link rel="stylesheet" href="css/landing.css">
-  <link rel="stylesheet" href="css/theme.css">
-  <link rel="stylesheet" href="css/resource.css">
+  <link rel="stylesheet" href="css/landing.css?v=20261004-golive">
+  <link rel="stylesheet" href="css/theme.css?v=20261004-golive">
+  <link rel="stylesheet" href="css/resource.css?v=20261004-golive">
 </head>
 <body>
   <a class="skip-link" href="#tools">Skip to tools</a>
   <header class="header">
     <a class="brand" href="index.html" aria-label="Dell Pro-Support home"><span class="dell">DELL</span><span class="brand-divider"></span><span>Pro-Support</span></a>
-    <nav class="primary-nav" aria-label="Primary navigation">
-      <div class="menu-item">
-        <a class="menu-trigger" href="knowledge.html">Knowledge <span aria-hidden="true">⌄</span></a>
-        <div class="submenu" role="menu"><a href="knowledge.html" role="menuitem">Knowledge hub</a></div>
-      </div>
-      <div class="menu-item">
-        <a class="menu-trigger" href="ai-resources.html">AI Resources <span aria-hidden="true">⌄</span></a>
-        <div class="submenu" role="menu"><a href="ai-resources.html" role="menuitem">AI resources hub</a></div>
-      </div>
-      <div class="menu-item">
-        <a class="menu-trigger" href="training.html">Training <span aria-hidden="true">⌄</span></a>
-        <div class="submenu" role="menu"><a href="training.html" role="menuitem">Training hub</a></div>
-      </div>
-    </nav>
+    <nav class="primary-nav" aria-label="Primary navigation"><div class="menu-item"><a class="menu-trigger" href="tools.html">Tools <span aria-hidden="true">⌄</span></a><div class="submenu"><a href="tools.html">Tools hub</a><a href="troubleshooting.html">Troubleshooting Guides</a><a href="https://seancrawforddell.github.io/DellSupportoolRepository/#/tools" target="_blank" rel="noopener noreferrer">ISG Tools Catalog</a><a href="https://github.com/DellProSupportGse/Tools" target="_blank" rel="noopener noreferrer">Microsoft Support Tools</a></div></div><div class="menu-item"><a class="menu-trigger" href="case-management.html">Case Management <span aria-hidden="true">⌄</span></a><div class="submenu"><a href="case-management.html">Case Management hub</a><a href="escalation-quality.html">DE Escalation Request</a><a href="case-notes.html">Case Notes</a></div></div><div class="menu-item"><a class="menu-trigger" href="knowledge.html">Knowledge <span aria-hidden="true">⌄</span></a><div class="submenu"><a href="knowledge.html">Knowledge hub</a></div></div><div class="menu-item"><a class="menu-trigger" href="ai-resources.html">AI Resources <span aria-hidden="true">⌄</span></a><div class="submenu"><a href="ai-resources.html">AI resources hub</a></div></div><div class="menu-item"><a class="menu-trigger" href="training.html">Training <span aria-hidden="true">⌄</span></a><div class="submenu"><a href="training.html">Training hub</a></div></div></nav>
     <div class="theme-controls" role="group" aria-label="Appearance">
         <button class="theme-switch" id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button>
       </div>
@@ -40,7 +28,7 @@
         <p class="eyebrow">DELL PRO-SUPPORT</p>
         <h1 id="page-title">Technical Support<br><span>Assistant.</span></h1>
         <p class="intro">Your starting point for better support. Find the tools to prepare your next step and move every case forward with confidence.</p>
-        <a class="button" href="case-notes.html#workflow">Open case workflow <span aria-hidden="true">→</span></a>
+        <a class="button" href="case-notes.html">Open Case Notes <span aria-hidden="true">→</span></a>
         <div class="hero-note"><span class="dot"></span>Built for the technical support workflow</div>
       </div>
       <div class="illustration" aria-hidden="true">
@@ -63,32 +51,31 @@
       </div>
       <p class="no-results" id="noResults" hidden>No tools match your search.</p>
       <div class="tool-grid" id="toolGrid">
-        <a class="tool-card active" href="escalation-quality.html">
+        <article class="tool-card active">
           <div class="card-top"><span class="tool-icon"><svg viewBox="0 0 32 32" aria-hidden="true" fill="currentColor"><path d="M12 4h8v8h8v8h-8v8h-8v-8H4v-8h8z"/></svg></span><span class="badge">Available</span></div>
-          <p class="category">ESCALATION READINESS</p><h3>DE Escalation Request</h3><p>Review your escalation before the handoff. Check for missing details, assess readiness, and give senior technicians the context they need.</p>
+          <p class="category">ESCALATION READINESS</p><h3><a class="card-link" href="escalation-quality.html">DE Escalation Request</a></h3><p>Review your escalation before the handoff. Check for missing details, assess readiness, and give senior technicians the context they need.</p>
           <div class="tags"><span>Readiness score</span><span>Actionable feedback</span></div><div class="card-action">Launch tool <span aria-hidden="true">↗</span></div><button class="pin-button" type="button" data-pin-id="escalation">Pin to toolkit</button>
-        </a>
-        <a class="tool-card active" href="case-notes.html">
+        </article>
+        <article class="tool-card active">
           <div class="card-top"><span class="tool-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="7" y="5" width="18" height="24" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 4h8v5h-8zM11 18l3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span class="badge">Available</span></div>
-          <p class="category">CASE DOCUMENTATION</p><h3>Case Notes</h3><p>Capture your investigation and next steps. Never lose your notes with the backup/restore feature. Automated templates and AI-assisted summaries and reviews. Follow-up and case alerts. Email to case, and a simple Copy to Lightning option. Convert case notes into well-written DE escalations in a single click.</p>
+          <p class="category">CASE DOCUMENTATION</p><h3><a class="card-link" href="case-notes.html">Case Notes</a></h3><p>Capture your investigation and next steps. Never lose your notes with the backup/restore feature. Automated templates and AI-assisted summaries and reviews. Follow-up and case alerts. Email to case, and a simple Copy to Lightning option. Convert case notes into well-written DE escalations in a single click.</p>
           <div class="tags"><span>Automatic saving</span><span>Time tracking</span></div><div class="card-action">Launch tool <span aria-hidden="true">↗</span></div><button class="pin-button" type="button" data-pin-id="case-notes">Pin to toolkit</button>
-        </a>
-        <a class="tool-card active" href="troubleshooting.html">
+        </article>
+        <article class="tool-card active">
           <div class="card-top"><span class="tool-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="6" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/><circle cx="26" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="25" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h14M7.5 10.5 14.5 22.5M24.5 10.5 17.5 22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="badge">Available</span></div>
-          <p class="category">TROUBLESHOOTING</p><h3>Troubleshooting Guides</h3><p>Step-by-step decision trees for Windows Server, Hyper-V, Failover Clustering, Networking, Active Directory and DNS. Each guide ends in a likely cause and recommended actions you can send straight to Case Notes.</p>
+          <p class="category">TROUBLESHOOTING</p><h3><a class="card-link" href="troubleshooting.html">Troubleshooting Guides</a></h3><p>Step-by-step decision trees for Windows Server, Hyper-V, Failover Clustering, Networking, Active Directory and DNS. Each guide ends in a likely cause and recommended actions you can send straight to Case Notes.</p>
           <div class="tags"><span>Decision trees</span><span>Send to Case Notes</span></div><div class="card-action">Start troubleshooting <span aria-hidden="true">↗</span></div><button class="pin-button" type="button" data-pin-id="troubleshooting">Pin to toolkit</button>
-        </a>
-        <a class="tool-card active" href="support-trends.html">
+        </article>
+        <article class="tool-card active">
           <div class="card-top"><span class="tool-icon" aria-hidden="true">↗</span><span class="badge">Available</span></div>
-          <p class="category">CASE QUALITY</p><h3>Support Trends</h3><p>See evidence gaps, follow-up risk, and recurring issue patterns from the cases saved in this browser.</p>
+          <p class="category">CASE QUALITY</p><h3><a class="card-link" href="support-trends.html">Support Trends</a></h3><p>See evidence gaps, follow-up risk, and recurring issue patterns from the cases saved in this browser.</p>
           <div class="tags"><span>Evidence gaps</span><span>Local dashboard</span></div><div class="card-action">Open trends <span aria-hidden="true">↗</span></div><button class="pin-button" type="button" data-pin-id="trends">Pin to toolkit</button>
-        </a>
-        <a class="tool-card active" href="https://seancrawforddell.github.io/DellSupportoolRepository/#/tools" target="_blank" rel="noopener noreferrer">
+        </article>
+        <article class="tool-card active">
           <div class="card-top"><span class="tool-icon" aria-hidden="true">▦</span><span class="badge">Available</span></div>
-          <p class="category">SUPPORT TOOL CATALOG</p><h3>ISG Tools Catalog</h3><p>Browse the shared catalog of ISG support tools, instructions, usage, and active requests.</p>
+          <p class="category">SUPPORT TOOL CATALOG</p><h3><a class="card-link" href="https://seancrawforddell.github.io/DellSupportoolRepository/#/tools" target="_blank" rel="noopener noreferrer">ISG Tools Catalog</a></h3><p>Browse the shared catalog of ISG support tools, instructions, usage, and active requests.</p>
           <div class="tags"><span>Tool catalog</span><span>Opens in a new tab</span></div><div class="card-action">Open Tools Catalog <span aria-hidden="true">↗</span></div><button class="pin-button" type="button" data-pin-id="catalog">Pin to toolkit</button>
-        </a>
-      </div>
+        </article>      </div>
     </section>
     <section class="resource-hub" aria-label="Support resources">
       <article id="knowledge"><p class="eyebrow">KNOWLEDGE</p><h2>Find the right guidance.</h2><p>Open a tool to find its instructions, practical guidance, and support context.</p><a href="#tools">Browse tools <span aria-hidden="true">→</span></a></article>

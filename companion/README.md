@@ -21,8 +21,10 @@ your approved AI tool.
    are requested, and Node/Devin are not installed automatically.
 
    Keep the PowerShell window open while using direct Devin actions. Run the
-   command again when starting a new connection session. It fetches current code
-   from this repository's main branch, so network access is required each time.
+   command again when starting a new connection session. It fetches a fixed,
+   reviewed commit of this repository (never the moving `main` branch) and refuses
+   to run runtime files whose SHA-256 checksum does not match, so network access
+   is required each time.
    An ordinary exit or Ctrl+C removes the downloaded runtime files; abruptly
    closing or terminating PowerShell may leave that temporary folder behind.
 5. The helper displays its workspace path. If your CLI requires workspace
@@ -90,12 +92,33 @@ minutes. Devin may retain its own session history under its settings; companion
 cleanup does not erase it. The helper's dedicated workspace avoids running
 inside your notes or repository, but is not an operating-system sandbox.
 
+## Security notes
+
+- Case text can contain customer-written content (pasted logs, emails, error
+  messages). Such text could try to instruct Devin. The helper always starts Devin
+  with `--permission-mode normal` when the CLI supports it, so a permissive
+  personal default (for example `DEVIN_PERMISSION_MODE=dangerous`) is never used
+  for these unattended runs. Do not run the helper from an administrator window,
+  and review every response before using it.
+
 ## Local development
 
 AI Settings on a localhost preview generates a command pointing to that preview
 server and explicitly allows its origin. Keep the preview server running while
-starting the connection. The production command works after `Connect-Devin.ps1`
-and both runtime files have been published to the repository's main branch.
+starting the connection. Checksums are only enforced for the published source.
+
+## Releasing companion changes
+
+The production command is pinned to a commit, so companion changes reach users
+only when the pin moves:
+
+1. Change `server.cjs` / `devin-runner.cjs`, then update `$expectedHashes` in
+   `Connect-Devin.ps1` (`shasum -a 256 companion/*.cjs`). `node --test` fails
+   until they match.
+2. Commit and push that change on its own, and review it.
+3. Set `COMPANION_COMMIT` in `js/devin-integration.js` to that commit's full SHA
+   in a follow-up commit. Merge with a merge commit (not squash) so the pinned
+   commit stays reachable.
 
 Explicitly allow the local preview origin when starting the helper:
 

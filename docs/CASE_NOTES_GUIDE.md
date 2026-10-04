@@ -113,7 +113,7 @@ command** and paste it into PowerShell. It automatically fetches and starts the
 connection; no ZIP or manual script download is required. Keep the window open.
 Review the linked source and follow your organization's policy for downloaded
 code. Paste its pairing token in AI
-Settings and choose Connect Devin. See [the companion guide](companion/README.md)
+Settings and choose Connect Devin. See [the companion guide](../companion/README.md)
 for setup and troubleshooting, including browser local-network permission.
 
 **Copy to AI** continues to copy the selected prompt and current case details

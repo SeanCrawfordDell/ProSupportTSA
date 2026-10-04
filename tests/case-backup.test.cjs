@@ -79,6 +79,7 @@ test('screenshots move to content-addressed image files and restore byte for byt
   const data = 'data:image/png;base64,aGVsbG8=';
   note.images = { one: { name: 'First', data }, two: { name: 'Duplicate', data }, three: { name: 'Other', data: 'data:image/jpeg;base64,d29ybGQ=' } };
   const previous = structuredClone(state); note.notes = 'changed'; C.checkpoint(state, previous, 2000);
+  assert.deepEqual(state.revisions.shots[0].note.images, {}, 'versions do not copy screenshots');
   C.create(state, 'later', 3000); C.move(state, 'later', 'cases', 'trash', 4000);
   state.trash[0].images = { t: { name: 'Trash', data } };
   const { state: external, files } = await B.externalizeImages(JSON.parse(C.backup(state, 5000)));
@@ -87,7 +88,8 @@ test('screenshots move to content-addressed image files and restore byte for byt
   const image = external.cases.find(n => n.id === 'shots').images.one;
   assert.equal(image.data, undefined); assert.ok(image.file.startsWith('images/')); assert.ok(image.file.endsWith('.png'));
   assert.ok(external.cases.find(n => n.id === 'shots').images.three.file.endsWith('.jpg'));
-  assert.equal(external.revisions.shots[0].note.images.one.file, image.file);
+  assert.deepEqual(external.revisions.shots[0].note.images, {});
+  external.revisions.shots[0].note.images = { one: { name: 'First', file: image.file } }; // older backups carried copies in versions
   assert.equal(external.trash[0].images.t.file, image.file);
   assert.ok(B.hasExternalImages(external)); assert.ok(!B.hasExternalImages(state));
   assert.deepEqual([...B.imageReferences(external)].sort(), [...files.keys()].sort());
@@ -97,7 +99,7 @@ test('screenshots move to content-addressed image files and restore byte for byt
   const parsed = C.parse(JSON.stringify(restored));
   assert.deepEqual(parsed.cases.find(n => n.id === 'shots').images, note.images);
   assert.equal(parsed.trash[0].images.t.data, data);
-  assert.equal(parsed.revisions.shots[0].note.images.one.data, data);
+  assert.deepEqual(parsed.revisions.shots[0].note.images, {}, 'version copies fold into the case on load');
   await assert.rejects(B.inlineImages(external, async () => null), /missing from the backup folder/);
   await assert.rejects(B.inlineImages({ cases: [{ images: { x: { name: 'x', file: '../../etc/passwd' } } }] }, async () => data), /Invalid screenshot reference/);
   assert.equal(B.bytesToDataUrl(new Uint8Array(70000).fill(65), 'images/' + 'a'.repeat(64) + '.webp').slice(0, 23), 'data:image/webp;base64,');

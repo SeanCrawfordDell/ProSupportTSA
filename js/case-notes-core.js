@@ -8,6 +8,9 @@ const CaseNotes = (() => {
   // Earlier versions stored short codes; map them to the current entitlement options.
   const legacySupportTypes = { "OEM": "OEM OS", "PSP": "ProSupport Plus Bring Your own License", "No OS Support": "No Software Support" };
   const normalizeSupportType = value => Object.hasOwn(legacySupportTypes, value) ? legacySupportTypes[value] : value;
+  // Case properties a custom field ID may not take. case-settings-core.js keeps a copy (a test checks they match).
+  const reservedFieldIds = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt", "entries", "activeEntryId"]);
+  const imageDataPattern = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
   const empty = () => ({ version: 3, selected: null, cases: [], archive: [], trash: [], revisions: {}, fieldConfig: { order: [...defaultFieldOrder], customFields: {} } });
   function migrateEntries(note) {
     note.activeEntryId = "initial-" + note.id;
@@ -146,7 +149,16 @@ const CaseNotes = (() => {
     else if (state.selected === id) state.selected = state.cases[0]?.id || null;
     return note;
   }
-  const contentSignature = note => JSON.stringify({...Object.fromEntries(Object.entries(note).filter(([key]) => !["started", "elapsed", "lastSession", "updated", "pinned", "deletedAt", "activeEntryId", "notes", "next", "entries"].includes(key))),entries:entryList(note)});
+  // Screenshots are compared through the text that references them, so image bookkeeping alone never creates a version.
+  const contentSignature = note => JSON.stringify({...Object.fromEntries(Object.entries(note).filter(([key]) => !["started", "elapsed", "lastSession", "updated", "pinned", "deletedAt", "activeEntryId", "notes", "next", "entries", "images"].includes(key))),entries:entryList(note)});
+  // One version per editing burst: saves within this window of the newest version extend the same burst.
+  const VERSION_INTERVAL = 5 * 60 * 1000;
+  // Versions never copy screenshots; they reference the case's own images, which pruneImages keeps while referenced.
+  function versionSnapshot(note, now) {
+    const snapshot = JSON.parse(JSON.stringify(note)); stop(snapshot, now);
+    snapshot.images = {};
+    return snapshot;
+  }
   function checkpoint(state, previous, now) {
     state.revisions ||= {};
     const current = new Map(state.cases.map(note => [note.id, note]));
@@ -154,13 +166,29 @@ const CaseNotes = (() => {
       const after = current.get(before.id);
       if (!after || contentSignature(before) === contentSignature(after)) continue;
       const versions = Object.hasOwn(state.revisions,before.id) ? state.revisions[before.id] : [];
-      const snapshot = JSON.parse(JSON.stringify(before)); stop(snapshot, now);
+      if (versions.length && now - versions[0].savedAt < VERSION_INTERVAL) continue;
+      const snapshot = versionSnapshot(before, now);
       for (const id of Object.keys(previous?.fieldConfig?.customFields || {})) {
         if (!Object.hasOwn(state.fieldConfig.customFields,id)) delete snapshot[id];
       }
       versions.unshift({ savedAt: now, note: snapshot });
       state.revisions[before.id] = versions.slice(0, 10);
     }
+  }
+  const attachmentRefs = text => new Set(Array.from(String(text).matchAll(/attachment:([a-zA-Z0-9-]+)/g), match => match[1]));
+  // Drop screenshots that neither the case nor any of its versions references. Returns the number removed.
+  // keep lists image IDs to spare, such as a screenshot registered moments before its reference is inserted.
+  function pruneImages(state, keep = new Set()) {
+    let removed = 0;
+    for (const collection of ["cases", "archive", "trash"]) {
+      for (const note of state[collection] || []) {
+        if (!note.images) continue;
+        const { images, ...rest } = note;
+        const refs = attachmentRefs(JSON.stringify([rest, Object.hasOwn(state.revisions || {}, note.id) ? state.revisions[note.id] : []]));
+        for (const id of Object.keys(images)) if (!refs.has(id) && !keep.has(id)) { delete images[id]; removed++; }
+      }
+    }
+    return removed;
   }
   function searchText(note) {
     return [...Object.entries(note).filter(([key,value]) => !["id","activeEntryId"].includes(key) && typeof value === "string").map(([,value]) => value), ...entryList(note).flatMap(entry=>[entry.notes,entry.next]), ...Object.values(note.toolkit || {}).filter(value => typeof value === "string")].map(plainImages).join("\n");
@@ -223,7 +251,7 @@ const CaseNotes = (() => {
       }
       migrateLegacyFieldConfig(config, legacyNotes);
     }
-    const reserved = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt", "entries", "activeEntryId"]);
+    const reserved = reservedFieldIds;
     if (!config.customFields || typeof config.customFields !== "object" || Array.isArray(config.customFields) || !Array.isArray(config.order)) throw Error("Invalid field configuration");
     for (const [id,label] of Object.entries(config.customFields)) {
       if (!/^[a-zA-Z0-9_-]+$/.test(id) || reserved.has(id) || Object.hasOwn(fields,id) || typeof label !== "string" || !label.trim()) throw Error("Invalid custom field");
@@ -259,7 +287,7 @@ const CaseNotes = (() => {
       if (!entryIds.has(note.activeEntryId)) throw Error("Invalid active note entry");
       syncEntry(note);
       if (!Object.hasOwn(note, "images")) note.images = {};
-      if (!note.images || typeof note.images !== "object" || Array.isArray(note.images) || !Object.entries(note.images).every(([id, image]) => /^[a-zA-Z0-9-]+$/.test(id) && image && typeof image.name === "string" && typeof image.data === "string" && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(image.data))) throw Error("Invalid screenshots");
+      if (!note.images || typeof note.images !== "object" || Array.isArray(note.images) || !Object.entries(note.images).every(([id, image]) => /^[a-zA-Z0-9-]+$/.test(id) && image && typeof image.name === "string" && typeof image.data === "string" && imageDataPattern.test(image.data))) throw Error("Invalid screenshots");
       Toolkit.validate(note);
       ids.add(note.id); if (note.started !== null) running++;
     }
@@ -276,6 +304,7 @@ const CaseNotes = (() => {
       }
       state.revisions ||= {};
       if (typeof state.revisions !== "object" || Array.isArray(state.revisions)) throw Error("Invalid versions");
+      const live = new Map(["cases", "archive", "trash"].flatMap(collection => state[collection].map(note => [note.id, note])));
       for (const [id, versions] of Object.entries(state.revisions)) {
         if (reserved.has(id) || !ids.has(id)) throw Error("Invalid version case ID");
         if (!Array.isArray(versions) || versions.length > 10) throw Error("Invalid versions");
@@ -283,6 +312,10 @@ const CaseNotes = (() => {
           if (!version || !Number.isFinite(version.savedAt) || version.note?.id !== id) throw Error("Invalid version");
           version.note = parse(JSON.stringify({version:inputVersion, cases:[version.note], selected:null, fieldConfig:state.fieldConfig}), true).cases[0];
           version.note.started = null;
+          // Older histories copied screenshots into every version; keep one copy on the case instead.
+          const owner = live.get(id);
+          for (const [imageId, image] of Object.entries(version.note.images)) if (!Object.hasOwn(owner.images, imageId)) owner.images[imageId] = image;
+          version.note.images = {};
         });
       }
     }
@@ -292,7 +325,7 @@ const CaseNotes = (() => {
   function addCustomField(state, fieldId, fieldLabel) {
     if (typeof fieldLabel !== "string" || !fieldLabel.trim() || fieldLabel.length > 120) throw Error("Field labels must contain 1–120 characters.");
     if (!/^[a-zA-Z0-9_-]+$/.test(fieldId)) throw Error("Invalid field ID");
-    if (["id","created","updated","started","elapsed","lastSession","images","toolkit","pinned","deletedAt","entries","activeEntryId","__proto__","constructor","prototype"].includes(fieldId)) throw Error("Reserved field ID");
+    if (reservedFieldIds.has(fieldId)) throw Error("Reserved field ID");
     if (fields[fieldId] || state.fieldConfig.customFields[fieldId]) throw Error("Field already exists");
     state.fieldConfig.customFields[fieldId] = fieldLabel;
     state.fieldConfig.order.push(fieldId);
@@ -329,6 +362,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { migrateLegacyFieldConfig, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
+  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;

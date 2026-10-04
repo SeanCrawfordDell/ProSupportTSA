@@ -8,8 +8,10 @@ function fault(code) { return Object.assign(new Error(code), {code}); }
 async function findDevin() {
   const name = process.platform === 'win32' ? 'devin.exe' : 'devin';
   for (const dir of (process.env.PATH || '').split(path.delimiter)) {
-    if (!dir) continue;
-    const candidate = path.resolve(dir.replace(/^"|"$/g,''), name);
+    const clean = dir.replace(/^"|"$/g,'');
+    // Relative PATH entries resolve against the launch folder, where a planted executable could hide.
+    if (!clean || !path.isAbsolute(clean)) continue;
+    const candidate = path.join(clean, name);
     try { if ((await fs.stat(candidate)).isFile()) return candidate; } catch {}
   }
   return null;
@@ -47,7 +49,7 @@ function createRunner({workspace, executable, prefixArgs=[], timeoutMs=600000, r
       function finish(available,code) {
         if(done)return;done=true;clearTimeout(timer);
         const compatible=available && !exceeded && output.includes('--print') && output.includes('--prompt-file');
-        resolve({version:1,cliAvailable:available,compatible,code:compatible?'ready':code || 'cli_incompatible'});
+        resolve({version:1,cliAvailable:available,compatible,permissionMode:output.includes('--permission-mode'),code:compatible?'ready':code || 'cli_incompatible'});
       }
       for(const stream of [child.stdout,child.stderr]) stream.on('data',chunk=>{
         if(Buffer.byteLength(output)+chunk.length>65536) { exceeded=true;killTree(child); } else output+=chunk.toString();
@@ -80,7 +82,10 @@ function createRunner({workspace, executable, prefixArgs=[], timeoutMs=600000, r
       jobs.set(job.id,job);
       job.done=new Promise(resolve => {
         let stdout=[],stderr=[],bytes=0,settled=false;
-        const child=job.child=spawn(bin,[...prefixArgs,'--print','--prompt-file',file],{
+        // Case text can contain customer-controlled instructions: never inherit a permissive
+        // user default (e.g. DEVIN_PERMISSION_MODE=dangerous); unattended runs keep normal checks.
+        const safety=status.permissionMode?['--permission-mode','normal']:[];
+        const child=job.child=spawn(bin,[...prefixArgs,...safety,'--print','--prompt-file',file],{
           cwd:root,shell:false,windowsHide:true,stdio:['ignore','pipe','pipe'],detached:process.platform!=='win32'
         });
         const timer=setTimeout(()=>{job.reason='timeout';killTree(child);},timeoutMs);

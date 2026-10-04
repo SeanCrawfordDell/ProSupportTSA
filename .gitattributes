@@ -1,0 +1,2 @@
+companion/*.cjs text eol=lf
+companion/*.ps1 text eol=lf

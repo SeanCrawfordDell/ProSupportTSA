@@ -5,19 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Device-local case trends for Dell Pro-Support.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
-  <script src="js/theme.js"></script>
+  <script src="js/theme.js?v=20261004-golive"></script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
   <title>Support Trends · Dell Pro-Support</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/theme.css">
-  <link rel="stylesheet" href="css/support-trends.css">
-  <script src="js/case-workflow-core.js?v=20260919-support-workflow" defer></script>
-  <script src="js/case-toolkit-core.js?v=20260919-support-workflow" defer></script>
-  <script src="js/case-notes-core.js?v=20261003-content-scoring" defer></script>
-  <script src="js/support-trends.js?v=20260919-support-workflow" defer></script>
+  <link rel="stylesheet" href="css/styles.css?v=20261004-golive">
+  <link rel="stylesheet" href="css/theme.css?v=20261004-golive">
+  <link rel="stylesheet" href="css/site-topbar.css?v=20261004-golive">
+  <link rel="stylesheet" href="css/support-trends.css?v=20261004-golive">
+  <script src="js/case-workflow-core.js?v=20261004-golive" defer></script>
+  <script src="js/case-toolkit-core.js?v=20261004-golive" defer></script>
+  <script src="js/case-notes-core.js?v=20261004-golive" defer></script>
+  <script src="js/support-trends.js?v=20261004-golive" defer></script>
 </head>
 <body>
-  <header class="topbar"><a class="brand home-link" href="index.html"><span class="brand-mark">←</span>Support Assistant</a><div class="theme-controls" role="group" aria-label="Appearance"><button id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button></div></header>
-  <main>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar" id="siteTopbar" data-page="trends"></header>
+  <script src="js/site-topbar.js?v=20261004-golive"></script>
+  <main id="main">
     <section class="hero"><div><p class="eyebrow">CASE QUALITY</p><h1>Support Trends</h1><p>See where follow-through and evidence collection need attention.</p></div><a class="button primary" href="case-notes.html">Open Case Notes</a></section>
     <p class="notice">This dashboard reads only the Case Notes history saved in this browser. It does not upload or share case data.</p>
     <section id="emptyState" class="panel empty-state" hidden><h2>No case history yet</h2><p>Create and save cases in Case Notes to see local trends here.</p><a class="button primary" href="case-notes.html">Create a case</a></section>

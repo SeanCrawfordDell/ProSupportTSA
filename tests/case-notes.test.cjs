@@ -129,6 +129,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
   get('fields').querySelector=sel=>sel==='.field-grid'?fieldGrid:null;
   const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../js/devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
   ctx.CaseSettings = require('../js/case-settings-core.js');
+  ctx.CaseToolkitCore = require('../js/case-toolkit-core.js');
   ctx.CaseBackup = require('../js/case-backup-core.js');
   ctx.CaseExample = require('../js/case-example-core.js');
   ctx.localStorage = {
@@ -194,6 +195,9 @@ test('Load Example adds a separate sample case with three dated notes and keeps 
   let saved=JSON.parse(h.stored());
   assert.equal(saved.selected,h.ctx.CaseExample.ID);
   assert.equal(saved.cases.find(n=>n.id===mine).tag,'MINE123','your own case is unchanged');
+  assert.notEqual(saved.cases.find(n=>n.id===mine).started,null,'its timer keeps running');
+  assert.equal(saved.cases.find(n=>n.id===h.ctx.CaseExample.ID).started,null);
+  assert.match(h.get('historyList').children.find(row=>row.children[0].children[0].textContent.startsWith('Sample')).children[0].children[0].textContent,/^Sample · /);
   const sample=saved.cases.find(n=>n.id===h.ctx.CaseExample.ID);
   assert.equal(sample.entries.length,3);assert.equal(new Set(sample.entries.map(e=>new Date(e.created).toDateString())).size,3);
   assert.match(h.get('copyStatus').textContent,/Sample case loaded/);
@@ -740,4 +744,93 @@ test('retention preference round-trips through settings backups and rejects unkn
   assert.equal(settings.values['dell-support.backup-retention-days'],'90');
   assert.throws(()=>S.validate({fieldConfig:C.empty().fieldConfig,preferences:{backupRetention:'forever'}},C.fields),/Invalid settings backup/);
   assert.equal(S.validate({fieldConfig:C.empty().fieldConfig,preferences:{backupRetention:null}},C.fields).values['dell-support.backup-retention-days'],null);
+});
+test('the folder backup still runs when the browser save fails, so unsaved edits reach disk',async()=>{
+  const folder=fakeFolder();const h=harness({folder});await new Promise(setImmediate);
+  h.click('newNote');await h.click('stopTimer');h.failWrite(true);h.edit('notes','Only in this tab');
+  await h.intervals.find(i=>i.ms===60000).f();
+  assert.equal(JSON.parse(folder.files.get('case-history.json')).cases[0].notes,'Only in this tab');
+  assert.match(h.get('saveStatus').textContent,/Save failed/);
+});
+test('a settings write failure does not repeat the hourly history snapshot every minute',async()=>{
+  const folder=fakeFolder();const write=folder.getFileHandle;
+  folder.getFileHandle=async(name,options)=>{if(name.startsWith('customer-config'))throw Error('locked by OneDrive');return write(name,options);};
+  const h=harness({folder});await new Promise(setImmediate);
+  const backup=h.intervals.find(i=>i.ms===60000).f;
+  h.click('newNote');h.edit('notes','First');await backup();
+  h.setTime(70000);h.edit('notes','Second');await backup();
+  const dated=[...folder.files.keys()].filter(n=>/^case-history-\d/.test(n));
+  assert.equal(dated.length,1,'one dated snapshot per hour: '+dated);
+  assert.equal(JSON.parse(folder.files.get('case-history.json')).cases[0].notes,'Second');
+  assert.match(h.get('backupFolderStatus').textContent,/site configuration could not be written/);
+});
+test('permanent deletion asks before continuing when the safety copy fails',async()=>{
+  const folder=fakeFolder();const h=harness({folder});await new Promise(setImmediate);
+  h.click('newNote');h.edit('notes','Doomed');
+  h.get('historyList').children[0].children[1].listeners.click();
+  h.get('caseCollection').value='trash';h.get('caseCollection').listeners.change();
+  folder.getFileHandle=async()=>{throw Error('disk full');};
+  const asked=[];h.ctx.confirm=message=>{asked.push(message);return !/safety copy could not be saved/.test(message);};
+  await h.get('historyList').children[0].children[1].listeners.click();
+  assert.equal(C.parse(h.stored()).trash.length,1,'kept when the user declines to continue');
+  assert.ok(asked.some(m=>/safety copy could not be saved/.test(m)));
+  h.ctx.confirm=()=>true;await h.get('historyList').children[0].children[1].listeners.click();
+  assert.equal(C.parse(h.stored()).trash.length,0);
+  assert.equal(h.get('pageStatus').hidden,false);assert.match(h.get('pageStatus').textContent,/permanently deleted/);
+});
+test('moving a case to Trash reports on the page, not only in the closed Backup dialog',()=>{
+  const h=harness();h.click('newNote');h.edit('tag','ABC1234');
+  h.get('historyList').children[0].children[1].listeners.click();
+  assert.equal(h.get('pageStatus').hidden,false);assert.match(h.get('pageStatus').textContent,/ABC1234 moved to Trash/);
+});
+test('field customizer changes stay in a draft until Save Configuration',async()=>{
+  const h=harness();h.click('newNote');h.edit('notes','Keep');
+  const before=h.stored();
+  const lookup=h.ctx.document.getElementById;h.ctx.document.getElementById=id=>id==='siteName'?null:lookup(id); // the harness creates every element on demand
+  h.click('customizeFields');
+  h.get('newFieldId').value='siteName';h.get('newFieldLabel').value='Site';h.click('addCustomField');
+  assert.equal(h.stored(),before,'adding only changes the draft');
+  assert.equal(C.parse(h.stored()).fieldConfig.customFields.siteName,undefined);
+  h.ctx.confirm=()=>true;h.click('closeCustomizer');
+  assert.equal(h.get('fieldCustomizer').open,false);assert.equal(h.stored(),before,'closing discards the draft');
+  h.click('customizeFields');h.get('newFieldId').value='siteName';h.get('newFieldLabel').value='Site';h.click('addCustomField');
+  await h.click('saveFieldConfig');
+  assert.equal(C.parse(h.stored()).fieldConfig.customFields.siteName,'Site');assert.equal(C.parse(h.stored()).cases[0].siteName,'');
+  h.click('customizeFields');h.get('customFieldsList').children[0].children[2].listeners.click();
+  assert.equal(C.parse(h.stored()).fieldConfig.customFields.siteName,'Site','removing waits for Save');
+  await h.click('saveFieldConfig');
+  assert.equal(C.parse(h.stored()).fieldConfig.customFields.siteName,undefined);assert.equal(C.parse(h.stored()).cases[0].notes,'Keep');
+});
+test('a restored backup whose custom field would take a page control ID is rejected',async()=>{
+  const h=harness();h.click('newNote');const before=h.stored();
+  const backup=C.empty();C.addCustomField(backup,'restoreFile','Clash');C.create(backup,'x',1000);
+  h.get('restoreFile').files=[{text:async()=>JSON.stringify(backup)}];await h.get('restoreFile').listeners.change();
+  assert.equal(h.stored(),before);assert.match(h.get('pageStatus').textContent,/conflicts with a page control: restoreFile/);
+});
+test('one damaged saved preference is skipped and named instead of stopping the settings backup',()=>{
+  const S=require('../js/case-settings-core.js');
+  const captured=S.capture({getItem:key=>key==='dell-support.case-notes-sections'?'{broken':key==='dell-support.pinned-resources.v1'?'["a"]':null});
+  assert.deepEqual(captured.skipped,['sections']);assert.deepEqual(captured.pins,['a']);
+  assert.equal('sections' in captured,false);assert.equal(JSON.stringify(captured).includes('skipped'),false);
+  assert.throws(()=>S.validate({fieldConfig:C.empty().fieldConfig,preferences:{aiTasks:{t:{label:'x'.repeat(81),instruction:'y'}}}},C.fields),/Invalid settings backup/);
+});
+test('Load Example never archives a real case when Recent cases is full',()=>{
+  const state=C.empty();for(let i=0;i<100;i++)C.create(state,'case'+i,1000+i);state.cases.forEach(n=>C.stop(n,5000));
+  const h=harness({initial:JSON.stringify(state)});const before=h.stored();
+  h.click('loadExampleNote');
+  assert.equal(h.stored(),before);assert.match(h.get('pageStatus').textContent,/Recent cases is full/);
+});
+test('unreadable stored history can be downloaded and replaced from a backup file',async()=>{
+  const h=harness({initial:'{"version":3,"cases":"broken"}'});await new Promise(setImmediate);
+  assert.equal(h.get('recoveryActions').hidden,false);assert.equal(h.get('recoverFromFile').disabled,false);
+  assert.match(h.get('lockNotice').textContent,/download the stored data/);
+  const downloads=[];h.ctx.URL={createObjectURL(blob){downloads.push(blob);return 'blob:x';},revokeObjectURL(){}};h.ctx.Blob=Blob;h.ctx.setTimeout=()=>{};
+  h.ctx.document.body={append(link){link.remove=()=>{};}};
+  h.click('downloadStoredData');assert.equal(await downloads[0].text(),'{"version":3,"cases":"broken"}');
+  h.click('recoverFromFile');assert.equal(h.get('restoreFile').clickCount,1);
+  const backup=C.empty();C.create(backup,'saved',1000).notes='Recovered';
+  h.get('restoreFile').files=[{size:100,text:async()=>JSON.stringify(backup)}];await h.get('restoreFile').listeners.change();
+  assert.equal(C.parse(h.stored()).cases[0].notes,'Recovered');
+  assert.equal(h.get('recoveryActions').hidden,true);assert.equal(h.get('lockNotice').hidden,true);
+  h.edit('notes','Editing again');assert.equal(C.parse(h.stored()).cases[0].started!==undefined,true);
 });

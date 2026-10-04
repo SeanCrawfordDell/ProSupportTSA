@@ -2,7 +2,7 @@
 
 Extend the existing Case Notes workspace with case context, shared evidence, resolution verification, editable knowledge candidates, and local repeat-pattern review in Support Trends. All data stays within the existing case history and backup/version workflow. Existing Copy to Lightning and escalation transfer include recorded workflow results. Collection guidance lives under Evidence; the duplicate suggested-tools section has been removed from Triage.
 
-Run: `python3 -m http.server 4187 --bind 127.0.0.1` from the repository root (or `python3 scripts/nocache_server.py` for a no-cache server on port 8080).
+Run: `python3 -m http.server 4187 --bind 127.0.0.1` from the repository root (or `python3 scripts/nocache_server.py` for the same address with caching disabled).
 Preview: http://127.0.0.1:4187/index.html
 Tests: `node --test tests/*.test.cjs`
 
@@ -17,7 +17,7 @@ This development copy is separate from the published website. Preview storage is
 5. Build and edit a knowledge candidate. Copy to Lightning and escalation source notes include the recorded workflow findings.
 6. Open Support Trends to inspect locally recorded repeat contacts, missing verification, and matching configuration groups.
 
-Release validation: 141 Node regression tests passed. Browser checks covered routing, evidence capture, completion gating, knowledge generation, reload persistence, Support Trends, the Chrome notes popout handoff, and knowledge export preparation. Synthetic QA cases are browser-local and are not shipped with the site.
+Release validation: run the full Node suite (all tests must pass). Browser checks covered routing, evidence capture, completion gating, knowledge generation, reload persistence, Support Trends, the Chrome notes popout handoff, and knowledge export preparation. Synthetic QA cases are browser-local and are not shipped with the site.
 
 The notes Pop out button opens a compact browser window with the existing rich editor and toolbox. Only one window can edit at a time. Return to case saves before returning; blocked popups offer a compact same-tab fallback.
 
@@ -41,16 +41,24 @@ Both rule-based scorers measure content rather than presence and length. `CaseRu
 - Escalation weak phrases (`see above`, `latest`, `n/a`, `ok`, ...) block only fields under 25 characters, matched as a prefix or whole word. Severity (2), Service Impact (2) and Affected Systems / Users (3) are required and also scored inside Specificity (13 points remain for text detail). Recent changes is required and accepts a plain "None" / "No known changes" (`noChanges` in app.js). Service Tag, Service Request Number and Expected behavior were removed from Escalation Quality; Reproducibility is now 10 for detailed steps + up to 5 numbered steps (or 15 for a detailed timeline when not reproducible).
 - Case Notes details apply format checks (Service Tag 5–10 alphanumerics, Service Request 6+ digits, OS version contains a digit, Log Location is a link or path) worth half credit on mismatch; Issue Description is no longer counted there. Triage (6) is its own row and accepts impact / change written in the Issue text; owner and date in the Action Plan count for Next steps. Template prompt labels followed by an answer of three characters or fewer are dropped by `clean()`. Troubleshooting and Next steps score every dated entry together.
 - Handoff (`CaseNotes.escalation`): `workflow.recentChange` → `changes`, `workflow.severity` → `production` (the escalation Service Impact field, which keeps the `production` id and offers the same options as the Triage Service Impact field; Unspecified → blank, and saved drafts holding the former Production down / Production degraded values are normalized to Service unavailable / Service degraded), `evidence` is "Yes" when a Log Location is set or an evidence checkbox is ticked, and `results` stays empty so outcomes are recorded on the escalation page.
+## Releasing Case Notes changes
+
+Every local script and stylesheet in `case-notes.html` carries the same `?v=` tag. When you change any of them, update the tag on every one (for example `?v=20261004-golive` to today's date and a short label) in a single replace. A browser holding an older cached core module next to a newer page script can reject newer saved data and lock editing, so mixed tags are not allowed. `tests/golive-hardening.test.cjs` enforces this.
+
+## Known risk: shared origin
+
+The site is published at `seancrawforddell.github.io/EscalationQuality/`. Browsers isolate storage by origin, not path, so every GitHub Pages project under that account shares this site's localStorage (case notes), IndexedDB (the backup folder handle) and the companion's allowed Origin. Script running from any other project on that account could read case data. This risk is accepted for launch because only the account owner publishes there. To remove it, serve the site from its own origin (a custom domain or a dedicated Pages account) and update the allowed `origins` list in `companion/server.cjs`.
+
 # Optional Devin CLI integration preview
 
 Run `python -m http.server 4187 --bind 127.0.0.1` from the repository root and open
 `http://127.0.0.1:4187/case-notes.html`. Run `node --test tests/*.test.cjs` for
 regression tests. AI Settings generates a one-command bootstrap: on localhost it
 fetches `companion/Connect-Devin.ps1` from that preview server; in production it
-fetches from the repository main branch. The bootstrap downloads only the two
+fetches from the commit pinned in `COMPANION_COMMIT` (`js/devin-integration.js`)
+and verifies runtime checksums (see "Releasing companion changes" in `companion/README.md`). The bootstrap downloads only the two
 runtime files into a unique temporary folder. It does not install dependencies
-or register startup tasks. The legacy ZIP packaging script remains for developer
-testing, but the user setup no longer links to it.
+or register startup tasks.
 
 The Windows helper uses Node.js 22+ with no npm dependencies. See
 `companion/README.md` for CLI installation, login, pairing, workspace trust,

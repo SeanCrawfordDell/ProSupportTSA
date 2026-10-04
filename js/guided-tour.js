@@ -1,8 +1,11 @@
 "use strict";
 window.GuidedTour = (() => {
-  function create({triggerId,steps,finishLabel="Finish tour",onStart,onFinish}) {
+  // Steps marked core:true form a short first tour; the rest are offered afterwards as "More features".
+  function create({triggerId,steps:allSteps,finishLabel="Finish tour",onStart,onFinish}) {
     const $=id=>document.getElementById(id),dialog=$("featureDemo"),trigger=$(triggerId);
-    let index=0,active=false,target=null,undo=[],originalScroll=0,context;
+    const core=allSteps.filter(step=>step.core),extra=core.length?allSteps.filter(step=>!step.core):[];
+    let index=0,active=false,target=null,undo=[],originalScroll=0,context,steps=core.length?core:allSteps;
+    const offerMore=()=>steps===core&&extra.length>0&&index===steps.length-1;
     const shield=document.createElement("div"),spotlight=document.createElement("div");
     shield.className="tour-shield";spotlight.className="tour-spotlight";
     shield.hidden=spotlight.hidden=true;spotlight.setAttribute("aria-hidden","true");
@@ -62,7 +65,9 @@ window.GuidedTour = (() => {
       $("demoProgress").setAttribute("aria-live","polite");
       $("demoTitle").textContent=step.title;$("demoDescription").textContent=step.what;
       $("demoExampleLabel").textContent="WHY USE IT";$("demoExample").textContent=step.why;
-      $("demoBack").disabled=index===0;$("demoNext").textContent=index===steps.length-1?finishLabel:"Next →";
+      $("demoBack").disabled=index===0;
+      $("demoNext").textContent=offerMore()?`More features (${extra.length}) →`:index===steps.length-1?finishLabel:"Next →";
+      $("skipDemo").textContent=offerMore()?"Done":"Skip tour";
       dialog.scrollTop=0;
       target.scrollIntoView({block:"start",behavior:"instant"});
       position();requestAnimationFrame(position);
@@ -71,7 +76,7 @@ window.GuidedTour = (() => {
       if(active)return;
       // onStart may prepare the page (for example, open sample data); onFinish receives what it returned.
       context=onStart?.();
-      originalScroll=window.scrollY;active=true;index=0;
+      originalScroll=window.scrollY;active=true;index=0;steps=core.length?core:allSteps;
       document.body.classList.add("tour-running");shield.hidden=spotlight.hidden=false;
       dialog.classList.add("guided-tour");dialog.setAttribute("aria-modal","true");dialog.show();render();$("demoNext").focus({preventScroll:true});
     }
@@ -83,7 +88,10 @@ window.GuidedTour = (() => {
     }
     trigger.addEventListener("click",open);$("skipDemo").textContent="Skip tour";$("skipDemo").addEventListener("click",finish);
     $("demoBack").addEventListener("click",()=>{if(index>0){index--;render();}});
-    $("demoNext").addEventListener("click",()=>{if(index===steps.length-1)finish();else{index++;render();}});
+    $("demoNext").addEventListener("click",()=>{
+      if(offerMore()){steps=[...core,...extra];index++;render();}
+      else if(index===steps.length-1)finish();else{index++;render();}
+    });
     dialog.addEventListener("cancel",event=>{event.preventDefault();finish();});
     document.addEventListener("keydown",event=>{
       if(!active)return;

@@ -1,5 +1,11 @@
 "use strict";
-// Shared by every tool. No saved preference means follow the operating system.
+// Shared by every tool and loaded first. GitHub Pages cannot send frame-ancestors or X-Frame-Options,
+// so refuse to render inside another site's frame (clickjacking) and take over the top window instead.
+if (window.top !== window.self) {
+  document.documentElement.style.display = "none";
+  try { window.top.location = window.self.location.href; } catch { /* The page stays hidden. */ }
+}
+// No saved preference means follow the operating system.
 (() => {
   const system = window.matchMedia("(prefers-color-scheme: dark)");
   const valid = value => value === "dark" || value === "light" ? value : null;
@@ -24,19 +30,22 @@
     } catch { /* Keep the selection for this page when storage is blocked. */ }
     apply();
   }
+  // Files added below carry the same cache version as this script, so one tag per page stays true.
+  const version = (() => { try { return new URL(document.currentScript.src).searchParams.get("v"); } catch { return null; } })();
+  const versioned = path => version ? path + "?v=" + encodeURIComponent(version) : path;
   apply(); // Run before styles render to avoid a flash of the wrong theme.
   document.addEventListener("DOMContentLoaded", () => {
     apply();
-    if (!document.querySelector('script[src="js/site-navigation.js"]')) {
+    if (!document.querySelector('script[src^="js/site-navigation.js"]')) {
       const navigation = document.createElement("script");
-      navigation.src = "js/site-navigation.js";
+      navigation.src = versioned("js/site-navigation.js");
       navigation.defer = true;
       document.head.append(navigation);
     }
-    if (!document.querySelector('link[href="css/header-layout.css"]')) {
+    if (!document.querySelector('link[href^="css/header-layout.css"]')) {
       const layout = document.createElement("link");
       layout.rel = "stylesheet";
-      layout.href = "css/header-layout.css";
+      layout.href = versioned("css/header-layout.css");
       document.head.append(layout);
     }
     document.getElementById("themeToggle")?.addEventListener("click", () => {
