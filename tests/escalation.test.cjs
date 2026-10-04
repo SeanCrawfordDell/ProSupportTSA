@@ -158,6 +158,19 @@ test('Log Location is required when logs were gathered, and only then',()=>{
  assert.ok(!h.run('evaluate({...samples.strong,evidence:"",logLocation:""})').blocking_issues.some(item=>item.field==='logLocation'),'an unanswered question blocks on itself, not the hidden location');
  assert.equal(h.run('evaluate(samples.strong)').ready_to_escalate,true);
 });
+test('the tutorial shows the reviewed strong sample and then restores the draft untouched',()=>{
+ const h=harness();h.run('populate({problem:"My own draft problem",evidence:"No"});markChanged();saveDraft()');const saved=h.stored();
+ h.get('problem').value='Unsaved edit';h.run('markChanged()');
+ const previous=h.run('window.EscalationExample.open()');
+ assert.equal(h.get('problem').value,h.run('samples.strong.problem'));assert.equal(h.get('reviewState').hidden,false,'the sample is reviewed so the results have content');
+ assert.notEqual(h.stored(),saved,'pending edits are saved before the sample loads');const beforeSample=h.stored();
+ h.run('markChanged();saveDraft()');assert.equal(h.stored(),beforeSample,'the sample is never saved over the draft');
+ h.run('window.EscalationExample.restore')(previous);
+ assert.equal(h.get('problem').value,'Unsaved edit');assert.equal(h.get('evidence').value,'No');assert.equal(h.get('reviewState').hidden,true,'an unreviewed draft returns unreviewed');
+ assert.equal(h.get('copyButton').disabled,true);assert.equal(h.stored(),beforeSample);
+ h.run('runReview()');const reviewed=h.run('window.EscalationExample.open()');h.run('window.EscalationExample.restore')(reviewed);
+ assert.equal(h.get('reviewState').hidden,false,'a reviewed draft comes back reviewed');assert.equal(h.get('problem').value,'Unsaved edit');
+});
 test('unanswered questions alone do not count as work or produce a copy; an answer does',()=>{
  const h=harness();h.run('populate({})');
  assert.equal(h.run('hasWork()'),false);assert.equal(h.run('formatEscalation(reviewData())'),'');
