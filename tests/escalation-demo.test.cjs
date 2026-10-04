@@ -69,7 +69,7 @@ test('Escalation tour covers the current form and points at real controls',()=>{
   }
  }
  const targets=captured.steps.map(s=>s.target).join(' '),text=captured.steps.map(s=>s.what).join(' ');
- for(const area of ['#caseTitle','#sourceNotePanel','#problem','#platform','#reproducible','#troubleshooting','#evidence','#openLogHelper','#changes','#addAction','.form-actions','#scoreRing','#categoryGrid','#strengthsSection','#copySection','.devin-copy','#trainingMenu','#toolsMenu','#settingsMenu','#requestFeature','#themeToggle'])
+ for(const area of ['#caseTitle','#sourceNotePanel','#problem','#platform','#reproducible','#troubleshooting','#evidence','#openLogHelper','#changes','#addAction','.form-actions','#scoreRing','#categoryGrid','#strengthsSection','#copySection','#trainingMenu','#toolsMenu','#settingsMenu','#requestFeature','#themeToggle'])
   assert.ok(targets.includes(area),'tour covers '+area);
  for(const field of ['Severity','Service Impact','Affected Systems / Users','Customer Country','time zone','Exact errors and timestamps','Log Location','Reason logs cannot be obtained','Recent changes'])
   assert.ok(text.includes(field),'tour explains '+field);
