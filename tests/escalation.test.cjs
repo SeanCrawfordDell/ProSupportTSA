@@ -43,7 +43,7 @@ test('10-second autosave restores all fields, checks and paired actions; storage
  h.setFail(false);h.run('saveDraft()');assert.equal(h.run('dirty'),false);
 });
 test('edits invalidate review; copy requires a fresh review and reports clipboard failure',async()=>{
- const h=harness();await h.click('loadStrong');assert.equal(h.get('copyButton').disabled,false);await h.click('copyButton');assert.match(h.copied(),/^CASE TITLE:\nPowerEdge R750 \| Windows Server \|/);assert.match(h.copied(),/AFFECTED SYSTEMS \/ USERS:\n1 of 24 hosts/);assert.doesNotMatch(h.copied(),/SERVICE REQUEST|SERVICE TAG|EXPECTED BEHAVIOR/);
+ const h=harness();await h.click('loadStrong');assert.equal(h.get('copyButton').disabled,false);await h.click('copyButton');assert.match(h.copied(),/^CASE TITLE:\nPowerEdge R750 \| Windows Server \|/);assert.match(h.copied(),/AFFECTED SYSTEMS \/ USERS:\n1 server, 50 users\n/);assert.doesNotMatch(h.copied(),/SERVICE REQUEST|SERVICE TAG|EXPECTED BEHAVIOR/);
  h.get('problem').value='Changed';h.run('markChanged()');assert.equal(h.get('copyButton').disabled,true);assert.match(h.get('resultTitle').textContent,/review again/);
  await h.click('copyButton');assert.match(h.get('copyStatus').textContent,/Review/);
  const f=harness({failClipboard:true});await f.click('loadStrong');await f.click('copyButton');assert.match(f.get('copyStatus').textContent,/Copy failed/);assert.equal(f.get('copyPreview').selected,true);
