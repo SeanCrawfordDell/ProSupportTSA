@@ -5,7 +5,7 @@
 .ts-field select,.ts-field input { width:100%; padding:9px 11px; border:1px solid var(--input-border); border-radius:8px; background:var(--input-bg); color:var(--input-text); font:inherit; font-weight:400; }
 .ts-areas { display:flex; flex-wrap:wrap; gap:6px; }
 .ts-chip { border:1px solid var(--input-border); background:var(--panel-bg); color:var(--ink); border-radius:999px; padding:5px 11px; font-size:12px; font-weight:700; cursor:pointer; }
-.ts-chip[aria-pressed="true"] { background:var(--blue); border-color:var(--blue); color:#fff; }
+.ts-chip[aria-pressed="true"] { background:var(--blue); border-color:var(--blue); color:var(--on-blue); }
 .ts-count { margin:0; color:var(--muted); font-size:12px; }
 .ts-list { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
 .ts-item { display:grid; gap:3px; width:100%; text-align:left; padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--input-bg); color:var(--ink); cursor:pointer; font:inherit; }

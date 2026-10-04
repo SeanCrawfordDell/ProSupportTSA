@@ -2,7 +2,7 @@
 .case-workflow summary { cursor:pointer; font-size:17px; font-weight:750; }
 .workflow-help { color:var(--muted); font-size:13px; line-height:1.6; }
 #workflowTabs,.workflow-actions { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
-#workflowTabs [aria-pressed="true"] { background:var(--blue); color:#fff; border-color:var(--blue); }
+#workflowTabs [aria-pressed="true"] { background:var(--blue); color:var(--on-blue); border-color:var(--blue); }
 #workflowFields { border:0; padding:0; margin:0; min-width:0; }
 #workflowFields h3 { margin:20px 0 8px; font-size:15px; }
 /* Starts one line tall like an input, grows with its text, and can be dragged taller. */

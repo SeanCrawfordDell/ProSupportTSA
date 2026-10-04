@@ -5,7 +5,7 @@
 /* Override the original nth-child positions with one evenly spaced orbit. */
 #floatingToolbox.is-open #toolboxRadial button{transform:translate(-50%,-50%) rotate(var(--angle)) translateX(var(--orbit,108px)) rotate(calc(-1 * var(--angle))) scale(1);touch-action:none;user-select:none}
 .toolbox-color-row{display:flex;align-items:center;gap:8px;margin:12px 0}.toolbox-color-row label{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:1}.toolbox-color-row input{width:48px;height:34px;padding:2px}.toolbox-color-row button{padding:8px;cursor:pointer}
-#toolboxEditor{width:min(540px,calc(100% - 32px));max-height:85vh;overflow:auto;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:24px}
+#toolboxEditor{width:min(540px,calc(100% - 32px));max-height:85vh;overflow:auto;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:24px}
 #toolboxEditor form{display:grid;gap:14px}#toolboxLinkList{padding:0;list-style:none}#toolboxLinkList li{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px 0}#toolboxLinkList span{overflow-wrap:anywhere;min-width:0}
 .demo-toolbox-preview{display:flex;align-items:center;gap:18px;padding:20px;margin:16px 0;border:2px solid #73caff;border-radius:12px;background:#0076ad18}.demo-toolbox-preview svg{flex:none;width:48px;height:48px;color:#0076ad}.demo-toolbox-preview p{margin:0}.demo-toolbox-preview[hidden]{display:none}
 /* Launcher size and icon. --toolbox-size is set from the saved toolbox appearance. */
