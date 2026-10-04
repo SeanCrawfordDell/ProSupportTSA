@@ -21,7 +21,7 @@ function harness({stored=null,failStorage=false,failClipboard=false,imported=nul
  }
  const get=id=>nodes[id]??=Object.assign(new Element(),{id});
  const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
- for(const [,tag,id]of html.matchAll(/<(\w+)[^>]*\bid="([^"]+)"/g))get(id).tagName=tag.toUpperCase();
+ for(const [whole,tag,id]of html.matchAll(/<(\w+)[^>]*\bid="([^"]+)"[^>]*>/g)){const node=get(id);node.tagName=tag.toUpperCase();const type=/\btype="([^"]+)"/.exec(whole)?.[1];if(type){node.type=type;node.checked=false;}if(/\shidden[\s>]/.test(whole))node.hidden=true;}
  get('reviewState').hidden=true;
  const storage={getItem(){if(failStorage)throw Error('blocked');return stored},setItem(k,v){if(failStorage)throw Error('quota');stored=v;writes++}};
  const ctx=vm.createContext({document:{getElementById:get,createElement:t=>new Element(t),createTextNode:t=>t,querySelectorAll:()=>[],addEventListener:(k,f)=>listeners[k]=f},localStorage:storage,sessionStorage:{getItem:()=>imported&&JSON.stringify(imported),removeItem(){imported=null}},location:{hash:imported?'#import=test':'',pathname:'/escalation-quality.html',search:''},history:{replaceState(){}},window:{addEventListener:(k,f)=>listeners[k]=f},setInterval:(f,ms)=>timers.push({f,ms}),confirm:()=>confirmAnswer,navigator:{clipboard:{async writeText(text){if(failClipboard)throw Error('denied');copied=text}}},URLSearchParams,console,CaseToolkitCore:require('../case-toolkit-core.js'),DevinPrompt:require('../devin-prompt-core.js')});
@@ -94,12 +94,49 @@ test('another tab cannot silently overwrite a newer draft',()=>{
  h.externalSave('newer draft from other tab');assert.equal(h.run('saveDraft()'),false);assert.match(h.get('draftStatus').textContent,/Save paused/);assert.equal(h.stored(),'newer draft from other tab');
 });
 
-test('log reason appears only for No, including restored drafts, and is omitted from Yes copies',()=>{
- const h=harness();assert.equal(h.get('logReasonField').hidden,true);
+test('gathered logs is a checkbox; unchecked asks for the reason, which is omitted once logs are gathered',()=>{
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
+ assert.match(html,/<input type="checkbox" id="evidence"[^>]*>Have you gathered logs\?<\/label>/);assert.ok(!/<select id="evidence"/.test(html));
+ const h=harness();assert.equal(h.get('evidence').checked,false);assert.equal(h.run('value("evidence")'),'No');
+ assert.equal(h.get('logReasonField').hidden,false,'unchecked means no logs yet, so the reason is asked for');
  h.run('populate({evidence:"No",logReason:"Host unavailable"})');assert.equal(h.get('logReasonField').hidden,false);
- h.run('markChanged();saveDraft()');const restored=harness({stored:h.stored()});assert.equal(restored.get('logReasonField').hidden,false);
- h.get('evidence').value='Yes';h.run('updateLogReasonVisibility()');assert.equal(h.get('logReasonField').hidden,true);assert.doesNotMatch(h.run('formatEscalation(reviewData())'),/Host unavailable/);
- h.get('evidence').value='';h.run('updateLogReasonVisibility()');assert.equal(h.get('logReasonField').hidden,true);
+ h.run('markChanged();saveDraft()');const restored=harness({stored:h.stored()});assert.equal(restored.get('evidence').checked,false);assert.equal(restored.get('logReasonField').hidden,false);
+ h.get('evidence').checked=true;for(const f of h.get('evidence').listeners.change)f();
+ assert.equal(h.run('value("evidence")'),'Yes');assert.equal(h.get('logReasonField').hidden,true);assert.doesNotMatch(h.run('formatEscalation(reviewData())'),/Host unavailable/);
+ assert.match(h.run('formatEscalation(reviewData())'),/HAVE YOU GATHERED LOGS\?:\nYes/);
+});
+test('unchecked boxes alone do not count as work or produce a copy',()=>{
+ const h=harness();h.run('populate({})');
+ assert.equal(h.run('hasWork()'),false);assert.equal(h.run('formatEscalation(reviewData())'),'');
+ h.get('reproducible').checked=true;assert.equal(h.run('hasWork()'),true);
+});
+test('reproducible is a checkbox; checking it shows required reproduction steps',()=>{
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
+ assert.match(html,/<input type="checkbox" id="reproducible"[^>]*>Is this issue reproducible\?<\/label>\s*<label class="field wide" id="reproductionField" hidden>Reproduction steps <b>Required<\/b><textarea id="reproduction"/);
+ const h=harness();assert.equal(h.get('reproducible').checked,false);assert.equal(h.get('reproductionField').hidden,true);
+ h.get('reproducible').checked=true;for(const f of h.get('reproducible').listeners.change)f();
+ assert.equal(h.get('reproductionField').hidden,false);
+ const blocked=h.run('evaluate({...samples.strong,reproducible:"Yes",reproduction:""})');
+ assert.ok(blocked.blocking_issues.some(item=>item.field==='reproduction'),'steps are required when reproducible');
+ const notReproducible=h.run('evaluate({...samples.strong,reproducible:"No",reproduction:""})');
+ assert.ok(!notReproducible.blocking_issues.some(item=>item.field==='reproduction'),'steps are not required otherwise');
+ assert.equal(notReproducible.ready_to_escalate,true);
+ assert.equal(notReproducible.categories.reproducibility,15,'a detailed timeline earns the reproducibility credit');
+ assert.ok(h.run('evaluate({...samples.strong,reproducible:"No",reproduction:"",timeline:"Recently"})').categories.reproducibility<15,'a vague timeline does not');
+ // Steps typed before unchecking are kept in the draft but neither scored nor copied.
+ h.run('populate({...samples.strong,reproducible:"No"})');assert.equal(h.get('reproductionField').hidden,true);
+ const copy=h.run('formatEscalation(reviewData())');assert.match(copy,/IS THIS ISSUE REPRODUCIBLE\?:\nNo/);assert.doesNotMatch(copy,/REPRODUCTION STEPS/);
+ h.run('populate(samples.strong)');assert.equal(h.get('reproducible').checked,true,'samples with steps count as reproducible');
+ assert.match(h.run('formatEscalation(reviewData())'),/IS THIS ISSUE REPRODUCIBLE\?:\nYes\n\nREPRODUCTION STEPS:/);
+});
+test('drafts saved before the reproducible question keep their steps',()=>{
+ const h=harness();h.run('populate(samples.strong);markChanged();saveDraft()');
+ const old=JSON.parse(h.stored());delete old.fields.reproducible;
+ const restored=harness({stored:JSON.stringify(old)});
+ assert.equal(restored.get('reproducible').checked,true);assert.equal(restored.get('reproductionField').hidden,false);
+ assert.ok(restored.get('reproduction').value.startsWith('1.'));
+ const noSteps=JSON.parse(h.stored());delete noSteps.fields.reproducible;noSteps.fields.reproduction='';
+ assert.equal(harness({stored:JSON.stringify(noSteps)}).get('reproducible').checked,false);
 });
 
 test('senior assistance is excluded from scoring and export; total remains 100',()=>{
@@ -118,7 +155,7 @@ test('every Case Notes field reaches its corresponding escalation input and surv
  const restored=harness({stored:h.stored()});
  for(const [id,value] of Object.entries(expected)){assert.equal(h.get(id).value,value,id);assert.equal(restored.get(id).value,value,id+' restored');}
  // Log Location is set, so the handoff answers the gathered-logs question; results stay empty for outcomes to be recorded.
- assert.equal(h.get('evidence').value,'Yes');assert.equal(h.get('results').value,'');
+ assert.equal(h.get('evidence').checked,true);assert.equal(h.get('results').value,'');
  assert.ok(h.get('sourceNote').value.includes(core.plainText(note.next)));
  assert.equal(h.run('fieldIds.includes("nextSteps")'),false);
 });
@@ -155,7 +192,8 @@ test('OS version/build is required; concise versions receive completeness credit
 test('scoring requirements exactly match current visible Required labels',()=>{
  const h=harness(),html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
  const marked=[...html.matchAll(/<label\b[^>]*>(?:(?!<\/label>)[\s\S])*?<b>Required<\/b><(?:input|select|textarea) id="([^"]+)"/g)].map(m=>m[1]).sort();
- assert.deepEqual(Array.from(h.run('required')).sort(),marked);
+ // Checkbox questions are always answered, so they carry no badge; the log reason is required whenever logs were not gathered.
+ assert.deepEqual([...Array.from(h.run('required')).filter(id=>!h.run('checkboxFields').includes(id)),'logReason'].sort(),marked);
  for(const field of h.run('required')){
   const result=h.run('evaluate({...samples.strong,['+JSON.stringify(field)+']:""})');
   assert.equal(result.ready_to_escalate,false,field);assert.ok(result.blocking_issues.some(i=>i.field===field),field);
@@ -277,7 +315,7 @@ test('Case Notes handoff fills recent changes, service impact and gathered logs,
  note.toolkit.workflow={...require('../case-workflow-core.js').defaults(),recentChange:'Patched node 2 on 2026-09-30',severity:'Service unavailable'};
  const h=harness({imported:core.escalation(note,200)});
  assert.equal(h.get('changes').value,'Patched node 2 on 2026-09-30');assert.equal(h.get('production').value,'Service unavailable');
- assert.equal(h.get('evidence').value,'Yes');assert.equal(h.get('results').value,'');
+ assert.equal(h.get('evidence').checked,true);assert.equal(h.get('results').value,'');
  const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
  // Both pages label the field Service Impact and offer exactly the same options, so the handoff needs no mapping.
  const notesHtml=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');

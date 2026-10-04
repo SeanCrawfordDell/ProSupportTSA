@@ -7,10 +7,17 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 
 let formHasData = false;
 
-const fieldIds = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "errors", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "serviceRequest", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
+const fieldIds = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "serviceRequest", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
 const required = ["problem", "impact", "timeline", "expected", "country", "os", "reproduction", "troubleshooting", "results", "evidence", "supportType", "osVersion"];
+// Yes/No questions shown as checkboxes; they keep "Yes"/"No" values so drafts, imports, and copies are unchanged.
+const checkboxFields = ["evidence", "reproducible"];
+// Reproduction steps are required only when the issue is reproducible. A form without the answer is treated as reproducible.
+const isReproducible = form => form.reproducible !== "No";
+const requiredFor = form => required.filter(id => id !== "reproduction" || isReproducible(form));
+// An unchecked box is the default answer, not content: a form with only "No" answers counts as empty.
+const hasContent = form => fieldIds.some(id => checkboxFields.includes(id) ? form[id] === "Yes" : form[id]);
 const labels = {
-  serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Have you Gathered Logs?", changes: "recent changes"
+  serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproducible: "Is this issue reproducible?", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Have you Gathered Logs?", changes: "recent changes"
 };
 // Short answers that match one of these as a prefix or whole word are too vague to score (fields under 25 characters only).
 const weakPhrases = /(?:^|[^a-z0-9])(?:n\/a|na|none|unknown|not working|not sure|broken|issue|problem|see above|as above|same|latest|newest|current|tbd|tba|asap|ok|okay|fine|ask customer|pending|wip)(?![a-z0-9])/i;
@@ -63,7 +70,10 @@ const samples = {
 
 Object.assign(samples.strong, {serviceRequest:"123456789", platform:"PowerEdge R750", tag:"ABC1234", supportType:"OEM OS", osVersion:"Windows Server 2022; iDRAC 7.10.30.00", severity:"Sev 3", production:"Service degraded", affected:"1 of 24 hosts; infrastructure team", logLocation:"Case attachments: Lifecycle Controller log and browser trace"});
 
-function value(id) { return document.getElementById(id).value.trim(); }
+function value(id) {
+  const input = document.getElementById(id);
+  return checkboxFields.includes(id) ? (input.checked ? "Yes" : "No") : input.value.trim();
+}
 function caseTitle(form) {
   return [form.platform, form.os, form.problem].map(text => String(text || "").replace(/\s+/g," ").trim()).filter(Boolean).join(" | ");
 }
@@ -83,7 +93,7 @@ function outcomeCoverage(troubleshooting, results) {
 function numberedSteps(text) { return (text.match(/(?:^|\n)\s*(?:\d+[.)]|[-•])/g) || []).length; }
 function data() { 
   const formData = Object.fromEntries(fieldIds.map(id => [id, value(id)]));
-  formHasData = Object.values(formData).some(v => v.length > 0);
+  formHasData = hasContent(formData);
   return formData;
 }
 
@@ -94,6 +104,8 @@ const normalizeSupportType = text => Object.hasOwn(legacySupportTypes,text) ? le
 // Service Impact shares its options with Case Notes Triage; saved drafts may still carry the earlier Production down / degraded values.
 const legacyServiceImpact = {"Production down":"Service unavailable","Production degraded":"Service degraded"};
 const normalizeServiceImpact = text => Object.hasOwn(legacyServiceImpact,text) ? legacyServiceImpact[text] : text;
+// When and how often the issue occurs; for issues that cannot be reproduced on demand this carries the reproducibility credit.
+const timelinePattern = /\b(\d{1,2}[:/]\d{1,2}|\d{4}-\d{2}-\d{2}|utc|am|pm|daily|hourly|every|constant|intermittent|first|last|since)\b/i;
 const scoreMaxima = { completeness:35, specificity:20, reproducibility:15, evidence:15, troubleshooting:15 };
 const readinessThreshold = 75;
 function readiness(score, blockers) {
@@ -104,13 +116,15 @@ function evaluate(input = {}) {
   const form = Object.fromEntries(fieldIds.map(id => [id, typeof input[id] === "string" ? input[id].trim() : ""]));
   form.supportType = normalizeSupportType(form.supportType);
   form.production = normalizeServiceImpact(form.production);
-  const blockers = [], warnings = [], strengths = [];
-  required.forEach(id => {
+  // Steps for an issue marked not reproducible are hidden on the page and never scored or copied.
+  if (!isReproducible(form)) form.reproduction = "";
+  const blockers = [], warnings = [], strengths = [], requiredFields = requiredFor(form);
+  requiredFields.forEach(id => {
     if (!form[id]) addFinding(blockers, id, "Required information is missing.", "blocker");
     else if (isWeak(form[id]) || placeholderPattern.test(form[id])) addFinding(blockers, id, "The response is too vague to support an escalation.", "blocker");
   });
 
-  for (const [id,options] of [["supportType",supportTypeOptions],["evidence",["Yes","No"]]]) {
+  for (const [id,options] of [["supportType",supportTypeOptions],["evidence",["Yes","No"]],["reproducible",["Yes","No"]]]) {
     if(form[id] && !options.includes(form[id])) addFinding(blockers,id,"Choose one of the available options.","blocker");
   }
 
@@ -133,7 +147,7 @@ function evaluate(input = {}) {
 
   if (credit("problem") && !hasDetail(form.problem, 45)) addFinding(warnings, "problem", "Name the affected component, failure, and scope in concrete terms.", "warning");
   if (credit("impact") && (!hasDetail(form.impact, 45) || !quantityTerms.test(form.impact + " " + form.affected))) addFinding(warnings, "impact", "Quantify who or what is affected and explain the operational consequence.", "warning");
-  if (credit("timeline") && !/\b(\d{1,2}[:/]\d{1,2}|\d{4}-\d{2}-\d{2}|utc|am|pm|daily|hourly|every|constant|intermittent|first|last|since)\b/i.test(form.timeline)) addFinding(warnings, "timeline", "Add when the issue began, its frequency, and the latest occurrence.", "warning");
+  if (credit("timeline") && !timelinePattern.test(form.timeline)) addFinding(warnings, "timeline", "Add when the issue began, its frequency, and the latest occurrence.", "warning");
 
   if (credit("reproduction") && numberedSteps(form.reproduction) < 2) addFinding(warnings, "reproduction", "Use at least two ordered steps so another technician can reproduce the issue.", "warning");
   if (credit("troubleshooting") && numberedSteps(form.troubleshooting) < 2) addFinding(warnings, "troubleshooting", "Separate the troubleshooting actions into distinct steps.", "warning");
@@ -144,13 +158,17 @@ function evaluate(input = {}) {
   if (!form.changes) addFinding(warnings, "changes", "Document recent changes or explicitly state that none are known.", "warning");
   if (!form.severity || !form.production || !hasDetail(form.affected, 2) || discounted.has("affected")) addFinding(warnings, "affected", "Set Severity and Service Impact, and record the affected systems or users.", "warning");
 
-  const completedRequired = required.filter(id => credit(id) && !blockers.some(item => item.field === id)).length;
-  const completeness = Math.round(scoreMaxima.completeness * completedRequired / required.length);
+  const completedRequired = requiredFields.filter(id => credit(id) && !blockers.some(item => item.field === id)).length;
+  const completeness = Math.round(scoreMaxima.completeness * completedRequired / requiredFields.length);
   // Specificity: 13 points for concrete detail in the core text, 7 for Severity (2), Service Impact (2) and Affected systems / users (3).
   const coreText = ["problem", "impact", "timeline", "os", "osVersion"].filter(credit).map(id => form[id]).join(" ");
   const context = (hasDetail(form.severity, 1) ? 2 : 0) + (hasDetail(form.production, 1) ? 2 : 0) + (hasDetail(form.affected, 2) && !discounted.has("affected") ? 3 : 0);
   const specificity = Math.min(scoreMaxima.specificity, Math.round(Math.min(coreText.length, 500) / 500 * 7) + (specificityTerms.test(coreText) ? 3 : 0) + (/\d/.test(coreText) ? 3 : 0) + context);
-  const reproduction = Math.min(15, (detail("reproduction", 60) ? 6 : credit("reproduction") ? 2 : 0) + (credit("reproduction") ? Math.min(numberedSteps(form.reproduction), 5) : 0) + (credit("expected") ? 4 : 0));
+  // Reproducibility: steps (6 for detail + up to 5 steps) and expected behavior (4). Without steps to give, a detailed
+  // timeline of when and how often it occurs takes the steps' place.
+  const occurrence = detail("timeline", 45) && timelinePattern.test(form.timeline) ? 11 : credit("timeline") ? 4 : 0;
+  const steps = isReproducible(form) ? (detail("reproduction", 60) ? 6 : credit("reproduction") ? 2 : 0) + (credit("reproduction") ? Math.min(numberedSteps(form.reproduction), 5) : 0) : occurrence;
+  const reproduction = Math.min(15, steps + (credit("expected") ? 4 : 0));
   const evidenceText = ["errors", "timeline"].filter(credit).map(id => form[id]).join(" ");
   const evidence = Math.min(15, (detail("errors", 20) ? 5 : credit("errors") ? 1 : 0) + (form.evidence === "Yes" ? 3 + (credit("logLocation") && hasDetail(form.logLocation, 1) ? 2 : 0) : 0) + (evidenceTerms.test(evidenceText) ? 3 : 0) + (/\d/.test(evidenceText) ? 2 : 0));
   // Troubleshooting: actions (4 + up to 4 steps), results detail (3), and outcomes paired with actions (4; full credit at 50% coverage).
@@ -247,8 +265,9 @@ function reviewData() {
   return form;
 }
 function formatEscalation(form) {
-  const order = ["serviceRequest", "tag", "platform", "os", "osVersion", "supportType", "country", "severity", "production", "affected", "problem", "impact", "timeline", "expected", "errors", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "logReason", "collectionPlan", "changes", "sourceNote"];
-  const sections = order.filter(id => form[id] && (id !== "logReason" || form.evidence === "No")).map(id => `${labels[id].toUpperCase()}:\n${form[id]}`);
+  if (!hasContent(form)) return "";
+  const order = ["serviceRequest", "tag", "platform", "os", "osVersion", "supportType", "country", "severity", "production", "affected", "problem", "impact", "timeline", "expected", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "logReason", "collectionPlan", "changes", "sourceNote"];
+  const sections = order.filter(id => form[id] && (id !== "logReason" || form.evidence === "No") && (id !== "reproduction" || isReproducible(form))).map(id => `${labels[id].toUpperCase()}:\n${form[id]}`);
   const title=caseTitle(form);
   if(title)sections.unshift("CASE TITLE:\n"+title);
   return sections.join("\n\n");
@@ -295,10 +314,16 @@ function renderActions() {
 }
 function updateLogReasonVisibility() {
   byId("logReasonField").hidden = value("evidence") !== "No";
+  byId("reproductionField").hidden = value("reproducible") !== "Yes";
 }
 function populate(fields) {
   fieldIds.forEach(id => {
     const input = byId(id), raw = typeof fields[id] === "string" ? fields[id] : "", text = id === "supportType" ? normalizeSupportType(raw) : id === "production" ? normalizeServiceImpact(raw) : raw;
+    if (checkboxFields.includes(id)) {
+      // Drafts, samples, and imports from before the reproducible question count as reproducible when they have steps.
+      input.checked = id === "reproducible" && typeof fields.reproducible !== "string" ? !!fields.reproduction?.trim?.() : text === "Yes";
+      return;
+    }
     if (input.tagName === "SELECT" && text && ![...input.options].some(option => option.value === text)) { const option = document.createElement("option"); option.value = text; option.textContent = text; input.append(option); }
     input.value = text;
   });
@@ -314,7 +339,7 @@ function resetReview() {
   fieldIds.forEach(id => { byId(id).removeAttribute("aria-invalid"); byId(id).removeAttribute("aria-describedby"); });
   lastReviewed = "";
 }
-function hasWork() { return Object.values(data()).some(Boolean) || readActions().some(row => row.action || row.result) || Object.values(checks).some(Boolean); }
+function hasWork() { return hasContent(data()) || readActions().some(row => row.action || row.result) || Object.values(checks).some(Boolean); }
 function runReview() {
   const form = reviewData(), result = evaluate(form);
   readActions().forEach((row,index) => { if (!!row.action.trim() !== !!row.result.trim()) addFinding(result.blocking_issues, row.action.trim() ? "results" : "troubleshooting", `Complete both the action and result for row ${index+1}.`, "blocker"); });
@@ -323,7 +348,7 @@ function runReview() {
 }
 byId("escalationForm").addEventListener("input", markChanged);
 byId("escalationForm").addEventListener("change", markChanged);
-byId("evidence").addEventListener("change", updateLogReasonVisibility);
+for (const id of checkboxFields) byId(id).addEventListener("change", updateLogReasonVisibility);
 byId("addAction").addEventListener("click", () => { actions = readActions(); actions.push({action:"",result:""}); renderActions(); markChanged(); byId("actionRows").lastElementChild.querySelector("textarea").focus(); });
 byId("escalationForm").addEventListener("submit", event => { event.preventDefault(); runReview(); byId("resultTitle").setAttribute("tabindex","-1"); byId("resultTitle").focus(); });
 for (const kind of ["weak","strong"]) byId(kind === "weak" ? "loadWeak" : "loadStrong").addEventListener("click", () => {
@@ -471,6 +496,7 @@ try {
   if (raw) {
     const draft = JSON.parse(raw);
     if (draft.fields && draft.fields.collectionPlan === undefined) draft.fields.collectionPlan = "";
+    if (draft.fields && draft.fields.reproducible === undefined) draft.fields.reproducible = draft.fields.reproduction?.trim?.() ? "Yes" : "No";
     if (draft.version !== 1 || !draft.fields || !fieldIds.every(id => typeof draft.fields[id] === "string") || !Array.isArray(draft.actions) || !draft.actions.every(row => row && typeof row.action === "string" && typeof row.result === "string") || !draft.checks || typeof draft.checks !== "object" || !Object.values(draft.checks).every(v => typeof v === "boolean") || !Object.hasOwn(CaseToolkitCore.templates,draft.issueType)) throw Error("Invalid draft");
     populate(draft.fields); actions = draft.actions; checks = draft.checks; issueType = draft.issueType; byId("draftStatus").textContent = "Saved draft restored";
   }
