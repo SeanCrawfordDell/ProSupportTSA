@@ -537,6 +537,25 @@ test('dated entry tabs preserve each day and keep a single case through summary 
  tabs()[2].listeners.click();assert.equal(h.get('notes').value,'Follow-up investigation');assert.equal(h.get('caseSummaryPanel').hidden,true);
  saved=C.parse(h.stored());assert.equal(saved.cases[0].entries[1].next,'Review logs');
 });
+test('selecting a dated tab scrolls only the tab strip, never the page',()=>{
+ const state=C.empty(),note=C.create(state,'scroll',1000);
+ for(let day=1;day<=3;day++){C.addEntry(note,'day'+day,1000+day*86400000);note.notes='Day '+day;C.syncEntry(note);}
+ const h=harness({initial:JSON.stringify(state)}),strip=h.get('caseEntryTabs');let pageScrolls=0;
+ // Lay tabs out 110px wide every 120px inside a 200px strip, so later tabs start out of view.
+ strip.scrollLeft=0;strip.getBoundingClientRect=()=>({left:0,right:200});
+ const create=h.ctx.document.createElement;
+ h.ctx.document.createElement=(...args)=>{
+  const el=create(...args);el.getAttribute=name=>el.attributes[name];el.scrollIntoView=()=>{pageScrolls++;};
+  el.getBoundingClientRect=()=>{const left=strip.children.indexOf(el)*120-strip.scrollLeft;return {left,right:left+110};};
+  return el;
+ };
+ const tabs=()=>strip.children;
+ tabs()[1].listeners.click();assert.equal(h.get('notes').value,'');assert.equal(strip.scrollLeft,30);
+ tabs()[4].listeners.keydown({key:'End',preventDefault(){}});assert.equal(h.get('notes').value,'Day 3');assert.equal(strip.scrollLeft,390);
+ tabs()[4].listeners.keydown({key:'ArrowRight',preventDefault(){}});assert.equal(h.get('caseSummaryPanel').hidden,false);assert.equal(strip.scrollLeft,0);
+ tabs()[0].listeners.keydown({key:'ArrowLeft',preventDefault(){}});assert.equal(h.get('notes').value,'Day 3');assert.equal(strip.scrollLeft,390);
+ assert.equal(pageScrolls,0,'scrollIntoView would also scroll the page vertically to reach the tabs');
+});
 test('failed saves block entry creation and switching without discarding edits',()=>{
  const h=harness();h.click('newNote');h.edit('notes','Must retain');h.failWrite(true);
  assert.equal(typeof h.get('newCaseEntry').listeners.click,'function');h.click('newCaseEntry');

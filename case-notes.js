@@ -577,6 +577,7 @@
     if (!note) { summaryCaseId = null; return; }
     const summary = summaryOpen(), entries = CaseNotes.entryList(note);
     const buttons = [];
+    let activeButton = null;
     function tab(label, active, id, action) {
       const button = document.createElement("button"); button.type="button";
       button.className="case-entry-tab"; button.textContent=label; button.id=id;
@@ -593,6 +594,7 @@
         else return;
         event.preventDefault(); buttons[next].focus(); buttons[next].click();
       });
+      if(active) activeButton=button;
       buttons.push(button); tabs.append(button); return button;
     }
     tab("Case Summary",summary,"caseSummaryTab",()=>{
@@ -622,7 +624,14 @@
       $("entryCreatedInfo").textContent="Created "+new Date(active.created).toLocaleString()+" · Last edited "+new Date(active.updated).toLocaleString();
       $("notesSectionBody").setAttribute("aria-labelledby","case-entry-tab-"+active.id);
     }
-    buttons.find(button=>button.getAttribute?.("aria-selected")==="true")?.scrollIntoView?.({block:"nearest",inline:"nearest"});
+    revealEntryTab(tabs,activeButton);
+  }
+  // Scroll the tab strip sideways to show the selected tab. scrollIntoView would also scroll the page down to the tabs.
+  function revealEntryTab(tabs,button) {
+    const strip=tabs.getBoundingClientRect?.(), rect=button?.getBoundingClientRect?.();
+    if(!strip || !rect) return;
+    if(rect.left<strip.left) tabs.scrollLeft-=strip.left-rect.left;
+    else if(rect.right>strip.right) tabs.scrollLeft+=rect.right-strip.right;
   }
   function renderCaseSummary(note,entries) {
     const panel=$("caseSummaryPanel"); panel.replaceChildren();
