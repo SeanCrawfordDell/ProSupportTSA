@@ -1,7 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {init}=require('../devin-integration.js');
-const {createClient}=require('../devin-connection-core.js');
+const {init}=require('../js/devin-integration.js');
+const {createClient}=require('../js/devin-connection-core.js');
 function harness({storageBlocked=false,isPopout=false,seen=false,href,clipboardBlocked=false}={}) {
   const nodes=new Map(),local=new Map(),scheduled=[],docListeners={};
   if(seen)local.set('dell-support.devin-onboarding.v1','1');

@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const Notes=require('../case-notes-core.js'),Example=require('../case-example-core.js'),Rubric=require('../case-rubric-core.js'),Workflow=require('../case-workflow-core.js'),Toolkit=require('../case-toolkit-core.js');
+const Notes=require('../js/case-notes-core.js'),Example=require('../js/case-example-core.js'),Rubric=require('../js/case-rubric-core.js'),Workflow=require('../js/case-workflow-core.js'),Toolkit=require('../js/case-toolkit-core.js');
 const image={name:'flep-event-27.png',data:'data:image/png;base64,iVBORw0KGgo='};
 function load(options){
   const state=Notes.empty(),note=Example.build(options);

@@ -2,7 +2,7 @@
 
 Extend the existing Case Notes workspace with case context, shared evidence, resolution verification, editable knowledge candidates, and local repeat-pattern review in Support Trends. All data stays within the existing case history and backup/version workflow. Existing Copy to Lightning and escalation transfer include recorded workflow results. Collection guidance lives under Evidence; the duplicate suggested-tools section has been removed from Triage.
 
-Run: `python3 -m http.server 4187 --bind 127.0.0.1` from this directory.
+Run: `python3 -m http.server 4187 --bind 127.0.0.1` from the repository root (or `python3 scripts/nocache_server.py` for a no-cache server on port 8080).
 Preview: http://127.0.0.1:4187/index.html
 Tests: `node --test tests/*.test.cjs`
 
@@ -43,7 +43,7 @@ Both rule-based scorers measure content rather than presence and length. `CaseRu
 - Handoff (`CaseNotes.escalation`): `workflow.recentChange` → `changes`, `workflow.severity` → `production` (the escalation Service Impact field, which keeps the `production` id and offers the same options as the Triage Service Impact field; Unspecified → blank, and saved drafts holding the former Production down / Production degraded values are normalized to Service unavailable / Service degraded), `evidence` is "Yes" when a Log Location is set or an evidence checkbox is ticked, and `results` stays empty so outcomes are recorded on the escalation page.
 # Optional Devin CLI integration preview
 
-Run `python -m http.server 4187 --bind 127.0.0.1` from this checkout and open
+Run `python -m http.server 4187 --bind 127.0.0.1` from the repository root and open
 `http://127.0.0.1:4187/case-notes.html`. Run `node --test tests/*.test.cjs` for
 regression tests. AI Settings generates a one-command bootstrap: on localhost it
 fetches `companion/Connect-Devin.ps1` from that preview server; in production it

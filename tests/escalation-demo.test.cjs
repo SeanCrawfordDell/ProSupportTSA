@@ -11,7 +11,7 @@ function harness(hooks={}){
  const document={body,activeElement:null,getElementById:get,createElement:()=>new Element(),querySelector:selector=>get(selector),querySelectorAll:()=>[],addEventListener:(k,f)=>docEvents[k]=f};
  const window={innerWidth:1280,innerHeight:900,scrollY:120,scrollTo:options=>window.restoredScroll=options.top,addEventListener:(k,f)=>windowEvents[k]=f};
  const target=get('#target');target.parentElement=body;target.hidden=true;target.tagName='DETAILS';target.classList.add('collapsed');
- vm.runInNewContext(fs.readFileSync(require.resolve('../guided-tour.js'),'utf8'),{window,document,requestAnimationFrame:fn=>fn()});
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/guided-tour.js'),'utf8'),{window,document,requestAnimationFrame:fn=>fn()});
  const tour=window.GuidedTour.create({...hooks,triggerId:'showDemo',steps:[{target:'#target',title:'First section',what:'What it is',why:'Why to use it'},{target:'#second',title:'Second section',what:'Next section',why:'Next reason'}]});
  return {get,tour,target,body,window,docEvents,click:id=>get(id).handlers.click()};
 }
@@ -31,7 +31,7 @@ test('Skip and Escape clean up highlighted and expanded state',()=>{
 });
 test('tour configurations cover the current evidence workflow and generated DE title',()=>{
  function config(file){let captured;vm.runInNewContext(fs.readFileSync(require.resolve(file),'utf8'),{GuidedTour:{create:options=>captured=options}});return captured;}
- const notes=config('../case-notes-demo.js'),de=config('../escalation-demo.js');
+ const notes=config('../js/case-notes-demo.js'),de=config('../js/escalation-demo.js');
  assert.ok(notes.steps.some(s=>s.stage==='evidence'));assert.ok(notes.steps.some(s=>s.stage==='resolve'));assert.equal(de.steps[1].target,'#caseTitle','the generated title follows the welcome step');
  for(const tour of [notes,de])for(const step of tour.steps){assert.ok(step.target);assert.ok(step.what);assert.ok(step.why);}
 });
@@ -41,8 +41,8 @@ test('onStart prepares the page and onFinish receives its result once',()=>{
  h.click('skipDemo');assert.deepEqual(calls,['start','finish:previous-case']);h.click('skipDemo');assert.equal(calls.length,2,'finish runs once');
 });
 test('Case Notes tour covers every area of the tool and points at real controls',()=>{
- let captured;vm.runInNewContext(fs.readFileSync(require.resolve('../case-notes-demo.js'),'utf8'),{GuidedTour:{create:options=>captured=options}});
- const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../site-topbar.js'),'utf8'),{window,document:{getElementById:()=>null}});
+ let captured;vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-notes-demo.js'),'utf8'),{GuidedTour:{create:options=>captured=options}});
+ const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../js/site-topbar.js'),'utf8'),{window,document:{getElementById:()=>null}});
  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8')+window.SiteTopbar.markup('case-notes');
  assert.equal(typeof captured.onStart,'function');assert.equal(typeof captured.onFinish,'function');
  const dynamic=new Set(['#caseSummaryTab']);
@@ -58,8 +58,8 @@ test('Case Notes tour covers every area of the tool and points at real controls'
   assert.ok(targets.includes(area),'tour covers '+area);
 });
 test('Escalation tour covers the current form and points at real controls',()=>{
- let captured;vm.runInNewContext(fs.readFileSync(require.resolve('../escalation-demo.js'),'utf8'),{GuidedTour:{create:options=>captured=options}});
- const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../site-topbar.js'),'utf8'),{window,document:{getElementById:()=>null}});
+ let captured;vm.runInNewContext(fs.readFileSync(require.resolve('../js/escalation-demo.js'),'utf8'),{GuidedTour:{create:options=>captured=options}});
+ const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../js/site-topbar.js'),'utf8'),{window,document:{getElementById:()=>null}});
  const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8')+window.SiteTopbar.markup('escalation');
  assert.equal(typeof captured.onStart,'function');assert.equal(typeof captured.onFinish,'function');
  for(const {target,container} of captured.steps){

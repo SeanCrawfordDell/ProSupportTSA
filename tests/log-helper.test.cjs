@@ -1,4 +1,4 @@
-const test=require('node:test'),assert=require('node:assert/strict'),core=require('../log-helper-core.js');
+const test=require('node:test'),assert=require('node:assert/strict'),core=require('../js/log-helper-core.js');
 test('all supported solutions and symptoms produce explained, linked collection plans',()=>{
  for(const os of Object.keys(core.guides))for(const symptom of Object.keys(core.symptoms)){
   const plan=core.plan({os,symptom});assert.ok(plan.items.length>=3);assert.ok(plan.items.some(item=>item.url.startsWith('https://')));assert.ok(plan.items.every(item=>item.title&&item.how&&item.why));assert.match(core.text(plan),/not yet collected/);
@@ -20,7 +20,7 @@ function ui({failCopy=false,symptom='network'}={}) {
  get('os').options=[{value:'Windows Server',textContent:'Windows Server'}];
  let copied='';const window={};
  const body={append(item){elements[item.id]=item;}};
- vm.runInNewContext(fs.readFileSync(require.resolve('../log-helper.js'),'utf8'),{window,document:{body,getElementById:get,createElement:node},LogHelperCore:core,navigator:{clipboard:{async writeText(text){if(failCopy)throw Error();copied=text}}}});
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/log-helper.js'),'utf8'),{window,document:{body,getElementById:get,createElement:node},LogHelperCore:core,navigator:{clipboard:{async writeText(text){if(failCopy)throw Error();copied=text}}}});
  window.LogHelper.init({context:()=>({id:'one',os:'Windows Server',platform:'PowerEdge R750',symptom})});
  return {get,window,click:id=>get(id).listeners.click(),copied:()=>copied};
 }
@@ -52,7 +52,7 @@ test('Windows commands are excluded on other platforms and unavailable hosts',()
  assert.equal(core.plan({os:'Windows Server',symptom:'custom-my-template'}).symptom,'general');
 });
 test('new issue types survive case backup and structured escalation handoff',()=>{
- const C=require('../case-notes-core.js');
+ const C=require('../js/case-notes-core.js');
  for(const [symptom] of windowsCases){
   const state=C.empty(),note=C.create(state,'case',1000);note.os='Windows Server';note.toolkit.issueType=symptom;
   const restored=C.parse(C.backup(state,2000)).cases[0];
@@ -86,12 +86,12 @@ test('Case Notes and Escalation Quality share one helper with identical behavior
   const html=fs.readFileSync(require.resolve(page),'utf8');
   assert.ok(!html.includes('id="logHelperDialog"'),page+' has no copy of the dialog markup');
   assert.ok(!/id="helper(Add|Copy|OS|Symptom|Results)"/.test(html),page+' has no helper controls of its own');
-  assert.match(html,/<script src="log-helper-core\.js[^"]*" defer><\/script>/);assert.match(html,/<script src="log-helper\.js[^"]*" defer><\/script>/);
+  assert.match(html,/<script src="js\/log-helper-core\.js[^"]*" defer><\/script>/);assert.match(html,/<script src="js\/log-helper\.js[^"]*" defer><\/script>/);
   assert.match(html,/id="openLogHelper"/);assert.match(html,/<select id="os"/);
  }
  const versions=['../case-notes.html','../escalation-quality.html'].map(page=>/log-helper\.js\?v=([^"]+)"/.exec(fs.readFileSync(require.resolve(page),'utf8'))[1]);
  assert.equal(versions[0],versions[1],'both pages load the same helper version');
- for(const script of ['../case-notes.js','../app.js']){
+ for(const script of ['../js/case-notes.js','../js/app.js']){
   const init=/LogHelper\?\.init\(\{([\s\S]*?)\n  ?\}\);/.exec(fs.readFileSync(require.resolve(script),'utf8'))[1];
   assert.ok(!/canAdd|addLabel|add\(/.test(init),script+' passes only page context');
  }

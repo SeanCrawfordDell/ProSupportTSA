@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const R=require('../case-rubric-core.js'),C=require('../case-notes-core.js'),T=require('../case-toolkit-core.js');
+const R=require('../js/case-rubric-core.js'),C=require('../js/case-notes-core.js'),T=require('../js/case-toolkit-core.js');
 const blank=()=>C.create(C.empty(),'n1',1000);
 test('empty note scores zero and lists the biggest gaps first',()=>{
  const r=R.score(blank());assert.equal(r.total,0);assert.equal(r.rating,'Incomplete');
@@ -31,13 +31,13 @@ test('untouched default next-step scaffolding earns no next-step credit',()=>{
  assert.equal(R.score(note).categories.next,0);
 });
 test('No OS plans list the iDRAC collection once on PowerEdge platforms',()=>{
- const L=require('../log-helper-core.js');
+ const L=require('../js/log-helper-core.js');
  const items=L.plan({os:'No OS',platform:'PowerEdge R750'}).items;
  assert.equal(items.filter(i=>/SupportAssist/.test(i.title+' '+i.how)).length,1);
 });
 
 // --- Content scoring: fixtures from the scoring review (items 1-8 and 15) ---
-const W=require('../case-workflow-core.js'),fs=require('node:fs');
+const W=require('../js/case-workflow-core.js'),fs=require('node:fs');
 const lorem='Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident 1 same.';
 const allChecks=note=>{for(const item of T.checklist(note))note.toolkit.checks[item.id]=true;};
 function strong(){
@@ -147,8 +147,8 @@ test('text plausibility flags repeated and placeholder text but not long real no
  assert.equal(f('10.0.0.5 unreachable. 10.0.0.6 unreachable. 10.0.0.7 unreachable. 10.0.0.8 unreachable.'),false);
  assert.equal(f('1. Node 1 - 7.10.20.00\n2. Node 2 - 7.10.20.00\n3. Node 3 - 7.10.30.00'),false);
  assert.equal(f('Error 0x80070002. Error 0x80070002 again. Error 0x80070002 on retry.'),false);
- assert.equal(f(fs.readFileSync(require.resolve('../CASE_NOTES_GUIDE.md'),'utf8')),false);
- assert.equal(f(fs.readFileSync(require.resolve('../DEV-NOTES.md'),'utf8')),false);
+ assert.equal(f(fs.readFileSync(require.resolve('../docs/CASE_NOTES_GUIDE.md'),'utf8')),false);
+ assert.equal(f(fs.readFileSync(require.resolve('../docs/DEV-NOTES.md'),'utf8')),false);
 });
 test('handoff maps recent change, service impact and evidence onto the escalation and leaves results empty',()=>{
  const note=strong();const payload=C.escalation(note,2000);

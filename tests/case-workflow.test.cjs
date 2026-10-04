@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const C=require('../case-notes-core.js'),W=require('../case-workflow-core.js');
+const C=require('../js/case-notes-core.js'),W=require('../js/case-workflow-core.js');
 test('legacy cases load without workflow and new workflow survives backup and versions',()=>{
  const state=C.empty(),note=C.create(state,'workflow',1000),before=structuredClone(state);
  assert.equal(C.parse(JSON.stringify(state)).cases[0].toolkit.workflow,undefined);
@@ -50,7 +50,7 @@ test('Recent change is a multi-line field that grows with its text and waits for
  const all={'[data-workflow-field]':[field],'#workflowFields textarea.auto-grow':[field],'[data-stage]':[],'[data-workflow-panel]':[]};
  const note={id:'n',os:'',issue:'',platform:'',toolkit:{checks:{},workflow:{...W.defaults(),recentChange:'Driver update\nFirmware update\nSwitch change'}}};
  const window={};
- vm.runInNewContext(fs.readFileSync(require.resolve('../case-workflow.js'),'utf8'),{window,document:{getElementById:get,querySelectorAll:s=>all[s]||[],querySelector:()=>node(),createElement:()=>node()},CaseWorkflowCore:W,CaseToolkitCore:{checklist:()=>[]},CaseNotes:C});
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-workflow.js'),'utf8'),{window,document:{getElementById:get,querySelectorAll:s=>all[s]||[],querySelector:()=>node(),createElement:()=>node()},CaseWorkflowCore:W,CaseToolkitCore:{checklist:()=>[]},CaseNotes:C});
  window.CaseWorkflow.init({current:()=>note,canEdit:()=>true,mutate(change){change(note);},save:()=>true});
  window.CaseWorkflow.refresh();
  assert.equal(field.value,'Driver update\nFirmware update\nSwitch change');

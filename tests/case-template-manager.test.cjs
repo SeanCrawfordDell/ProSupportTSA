@@ -1,11 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const core=require('../case-toolkit-core.js');
+const core=require('../js/case-toolkit-core.js');
 function setup(){
  const elements={},values=new Map();let fail=false;
  const get=id=>elements[id]??={value:'',textContent:'',hidden:false,handlers:{},addEventListener(k,f){this.handlers[k]=f;},replaceChildren(...items){this.children=items;},showModal(){this.open=true;},close(){this.open=false;},focus(){}};
  get('caseIssueType').value='boot';
  const storage={getItem:k=>values.get(k)??null,setItem(k,v){if(fail)throw Error('Storage full');values.set(k,v);}};
- vm.runInNewContext(fs.readFileSync(require.resolve('../case-template-manager.js'),'utf8'),{CaseToolkitCore:core,document:{getElementById:get,createElement:()=>({})},window:{CaseToolkit:{canEdit:()=>true},dispatchEvent(){}},localStorage:storage,crypto:{randomUUID:()=> 'test'},confirm:()=>true,Event:class{}});
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-template-manager.js'),'utf8'),{CaseToolkitCore:core,document:{getElementById:get,createElement:()=>({})},window:{CaseToolkit:{canEdit:()=>true},dispatchEvent(){}},localStorage:storage,crypto:{randomUUID:()=> 'test'},confirm:()=>true,Event:class{}});
  return {get,storage,fail(){fail=true;},click:id=>get(id).handlers.click(),save:()=>get('templateEditorForm').handlers.submit({preventDefault(){}}),saved:()=>core.loadTemplates(storage)};
 }
 test('manager renames built-ins, resets defaults, and creates and deletes personal templates',()=>{

@@ -27,16 +27,16 @@
   apply(); // Run before styles render to avoid a flash of the wrong theme.
   document.addEventListener("DOMContentLoaded", () => {
     apply();
-    if (!document.querySelector('script[src="site-navigation.js"]')) {
+    if (!document.querySelector('script[src="js/site-navigation.js"]')) {
       const navigation = document.createElement("script");
-      navigation.src = "site-navigation.js";
+      navigation.src = "js/site-navigation.js";
       navigation.defer = true;
       document.head.append(navigation);
     }
-    if (!document.querySelector('link[href="header-layout.css"]')) {
+    if (!document.querySelector('link[href="css/header-layout.css"]')) {
       const layout = document.createElement("link");
       layout.rel = "stylesheet";
-      layout.href = "header-layout.css";
+      layout.href = "css/header-layout.css";
       document.head.append(layout);
     }
     document.getElementById("themeToggle")?.addEventListener("click", () => {

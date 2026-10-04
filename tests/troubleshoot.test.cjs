@@ -1,6 +1,6 @@
 const test = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), vm = require('node:vm');
-const core = require('../troubleshoot-core.js');
-require('../troubleshoot-data-windows.js');
+const core = require('../js/troubleshoot-core.js');
+require('../js/troubleshoot-data-windows.js');
 
 test('every workflow is a valid, fully connected decision tree', () => {
   for (const workflow of core.all()) assert.deepEqual(core.validate(workflow), [], workflow.id);
@@ -52,7 +52,7 @@ test('handoff payloads round-trip and expire', () => {
 });
 
 test('workflow data contains no markup that would break the CSP', () => {
-  const source = fs.readFileSync(require.resolve('../troubleshoot-data-windows.js'), 'utf8');
+  const source = fs.readFileSync(require.resolve('../js/troubleshoot-data-windows.js'), 'utf8');
   assert.doesNotMatch(source, /<script|style=|\son[a-z]+=/i);
   const html = fs.readFileSync(require.resolve('../troubleshooting.html'), 'utf8');
   assert.doesNotMatch(html, /style=|\son[a-z]+=/i);
@@ -68,7 +68,7 @@ function ui(hash = '') {
     location: { hash, pathname: '/troubleshooting.html', search: '', assign(url) { ctx.assigned = url; } }, history: { replaceState() {} },
     localStorage: { setItem: (k, v) => stored.set(k, v), getItem: k => stored.get(k) ?? null },
     navigator: { clipboard: { async writeText(text) { ctx.copied = text; } } } };
-  vm.runInNewContext(fs.readFileSync(require.resolve('../troubleshoot.js'), 'utf8'), ctx);
+  vm.runInNewContext(fs.readFileSync(require.resolve('../js/troubleshoot.js'), 'utf8'), ctx);
   const answers = () => get('tsAnswers').children;
   return { get, ctx, stored, guides: ctx.window.TroubleshootGuides, answers };
 }

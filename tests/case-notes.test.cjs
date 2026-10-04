@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const C = require('../case-notes-core.js');
+const C = require('../js/case-notes-core.js');
 test('Backup Settings saves latest and dated settings in the configured folder without changing note backups', async () => {
   const files=new Map();let closed=0;
   const folder={queryPermission:async()=> 'granted',async getFileHandle(name,options){assert.equal(options.create,true);return {async createWritable(){return {async write(value){files.set(name,value);},async close(){closed++;}};}};}};
@@ -127,10 +127,10 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
     }
   }
   get('fields').querySelector=sel=>sel==='.field-grid'?fieldGrid:null;
-  const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
-  ctx.CaseSettings = require('../case-settings-core.js');
-  ctx.CaseBackup = require('../case-backup-core.js');
-  ctx.CaseExample = require('../case-example-core.js');
+  const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../js/devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
+  ctx.CaseSettings = require('../js/case-settings-core.js');
+  ctx.CaseBackup = require('../js/case-backup-core.js');
+  ctx.CaseExample = require('../js/case-example-core.js');
   ctx.localStorage = {
     getItem(k){return k==='dell-support.case-notes.v1' ? stored : preferences.get(k) ?? null;},
     setItem(k,v){if(writeError)throw Error('full');if(k==='dell-support.case-notes.v1')stored=v;else preferences.set(k,v);},
@@ -152,7 +152,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
   ctx.window.SiteTopbar={closed:0,closeMenus(){this.closed++;}};
   if(hash){ctx.window.location={hash,pathname:'/case-notes.html',search:''};ctx.window.history={replaceState(){ctx.window.location.hash='';}};}
   if(aiIntegration){ctx.window.DevinConnection={createClient:()=>({})};ctx.window.DevinIntegration={init(api){ctx.ai=api;return {refresh(){}};}};}
-  vm.runInNewContext(fs.readFileSync(require.resolve('../case-notes.js'),'utf8'),ctx);
+  vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8'),ctx);
   return {get,events,intervals,ctx,setTime:n=>now=n,stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
 }
 test('missing backups show an inline banner on startup and configure opens backup options',async()=>{
@@ -602,7 +602,7 @@ function fakeFolder(permission='granted'){
   };
   return folder;
 }
-const B=require('../case-backup-core.js');
+const B=require('../js/case-backup-core.js');
 const HOUR=3600000,DAY=86400000;
 test('automatic backups refresh the latest file every run but add a dated snapshot only once per hour',async()=>{
   const folder=fakeFolder();const h=harness({folder});await new Promise(setImmediate);
@@ -733,7 +733,7 @@ test('permanent deletion saves a safety copy to the backup folder first',async()
   h.get('trashFilter')?.listeners?.change?.();
 });
 test('retention preference round-trips through settings backups and rejects unknown values',()=>{
-  const S=require('../case-settings-core.js');
+  const S=require('../js/case-settings-core.js');
   const captured=S.capture({getItem:key=>key==='dell-support.backup-retention-days'?'90':null});
   assert.equal(captured.backupRetention,'90');
   const settings=S.validate({fieldConfig:C.empty().fieldConfig,preferences:captured},C.fields);

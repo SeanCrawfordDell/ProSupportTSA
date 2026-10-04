@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const install = require('../case-tooltips.js');
+const install = require('../js/case-tooltips.js');
 function setup() {
   const events={},timers=new Map();let now=0,id=0;
   function node(tag='button') {

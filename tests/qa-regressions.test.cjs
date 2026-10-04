@@ -1,7 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const C=require('../case-notes-core.js');
-const S=require('../case-settings-core.js');
+const C=require('../js/case-notes-core.js');
+const S=require('../js/case-settings-core.js');
 test('inherited-property case IDs can be edited and checkpointed',()=>{
   for(const id of ['toString','valueOf','hasOwnProperty']){
     const s=C.empty();C.create(s,id,1);const previous=C.parse(JSON.stringify(s));

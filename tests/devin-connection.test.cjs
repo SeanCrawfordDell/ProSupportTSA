@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {createClient}=require('../devin-connection-core.js');
+const {createClient}=require('../js/devin-connection-core.js');
 const token='b'.repeat(64), id='11111111-1111-4111-8111-111111111111';
 const response=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
 const health={version:1,cliAvailable:true,compatible:true,code:'ready'};
