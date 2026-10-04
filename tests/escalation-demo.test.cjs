@@ -12,7 +12,7 @@ function harness(hooks={}){
  const window={innerWidth:1280,innerHeight:900,scrollY:120,scrollTo:options=>window.restoredScroll=options.top,addEventListener:(k,f)=>windowEvents[k]=f};
  const target=get('#target');target.parentElement=body;target.hidden=true;target.tagName='DETAILS';target.classList.add('collapsed');
  vm.runInNewContext(fs.readFileSync(require.resolve('../js/guided-tour.js'),'utf8'),{window,document,requestAnimationFrame:fn=>fn()});
- const tour=window.GuidedTour.create({...hooks,triggerId:'showDemo',steps:[{target:'#target',title:'First section',what:'What it is',why:'Why to use it'},{target:'#second',title:'Second section',what:'Next section',why:'Next reason'}]});
+ const tour=window.GuidedTour.create({triggerId:'showDemo',...hooks,steps:hooks.steps||[{target:'#target',title:'First section',what:'What it is',why:'Why to use it'},{target:'#second',title:'Second section',what:'Next section',why:'Next reason'}]});
  return {get,tour,target,body,window,docEvents,click:id=>get(id).handlers.click()};
 }
 test('tour is user initiated and reveals the real target with what and why',()=>{
@@ -74,4 +74,15 @@ test('Escalation tour covers the current form and points at real controls',()=>{
  for(const field of ['Severity','Service Impact','Affected Systems / Users','Customer Country','time zone','Exact errors and timestamps','Log Location','Reason logs cannot be obtained','Recent changes'])
   assert.ok(text.includes(field),'tour explains '+field);
  assert.doesNotMatch(text,/Service Tag field|Expected behavior|Issue Description/,'no removed fields');
+});
+
+test('core steps run first and the rest are offered as More features',()=>{
+ const steps=[{core:true,target:'#a',title:'A'},{target:'#b',title:'B'},{core:true,target:'#c',title:'C'}];
+ const h=harness({steps});h.tour.open();
+ assert.equal(h.get('demoTitle').textContent,'A');assert.equal(h.get('demoProgress').textContent,'Step 1 of 2');
+ h.click('demoNext');assert.equal(h.get('demoTitle').textContent,'C');
+ assert.equal(h.get('demoNext').textContent,'More features (1) →');assert.equal(h.get('skipDemo').textContent,'Done');
+ h.click('demoNext');assert.equal(h.get('demoTitle').textContent,'B');assert.equal(h.get('demoProgress').textContent,'Step 3 of 3');
+ h.click('demoNext');assert.equal(h.get('featureDemo').open,false);
+ h.tour.open();assert.equal(h.get('demoProgress').textContent,'Step 1 of 2','reopening starts with the short tour again');
 });
