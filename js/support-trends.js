@@ -13,7 +13,9 @@
       item.className="rank-item";name.textContent=label;value.textContent=count;top.append(name,value);bar.className="bar";fill.style.width=`${Math.round(count/max*100)}%`;bar.append(fill);item.append(top,bar);root.append(item);
     });
   }
-  function load() { try{return CaseNotes.parse(localStorage.getItem(key)).cases;} catch{return null;} }
+  // The tutorial's sample case (CaseExample.ID) is not real work, so it never counts toward trends.
+  const SAMPLE_ID="example-case";
+  function load() { try{return CaseNotes.parse(localStorage.getItem(key)).cases.filter(note=>note.id!==SAMPLE_ID);} catch{return null;} }
   function run() {
     $("dashboard").hidden=true;$("emptyState").hidden=true;
     const cases=load();if(cases===null){$("emptyState").hidden=false;$("emptyState").querySelector("p").textContent="Case history could not be read in this browser. Open Case Notes to protect and restore it.";return;}

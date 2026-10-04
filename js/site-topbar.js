@@ -1,5 +1,5 @@
 "use strict";
-// Shared top bar for Case Notes and Escalation Quality. Both pages render it from this file, so the
+// Shared top bar for Case Notes, the escalation page, Troubleshooting and Support Trends. Every page renders it from this file, so the
 // menus always match. Place <header class="topbar" id="siteTopbar" data-page="…"></header> followed
 // by this script (not deferred), so the controls exist before the page's own scripts run.
 window.SiteTopbar = (() => {
@@ -11,10 +11,12 @@ window.SiteTopbar = (() => {
       settingsHere: true
     },
     "escalation": {
-      name: "Escalation Quality",
+      name: "DE Escalation Request",
       training: [["tutorialDemo", "Tutorial Demo"], ["loadWeak", "Load Weak Example"], ["loadStrong", "Load Strong Example"]],
       settingsHere: false
-    }
+    },
+    "troubleshooting": { name: "Troubleshooting Guides", training: [], settingsHere: false },
+    "trends": { name: "Support Trends", training: [], settingsHere: false }
   };
   const tools = [
     ["tools.html", "Tools Hub"],
@@ -43,7 +45,7 @@ window.SiteTopbar = (() => {
       ? `<button class="dropdown-item" id="${id}" type="button"${id === "customizeFields" ? " disabled" : ' aria-haspopup="dialog"'}>${label}</button>`
       : `<a class="dropdown-item" id="${id}" href="case-notes.html#${hash}" title="Opens in Case Notes, where site settings are kept.">${label}</a>`).join("");
     return `<a class="brand home-link" href="index.html" aria-label="Back to Technical Support Assistant"><span class="brand-mark">←</span><span>Support Assistant</span></a>` +
-      `<nav class="topbar-actions" aria-label="${config.name} actions">${menu("tools", "Tools", toolItems)}${menu("training", "Training", trainingItems)}</nav>` +
+      `<nav class="topbar-actions" aria-label="${config.name} actions">${menu("tools", "Tools", toolItems)}${config.training.length ? menu("training", "Tutorial &amp; examples", trainingItems) : ""}</nav>` +
       `<div class="appearance-actions" role="group" aria-label="Feedback, appearance, and settings">` +
       `<a class="button secondary" id="requestFeature" href="${feedbackUrl(config.name).replace(/&/g, "&amp;")}" target="_blank" rel="noopener noreferrer" title="Opens a new GitHub issue in a new tab. Do not include customer or case data.">Request feature / Report bug ↗</a>` +
       `<div class="theme-controls"><button class="theme-icon-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">${icons.moon}${icons.sun}</button></div>` +
