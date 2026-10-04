@@ -2,6 +2,12 @@
 window.CaseWorkflow=(()=>{
   let api,exports;const C=CaseWorkflowCore,$=id=>document.getElementById(id);
   const notify=text=>$("workflowStatus").textContent=text;
+  // Grow a field to fit its text. Skipped while hidden (no layout); refit when its stage or the workflow opens.
+  function fit(el) {
+    if(!el.offsetParent)return;
+    el.style.height="auto";el.style.height=el.scrollHeight+el.offsetHeight-el.clientHeight+"px";
+  }
+  const fitAll=()=>document.querySelectorAll("#workflowFields textarea.auto-grow").forEach(fit);
   function edit(change) {
     if(!api?.canEdit() || !api.current())return;
     api.mutate(note=>change(C.ensure(note),note),false);
@@ -19,6 +25,7 @@ window.CaseWorkflow=(()=>{
     const w=note.toolkit.workflow || C.defaults();
     $("workflowFields").disabled=!api.canEdit();
     document.querySelectorAll("[data-workflow-field]").forEach(el=>{const value=w[el.dataset.workflowField];if(el.type==="checkbox")el.checked=value;else el.value=value;});
+    fitAll();
     // Retain findings entered in earlier previews, alongside the evidence checklist.
     $("workflowSavedFindings").replaceChildren(...Object.entries(w.results).filter(([,value])=>value.trim()).map(([id,value])=>{
       const label=document.createElement("label"),result=document.createElement("textarea");
@@ -38,6 +45,8 @@ window.CaseWorkflow=(()=>{
       document.querySelectorAll("[data-stage]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));
       document.querySelectorAll("[data-workflow-panel]").forEach(p=>p.hidden=p.dataset.workflowPanel!==button.dataset.stage);refresh();
     }));
+    document.querySelectorAll("#workflowFields textarea.auto-grow").forEach(el=>el.addEventListener("input",()=>fit(el)));
+    $("workflow")?.addEventListener("toggle",fitAll);
     document.querySelectorAll("[data-workflow-field]").forEach(el=>el.addEventListener("input",()=>{if(el.dataset.workflowField==="knowledge")exports?.invalidate();edit(w=>{w[el.dataset.workflowField]=el.type==="checkbox"?el.checked:el.value;});}));
     $("workflowFollowup").addEventListener("click",()=>document.querySelector('[data-toolkit="followup"]').click());
     $("workflowComplete").addEventListener("click",()=>{if(C.gaps(api.current()).length)return;if(edit((w,n)=>{n.toolkit.status="Completed";})){refresh();notify("Case marked completed in this browser. Use Copy to Lightning to transfer the case record.");}});

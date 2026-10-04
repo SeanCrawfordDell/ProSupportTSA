@@ -16,8 +16,8 @@
   <script src="case-markdown.js?v=20261003-dated-entries" defer></script>
   <script src="case-workflow-core.js?v=20260919-support-workflow" defer></script>
   <script src="knowledge-export.js?v=20260919-support-workflow" defer></script>
-  <script src="case-workflow.js?v=20260919-support-workflow" defer></script>
-  <link rel="stylesheet" href="case-workflow.css?v=20260919-support-workflow">
+  <script src="case-workflow.js?v=20261004-recent-change-grow" defer></script>
+  <link rel="stylesheet" href="case-workflow.css?v=20261004-recent-change-grow">
   <script src="case-toolkit-core.js?v=20260919-support-workflow" defer></script>
   <script src="case-notes-core.js?v=20261003-content-scoring" defer></script>
   <script src="case-rubric-core.js?v=20261003-content-scoring" defer></script>
@@ -96,7 +96,7 @@
                   <label class="field">OS/Solution<select id="os"><option value="">Select OS/Solution</option><option value="Azure Local">Azure Local</option><option value="Azure Stack Hub">Azure Stack Hub</option><option value="Debian">Debian</option><option value="ESX">ESX</option><option value="Nutanix">Nutanix</option><option value="Redhat">Redhat</option><option value="Ubuntu">Ubuntu</option><option value="VCF">VCF</option><option value="Windows Server">Windows Server</option><option value="No OS">No OS</option></select></label>
                   <label class="field">Issue type<select id="caseIssueType"><option value="general">General investigation</option><option value="boot">Boot failure</option><option value="crash">Crash / unexpected restart</option><option value="network">Network connectivity</option><option value="performance">Performance degradation</option></select></label>
                   <label class="field">Service Impact<select data-workflow-field="severity"><option>Unspecified</option><option>Service unavailable</option><option>Service degraded</option><option>Deployment</option><option>How-to / planning</option></select></label>
-                  <label class="field wide">Recent change<input data-workflow-field="recentChange" maxlength="2000" placeholder="What changed before the issue began?"></label>
+                  <label class="field wide">Recent change<textarea data-workflow-field="recentChange" class="auto-grow" rows="1" maxlength="2000" placeholder="What changed before the issue began?"></textarea></label>
                 </div>
                 <div class="workflow-actions" role="group" aria-label="Issue templates">
                   <button class="button secondary" id="applyTemplate" type="button" title="Append troubleshooting prompts and next steps without replacing existing notes.">Apply template</button>

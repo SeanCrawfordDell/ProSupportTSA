@@ -5,6 +5,8 @@
 #workflowTabs [aria-pressed="true"] { background:var(--blue); color:#fff; border-color:var(--blue); }
 #workflowFields { border:0; padding:0; margin:0; min-width:0; }
 #workflowFields h3 { margin:20px 0 8px; font-size:15px; }
+/* Starts one line tall like an input, grows with its text, and can be dragged taller. */
+#workflowFields textarea.auto-grow { min-height:0; overflow-y:hidden; }
 #workflowSavedFindings .field { margin:14px 0; }
 .workflow-check { display:flex; align-items:flex-start; gap:10px; margin:14px 0; font-size:13px; line-height:1.5; }
 .workflow-check input { width:18px; height:18px; flex-shrink:0; margin:1px 0 0; }

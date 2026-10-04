@@ -38,3 +38,28 @@ test('knowledge candidate uses recorded facts and makes missing validation expli
  const n=C.create(C.empty(),'draft',1000);n.notes='<p>Observed timeout</p>';
  const draft=W.knowledge(n,C.plainText);assert.ok(draft.includes('Observed timeout'));assert.ok(draft.includes('[Add test and result]'));assert.ok(draft.includes('Customer confirmed: Not yet'));
 });
+test('Recent change is a multi-line field that grows with its text and waits for layout while hidden',()=>{
+ const html=require('node:fs').readFileSync(require.resolve('../case-notes.html'),'utf8');
+ assert.match(html,/<textarea data-workflow-field="recentChange" class="auto-grow" rows="1" maxlength="2000"[^>]*><\/textarea>/);
+ const vm=require('node:vm'),fs=require('node:fs'),nodes={};
+ const node=(extra={})=>({value:'',textContent:'',style:{},dataset:{},listeners:{},disabled:false,checked:false,type:'',addEventListener(k,f){const previous=this.listeners[k];this.listeners[k]=event=>{previous?.(event);f(event);};},replaceChildren(){},...extra});
+ const get=id=>nodes[id]??=node();
+ // Each line is 20px; padding and border add 24px between clientHeight and offsetHeight.
+ const field=node({type:'textarea',dataset:{workflowField:'recentChange'},offsetParent:{},clientHeight:44,offsetHeight:46});
+ Object.defineProperty(field,'scrollHeight',{get(){return this.style.height==='auto'?20*this.value.split('\n').length+22:0;}});
+ const all={'[data-workflow-field]':[field],'#workflowFields textarea.auto-grow':[field],'[data-stage]':[],'[data-workflow-panel]':[]};
+ const note={id:'n',os:'',issue:'',platform:'',toolkit:{checks:{},workflow:{...W.defaults(),recentChange:'Driver update\nFirmware update\nSwitch change'}}};
+ const window={};
+ vm.runInNewContext(fs.readFileSync(require.resolve('../case-workflow.js'),'utf8'),{window,document:{getElementById:get,querySelectorAll:s=>all[s]||[],querySelector:()=>node(),createElement:()=>node()},CaseWorkflowCore:W,CaseToolkitCore:{checklist:()=>[]},CaseNotes:C});
+ window.CaseWorkflow.init({current:()=>note,canEdit:()=>true,mutate(change){change(note);},save:()=>true});
+ window.CaseWorkflow.refresh();
+ assert.equal(field.value,'Driver update\nFirmware update\nSwitch change');
+ assert.equal(field.style.height,'84px','three lines plus padding and border');
+ field.value='One line';field.listeners.input();
+ assert.equal(field.style.height,'44px','shrinks back when text is removed');
+ assert.equal(note.toolkit.workflow.recentChange,'One line','still saves with the case');
+ field.offsetParent=null;field.value='a\nb\nc\nd';field.listeners.input();
+ assert.equal(field.style.height,'44px','hidden fields keep their size until shown');
+ field.offsetParent={};get('workflow').listeners.toggle();
+ assert.equal(field.style.height,'104px','opening the workflow refits the field');
+});
