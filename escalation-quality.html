@@ -11,7 +11,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
   <script src="theme.js"></script>
   <title>Domain Engineer Escalation Request</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261004-escalation-checkboxes">
+  <link rel="stylesheet" href="styles.css?v=20261004-required-logs">
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="site-topbar.css?v=20261004-shared-topbar">
   <script src="case-workflow-core.js?v=20260919-support-workflow" defer></script>
@@ -25,10 +25,10 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 <script src="log-helper.js?v=20261004-shared-log-helper" defer></script>
 <link rel="stylesheet" href="escalation-mascot.css">
 <script src="escalation-mascot.js" defer></script>
-<script src="app.js?v=20261004-escalation-checkboxes" defer></script>
+<script src="app.js?v=20261004-required-logs" defer></script>
   <link rel="stylesheet" href="escalation-demo.css?v=20260919-support-workflow">
   <script src="guided-tour.js?v=20260919-support-workflow" defer></script>
-  <script src="escalation-demo.js?v=20261004-escalation-checkboxes" defer></script>
+  <script src="escalation-demo.js?v=20261004-required-logs" defer></script>
 </head>
 <body>
   <header class="topbar" id="siteTopbar" data-page="escalation"></header>
@@ -90,8 +90,8 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
           <div class="field-grid">
             <label class="field wide">Troubleshooting performed <b>Required</b><textarea id="troubleshooting" maxlength="4000" placeholder="List each action taken and why, or use the paired action rows below."></textarea></label>
             <label class="field wide">Results and observations <b>Required</b><textarea id="results" maxlength="4000" placeholder="Document outcomes here, or use the paired action rows below."></textarea></label>
-            <div class="log-helper-location field wide"><label class="field check-field"><input type="checkbox" id="evidence" aria-controls="logReasonField">Have you gathered logs?</label><button class="button secondary" id="openLogHelper" type="button" aria-haspopup="dialog" aria-controls="logHelperDialog">Which logs should I collect?</button></div>
-            <label class="field wide">Log Location<input id="logLocation" maxlength="2000" placeholder="Case attachment, shared path, or link"></label>
+            <div class="log-helper-location field wide"><div class="field check-question" role="group" aria-labelledby="evidenceQuestion"><span id="evidenceQuestion">Do you have the Required Logs for this Escalation?</span><label class="check-field"><input type="checkbox" id="evidence" aria-controls="logLocationField logReasonField">Yes</label></div><button class="button secondary" id="openLogHelper" type="button" aria-haspopup="dialog" aria-controls="logHelperDialog">Which logs should I collect?</button></div>
+            <label class="field wide" id="logLocationField" hidden>Log Location<input id="logLocation" maxlength="2000" placeholder="Case attachment, shared path, or link"></label>
 <details class="field wide" id="collectionPlanPanel" hidden><summary>Planned log collection</summary><label class="field">Collection plan<textarea id="collectionPlan" readonly rows="8"></textarea></label></details>
 <label class="field" id="logReasonField" hidden>Reason logs cannot be obtained <b>Required</b><textarea id="logReason" maxlength="1500" placeholder="Explain the constraint or urgent exception"></textarea></label>
 <label class="field">Recent changes <textarea id="changes" maxlength="1500" placeholder="Updates, configuration changes, deployments, or “no known changes.”"></textarea></label>

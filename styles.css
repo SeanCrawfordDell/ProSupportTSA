@@ -38,7 +38,7 @@ h2,h3,p { margin-top:0; }
 /* Yes/No questions shown as a checkbox beside their label. */
 .check-field { display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; }
 .check-field input[type="checkbox"] { width:20px; height:20px; margin:0; padding:0; flex:none; accent-color:var(--blue); cursor:pointer; }
-#reproductionField[hidden], #logReasonField[hidden] { display:none; }
+#reproductionField[hidden], #logReasonField[hidden], #logLocationField[hidden] { display:none; }
 input,textarea,select { width:100%; border:1px solid var(--input-border); border-radius:8px; padding:11px 12px; color:var(--input-text); background:var(--input-bg); outline:none; transition:border-color .15s,box-shadow .15s; font-weight:400; }
 select { cursor:pointer; }
 textarea { min-height:88px; resize:vertical; line-height:1.45; }

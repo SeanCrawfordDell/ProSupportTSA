@@ -94,16 +94,20 @@ test('another tab cannot silently overwrite a newer draft',()=>{
  h.externalSave('newer draft from other tab');assert.equal(h.run('saveDraft()'),false);assert.match(h.get('draftStatus').textContent,/Save paused/);assert.equal(h.stored(),'newer draft from other tab');
 });
 
-test('gathered logs is a checkbox; unchecked asks for the reason, which is omitted once logs are gathered',()=>{
+test('required logs is a Yes checkbox; unchecked hides Log Location and asks for the reason, checked shows Log Location',()=>{
  const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
- assert.match(html,/<input type="checkbox" id="evidence"[^>]*>Have you gathered logs\?<\/label>/);assert.ok(!/<select id="evidence"/.test(html));
+ assert.match(html,/<span id="evidenceQuestion">Do you have the Required Logs for this Escalation\?<\/span><label class="check-field"><input type="checkbox" id="evidence"[^>]*>Yes<\/label>/);assert.ok(!/<select id="evidence"/.test(html));
  const h=harness();assert.equal(h.get('evidence').checked,false);assert.equal(h.run('value("evidence")'),'No');
  assert.equal(h.get('logReasonField').hidden,false,'unchecked means no logs yet, so the reason is asked for');
- h.run('populate({evidence:"No",logReason:"Host unavailable"})');assert.equal(h.get('logReasonField').hidden,false);
- h.run('markChanged();saveDraft()');const restored=harness({stored:h.stored()});assert.equal(restored.get('evidence').checked,false);assert.equal(restored.get('logReasonField').hidden,false);
+ assert.equal(h.get('logLocationField').hidden,true,'Log Location stays hidden until logs are confirmed');
+ h.run('populate({evidence:"No",logReason:"Host unavailable",logLocation:"\\\\old\\share"})');assert.equal(h.get('logReasonField').hidden,false);assert.equal(h.get('logLocationField').hidden,true);
+ assert.doesNotMatch(h.run('formatEscalation(reviewData())'),/LOG LOCATION/,'a hidden Log Location is not copied');
+ h.run('markChanged();saveDraft()');const restored=harness({stored:h.stored()});assert.equal(restored.get('evidence').checked,false);assert.equal(restored.get('logReasonField').hidden,false);assert.equal(restored.get('logLocationField').hidden,true);
  h.get('evidence').checked=true;for(const f of h.get('evidence').listeners.change)f();
- assert.equal(h.run('value("evidence")'),'Yes');assert.equal(h.get('logReasonField').hidden,true);assert.doesNotMatch(h.run('formatEscalation(reviewData())'),/Host unavailable/);
- assert.match(h.run('formatEscalation(reviewData())'),/HAVE YOU GATHERED LOGS\?:\nYes/);
+ assert.equal(h.run('value("evidence")'),'Yes');assert.equal(h.get('logReasonField').hidden,true);assert.equal(h.get('logLocationField').hidden,false);assert.doesNotMatch(h.run('formatEscalation(reviewData())'),/Host unavailable/);
+ assert.match(h.run('formatEscalation(reviewData())'),/DO YOU HAVE THE REQUIRED LOGS FOR THIS ESCALATION\?:\nYes\n\nLOG LOCATION:/);
+ h.run('populate(samples.strong)');assert.equal(h.get('logLocationField').hidden,false,'the strong sample has logs, so its location shows');
+ assert.equal(h.run('evaluate({...samples.strong,evidence:"No",logReason:"Host unavailable during production outage",logLocation:"x"}).warnings.some(w=>w.field==="logLocation")'),false,'a hidden Log Location raises no findings');
 });
 test('unchecked boxes alone do not count as work or produce a copy',()=>{
  const h=harness();h.run('populate({})');
