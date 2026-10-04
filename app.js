@@ -499,10 +499,7 @@ renderActions();
 updateLogReasonVisibility();
 
 window.LogHelper?.init({
-  context: () => ({id:"escalation",os:value("os"),platform:value("platform"),symptom:issueType}),
-  canAdd: () => true,
-  addLabel: "Add to escalation",
-  add(text) { byId("collectionPlan").value=[value("collectionPlan"),text].filter(Boolean).join("\n\n");byId("collectionPlanPanel").hidden=false;markChanged();return saveDraft(); }
+  context: () => ({id:"escalation",os:value("os"),platform:value("platform"),symptom:issueType})
 });
 
 if (window.DevinIntegration && window.DevinConnection) {

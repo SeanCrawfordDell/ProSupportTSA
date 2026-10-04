@@ -1,8 +1,26 @@
 "use strict";
+// Shared "Which logs should I collect?" dialog for Case Notes and Escalation Quality.
+// The dialog markup lives here, so both pages always show the same helper. A page only needs
+// an #openLogHelper button and an #os select, then calls LogHelper.init({context}).
 window.LogHelper = (() => {
+  const markup = `<div class="log-helper-heading"><h2 id="logHelperTitle">Which logs should I collect?</h2><button class="button secondary" id="closeLogHelper" type="button">Close</button></div>
+<p id="helperContext"></p>
+<p>Recommendations only — nothing runs automatically. Review permissions, production impact, and approved storage before collection. Logs and dumps can contain sensitive customer data. Defer host commands if Windows is unavailable.</p>
+<div class="field-grid">
+<label class="field">OS/Solution<select id="helperOS"></select></label>
+<label class="field">Issue type for this plan<select id="helperSymptom" aria-describedby="helperContext"></select></label>
+</div><div id="helperResults"></div>
+<details id="helperPlain"><summary>Plain text plan</summary><textarea id="helperPlanText" aria-label="Log collection plan" readonly></textarea></details>
+<div class="log-helper-actions"><button class="button secondary" id="closeLogHelperBottom" type="button">Close</button></div><p id="helperStatus" role="status"></p>`;
+  function mount() {
+    const dialog=document.createElement("dialog");
+    dialog.id="logHelperDialog";dialog.className="log-helper-dialog";dialog.setAttribute("aria-labelledby","logHelperTitle");
+    dialog.innerHTML=markup;document.body.append(dialog);
+    return dialog;
+  }
   function init(api) {
-    const $=id=>document.getElementById(id), dialog=$("logHelperDialog");
-    let activePlan, sourceId, platform="", added=false;
+    const $=id=>document.getElementById(id), dialog=mount();
+    let activePlan, platform="";
     function render() {
       activePlan=LogHelperCore.plan({os:$("helperOS").value,platform,symptom:$("helperSymptom").value,reachable:null});
       $("helperResults").replaceChildren(...activePlan.items.map(item=>{
@@ -26,10 +44,10 @@ window.LogHelper = (() => {
         return section;
       }));
       $("helperPlanText").value=LogHelperCore.text(activePlan);
-      added=false;$("helperStatus").textContent="";if($("helperAdd"))$("helperAdd").disabled=!api.canAdd?.();
+      $("helperStatus").textContent="";
     }
     $("openLogHelper").addEventListener("click",()=>{
-      const context=api.context();sourceId=context.id;
+      const context=api.context();
       $("helperOS").replaceChildren(...[...$("os").options].map(item=>{const option=document.createElement("option");option.value=item.value;option.textContent=item.textContent;return option;}));
       $("helperOS").value=context.os || "";platform=context.platform || "";
       $("helperSymptom").replaceChildren(...Object.entries(LogHelperCore.symptoms).map(([value,text])=>{const option=document.createElement("option");option.value=value;option.textContent=text;return option;}));
@@ -37,25 +55,12 @@ window.LogHelper = (() => {
       $("helperContext").textContent=Object.hasOwn(LogHelperCore.symptoms,context.symptom)
         ? "Based on this case's Issue type: "+LogHelperCore.symptoms[context.symptom]+". Overrides below affect this plan only."
         : "No matching built-in Issue type (custom or unspecified). Showing General investigation; choose a collection scenario below without changing your case.";
-      if($("helperAdd"))$("helperAdd").textContent=api.addLabel;
       render();dialog.showModal();
     });
     for(const id of ["helperOS","helperSymptom"]) $(id).addEventListener("change",render);
     $("closeLogHelper").addEventListener("click",()=>dialog.close());
-    $("closeLogHelperBottom")?.addEventListener("click",()=>dialog.close());
+    $("closeLogHelperBottom").addEventListener("click",()=>dialog.close());
     dialog.addEventListener("close",()=>$("openLogHelper").focus());
-    $("helperCopy")?.addEventListener("click",async()=>{
-      try{await navigator.clipboard.writeText($("helperPlanText").value);$("helperStatus").textContent="Collection plan copied.";}
-      catch{$("helperStatus").textContent="Copy failed. Expand Plain text plan to select and copy it manually.";$("helperPlain").open=true;$("helperPlanText").focus();$("helperPlanText").select();}
-    });
-    // Pages without an add button (Case Notes) show the plan only.
-    $("helperAdd")?.addEventListener("click",()=>{
-      if(added)return;
-      if(!api.canAdd() || api.context().id!==sourceId){$("helperStatus").textContent="The case changed or is read-only. Reopen the helper for the current case.";return;}
-      const saved=api.add($("helperPlanText").value);
-      added=true;$("helperAdd").disabled=true;
-      $("helperStatus").textContent=saved===false?"Plan added, but saving failed. Keep the page open and check the save status.":"Collection plan added. Collection status has not changed.";
-    });
   }
-  return {init};
+  return {init,markup};
 })();

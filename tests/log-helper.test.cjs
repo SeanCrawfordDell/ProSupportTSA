@@ -15,18 +15,23 @@ test('unavailable hosts defer host collection; unknown solutions use a safe fall
  const unknown=core.plan({os:'Custom OS',symptom:'unsupported'});assert.equal(unknown.symptom,'general');assert.ok(unknown.items.some(i=>i.title==='Identify the affected product'));
 });
 const vm=require('node:vm'),fs=require('node:fs');
-function ui({canAdd=true,failCopy=false,saveResult=true,symptom='network'}={}) {
- const elements={}, node=()=>({value:'',textContent:'',children:[],listeners:{},options:[],append(...items){this.children.push(...items)},replaceChildren(...items){this.children=items},addEventListener(k,f){this.listeners[k]=f},showModal(){this.open=true},close(){this.open=false;this.listeners.close?.()},focus(){},select(){}}),get=id=>elements[id]??=node();
+function ui({failCopy=false,symptom='network'}={}) {
+ const elements={}, node=()=>({value:'',textContent:'',innerHTML:'',children:[],listeners:{},options:[],attributes:{},setAttribute(k,v){this.attributes[k]=v},append(...items){this.children.push(...items)},replaceChildren(...items){this.children=items},addEventListener(k,f){this.listeners[k]=f},showModal(){this.open=true},close(){this.open=false;this.listeners.close?.()},focus(){},select(){}}),get=id=>elements[id]??=node();
  get('os').options=[{value:'Windows Server',textContent:'Windows Server'}];
- let id='one',adds=0,copied='';const window={};
- vm.runInNewContext(fs.readFileSync(require.resolve('../log-helper.js'),'utf8'),{window,document:{getElementById:get,createElement:node},LogHelperCore:core,navigator:{clipboard:{async writeText(text){if(failCopy)throw Error();copied=text}}}});
- window.LogHelper.init({context:()=>({id,os:'Windows Server',platform:'PowerEdge R750',symptom}),canAdd:()=>canAdd,addLabel:'Add plan',add(){adds++;return saveResult}});
- return {get,click:id=>get(id).listeners.click(),adds:()=>adds,copied:()=>copied,setId:value=>id=value};
+ let copied='';const window={};
+ const body={append(item){elements[item.id]=item;}};
+ vm.runInNewContext(fs.readFileSync(require.resolve('../log-helper.js'),'utf8'),{window,document:{body,getElementById:get,createElement:node},LogHelperCore:core,navigator:{clipboard:{async writeText(text){if(failCopy)throw Error();copied=text}}}});
+ window.LogHelper.init({context:()=>({id:'one',os:'Windows Server',platform:'PowerEdge R750',symptom})});
+ return {get,window,click:id=>get(id).listeners.click(),copied:()=>copied};
 }
-test('helper prefills context, appends once, and blocks mutation if the selected case changes',()=>{
- const h=ui();h.click('openLogHelper');assert.equal(h.get('helperOS').value,'Windows Server');assert.equal(h.get('helperSymptom').value,'network');h.click('helperAdd');h.click('helperAdd');assert.equal(h.adds(),1);
- h.click('openLogHelper');h.setId('two');h.click('helperAdd');assert.equal(h.adds(),1);assert.match(h.get('helperStatus').textContent,/case changed/);
- const ro=ui({canAdd:false});ro.click('openLogHelper');assert.equal(ro.get('helperAdd').disabled,true);ro.click('helperAdd');assert.equal(ro.adds(),0);
+test('helper builds its own dialog and prefills OS and issue type from the page',()=>{
+ const h=ui();
+ assert.equal(h.get('logHelperDialog').attributes['aria-labelledby'],'logHelperTitle');
+ assert.match(h.get('logHelperDialog').innerHTML,/Which logs should I collect\?/);
+ h.click('openLogHelper');assert.equal(h.get('logHelperDialog').open,true);
+ assert.equal(h.get('helperOS').value,'Windows Server');assert.equal(h.get('helperSymptom').value,'network');
+ assert.match(h.get('helperPlanText').value,/Packet Monitor/);
+ h.click('closeLogHelperBottom');assert.equal(h.get('logHelperDialog').open,false);
 });
 const windowsCases=[['boot','Boot'],['crash','dump'],['performance','Performance Monitor'],['network','Packet Monitor'],['storage','Get-Disk'],['directory','repadmin'],['hyperv','Get-VM'],['cluster','Get-ClusterLog'],['updates','Get-WindowsUpdateLog'],['smb','Get-SmbShare']];
 test('each Windows issue routes to targeted tools with location and precautions in the exported plan',()=>{
@@ -55,20 +60,16 @@ test('new issue types survive case backup and structured escalation handoff',()=
   assert.equal(core.plan({os:'Windows Server',symptom:C.escalation(restored,2000).issueType}).symptom,symptom);
  }
 });
-test('helper preselects every triage category and renders its commands for copying',async()=>{
+test('helper preselects every triage category and shows its tools in the plan',()=>{
  for(const [symptom,expected] of windowsCases){
   const h=ui({symptom});h.click('openLogHelper');
   assert.equal(h.get('helperSymptom').children.length,11);
   assert.equal(h.get('helperSymptom').value,symptom);
-  await h.click('helperCopy');assert.ok(h.copied().includes(expected));
+  assert.ok(h.get('helperPlanText').value.includes(expected));
  }
  const h=ui({symptom:'custom-example'});h.click('openLogHelper');
  assert.equal(h.get('helperSymptom').value,'general');
  assert.match(h.get('helperContext').textContent,/custom|Custom/);
-});
-test('helper copy failure exposes a manual fallback; failed saves never claim success',async()=>{
- const h=ui({failCopy:true,saveResult:false});h.click('openLogHelper');await h.click('helperCopy');assert.equal(h.get('helperPlain').open,true);assert.match(h.get('helperStatus').textContent,/Copy failed/);h.click('helperAdd');assert.match(h.get('helperStatus').textContent,/saving failed/);
- const ok=ui();ok.click('openLogHelper');await ok.click('helperCopy');assert.match(ok.copied(),/LOG COLLECTION PLAN/);
 });
 test('per-tool command copy exports only the command and reports clipboard failure',async()=>{
  for(const failCopy of [false,true]){
@@ -80,14 +81,20 @@ test('per-tool command copy exports only the command and reports clipboard failu
   else assert.equal(h.copied(),'Get-ClusterLog -TimeSpan 30 -UseLocalTime -Destination .');
  }
 });
-test('Case Notes shows the plan without an add button',()=>{
- const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8'),js=fs.readFileSync(require.resolve('../case-notes.js'),'utf8');
- assert.ok(!html.includes('id="helperAdd"'));assert.ok(!html.includes('Add to Next Steps'));assert.ok(!/addLabel/.test(js));
- const elements={},node=()=>({value:'',textContent:'',children:[],listeners:{},options:[],append(...items){this.children.push(...items)},replaceChildren(...items){this.children=items},addEventListener(k,f){this.listeners[k]=f},showModal(){this.open=true},close(){this.open=false},focus(){},select(){}});
- const get=id=>id==='helperAdd'?null:(elements[id]??=node());get('os').options=[{value:'Windows Server',textContent:'Windows Server'}];
- const window={};
- vm.runInNewContext(fs.readFileSync(require.resolve('../log-helper.js'),'utf8'),{window,document:{getElementById:get,createElement:node},LogHelperCore:core,navigator:{clipboard:{async writeText(){}}}});
- window.LogHelper.init({context:()=>({id:'one',os:'Windows Server',platform:'PowerEdge R750',symptom:'network'})});
- get('openLogHelper').listeners.click();
- assert.equal(get('logHelperDialog').open,true);assert.match(get('helperPlanText').value,/Packet Monitor/);
+test('Case Notes and Escalation Quality share one helper with identical behavior',()=>{
+ for(const page of ['../case-notes.html','../escalation-quality.html']){
+  const html=fs.readFileSync(require.resolve(page),'utf8');
+  assert.ok(!html.includes('id="logHelperDialog"'),page+' has no copy of the dialog markup');
+  assert.ok(!/id="helper(Add|Copy|OS|Symptom|Results)"/.test(html),page+' has no helper controls of its own');
+  assert.match(html,/<script src="log-helper-core\.js[^"]*" defer><\/script>/);assert.match(html,/<script src="log-helper\.js[^"]*" defer><\/script>/);
+  assert.match(html,/id="openLogHelper"/);assert.match(html,/<select id="os"/);
+ }
+ const versions=['../case-notes.html','../escalation-quality.html'].map(page=>/log-helper\.js\?v=([^"]+)"/.exec(fs.readFileSync(require.resolve(page),'utf8'))[1]);
+ assert.equal(versions[0],versions[1],'both pages load the same helper version');
+ for(const script of ['../case-notes.js','../app.js']){
+  const init=/LogHelper\?\.init\(\{([\s\S]*?)\n  ?\}\);/.exec(fs.readFileSync(require.resolve(script),'utf8'))[1];
+  assert.ok(!/canAdd|addLabel|add\(/.test(init),script+' passes only page context');
+ }
+ const markup=ui().window.LogHelper.markup;
+ assert.ok(!/helperAdd|helperCopy/.test(markup));
 });

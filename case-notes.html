@@ -31,7 +31,7 @@
 <script src="case-toolkit.js?v=20261003-dated-entries" defer></script>
   <link rel="stylesheet" href="log-helper.css?v=20260919-support-workflow">
 <script src="log-helper-core.js?v=20260919-support-workflow" defer></script>
-<script src="log-helper.js?v=20261004-helper-no-add" defer></script>
+<script src="log-helper.js?v=20261004-shared-log-helper" defer></script>
 <script src="troubleshoot-core.js" defer></script>
 <script src="case-notes-popout.js?v=20260919-support-workflow" defer></script>
 <script src="case-notes.js?v=20261004-helper-no-add" defer></script>
@@ -160,17 +160,6 @@
     </div>
   </main>
 <dialog id="toolkitDialog" class="toolkit-dialog" aria-labelledby="toolkitTitle"><div class="toolkit-dialog-heading"><h2 id="toolkitTitle">Case Toolkit</h2><button id="closeToolkit" class="button secondary" type="button" aria-label="Close Case Toolkit">Close</button></div><p class="toolkit-help">Details are saved with the current case.</p><fieldset id="toolkitFields" disabled><section id="toolkit-followup" data-title="Follow-up tracker" hidden><div class="toolkit-content field-grid"><label class="field">Owner<input id="followupOwner" placeholder="Person or team responsible"></label><label class="field">Due date and time<input id="followupDue" type="datetime-local"></label><label class="field">Status<select id="followupStatus"><option>Open</option><option>In progress</option><option>Waiting on customer</option><option>Completed</option></select></label><p class="toolkit-help">Times use this device’s local time zone. Overdue cases are highlighted in Recent Cases.</p></div></section><section id="toolkit-customer" data-title="Customer update generator" hidden><div class="toolkit-content"><p class="toolkit-help">Build an editable update from the case issue, investigation, and next steps. Review wording and remove internal details before sharing.</p><label class="field">Tone<select id="customerTone"><option value="clear">Clear and professional</option><option value="reassuring">Reassuring</option><option value="concise">Concise</option></select></label><button class="button secondary" type="button" id="generateCustomer">Generate customer update</button><label class="field">Customer update draft<textarea id="customerDraft" rows="12" placeholder="Generate an update, then edit it here."></textarea></label><p class="toolkit-help">Before sending, remove internal system names, unverified causes, and collection instructions.</p><button class="button secondary" type="button" id="copyCustomer">Copy customer update</button></div></section><section id="toolkit-summary" data-title="Case summary builder" hidden><div class="toolkit-content"><label class="field">Business impact<textarea id="caseImpact" placeholder="Who or what is affected?"></textarea></label><label class="field">Remaining questions<textarea id="caseQuestions" placeholder="What still needs to be answered?"></textarea></label><button class="button secondary" type="button" id="generateSummary">Build handoff summary</button><label class="field">Handoff summary draft<textarea id="summaryDraft" rows="14" placeholder="Build a summary, then edit it here."></textarea></label><button class="button secondary" type="button" id="copySummary">Copy handoff summary</button><small>Drafts use saved case details and your current edits. Regenerate after changing the case to refresh a draft.</small></div></section></fieldset><p id="toolkitStatus" role="status" class="toolkit-help"></p></dialog>
-<dialog id="logHelperDialog" class="log-helper-dialog" aria-labelledby="logHelperTitle">
-<div class="log-helper-heading"><h2 id="logHelperTitle">Which logs should I collect?</h2><button class="button secondary" id="closeLogHelper" type="button">Close</button></div>
-<p id="helperContext"></p>
-<p>Recommendations only — nothing runs automatically. Review permissions, production impact, and approved storage before collection. Logs and dumps can contain sensitive customer data. Defer host commands if Windows is unavailable.</p>
-<div class="field-grid">
-<label class="field">OS/Solution<select id="helperOS"></select></label>
-<label class="field">Issue type for this plan<select id="helperSymptom" aria-describedby="helperContext"></select></label>
-</div><div id="helperResults"></div>
-<details id="helperPlain"><summary>Plain text plan</summary><textarea id="helperPlanText" aria-label="Log collection plan" readonly></textarea></details>
-<div class="log-helper-actions"><button class="button secondary" id="closeLogHelperBottom" type="button">Close</button></div><p id="helperStatus" role="status"></p>
-</dialog>
 <dialog id="aiTasksDialog" class="ai-tasks-dialog" aria-labelledby="aiTasksTitle">
 <div class="ai-tasks-heading"><h2 id="aiTasksTitle">Add your Own AI Prompt/skills</h2><button class="button secondary" id="closeAiTasks" type="button">Close</button></div>
 <p class="ai-tasks-help">Add custom AI tasks to the dropdown. These tasks are saved in your browser and will be available in both Case Notes and Escalation Quality.</p>
