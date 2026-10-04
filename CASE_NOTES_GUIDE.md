@@ -18,7 +18,7 @@ Notes autosave in this browser every ten seconds. Open the gear-icon **Settings*
 
 Once access is approved, changed notes and settings are backed up approximately every minute while Case Notes is open. Browser background throttling can delay this; it is not a background service. **Backup Case History** saves immediately. The status shows the last successful folder backup. When a saved folder only needs re-approval after the browser restarts, your next click anywhere on the page asks the browser for access; **Reconnect Backup Folder** does the same. Browsers without folder access can download history and settings instead.
 
-When backups are not configured, an inline banner at the top of the page offers **Configure Backups**. **Remind me in a week** hides it for seven days.
+When backups are not configured, an inline banner at the top of the page offers **Configure Backups** and warns that resetting your browser or deleting browser data will erase all of the app's settings and notes history. **Remind me in a week** repeats that warning and asks you to confirm before hiding the banner for seven days.
 
 ### What the backup folder contains
 

@@ -156,6 +156,7 @@ test('missing backups show an inline banner on startup and configure opens backu
   const h=harness();h.get('backupWarningBanner').hidden=true;await new Promise(setImmediate);
   assert.equal(h.get('backupWarningBanner').hidden,false);
   assert.match(h.get('backupWarningMessage').textContent,/not configured/);
+  assert.match(h.get('backupWarningMessage').textContent,/reset your browser or delete browser data, all of this app's settings and notes history will be lost/);
   h.click('configureBackups');
   assert.equal(h.get('backupWarningBanner').hidden,true);
   assert.equal(h.get('backupRestoreMenu').open,true);
@@ -184,6 +185,7 @@ test('dismissed backup warning snoozes for a week across visits',async()=>{
   const h=harness();h.get('backupWarningBanner').hidden=true;await new Promise(setImmediate);
   assert.equal(h.get('backupWarningBanner').hidden,false);
   h.click('dismissBackupWarning');
+  h.click('confirmBackupSnooze');
   await h.intervals.find(i=>i.ms===60000).f();
   assert.equal(h.get('backupWarningBanner').hidden,true);
   const snoozed=Number(h.ctx.localStorage.getItem('dell-support.backup-warning-snoozed-until'));
@@ -194,6 +196,22 @@ test('dismissed backup warning snoozes for a week across visits',async()=>{
   const later=harness();later.get('backupWarningBanner').hidden=true;later.setTime(snoozed+1);
   later.ctx.localStorage.setItem('dell-support.backup-warning-snoozed-until',String(snoozed));
   await new Promise(setImmediate);assert.equal(later.get('backupWarningBanner').hidden,false);
+});
+test('Remind me in a week warns about data loss before snoozing',async()=>{
+  const h=harness();h.get('backupWarningBanner').hidden=true;await new Promise(setImmediate);
+  h.click('dismissBackupWarning');
+  assert.equal(h.get('backupSnoozeDialog').open,true,'snoozing asks for confirmation first');
+  assert.equal(h.ctx.localStorage.getItem('dell-support.backup-warning-snoozed-until'),null);
+  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+  assert.match(html,/id="backupSnoozeHelp"[^>]*><strong>If you reset your browser or delete browser data, all of this app's settings and notes history will be lost\./);
+  h.click('cancelBackupSnooze');
+  assert.equal(h.get('backupSnoozeDialog').open,false);
+  assert.equal(h.get('backupWarningBanner').hidden,false,'cancel keeps the banner');
+  assert.equal(h.ctx.localStorage.getItem('dell-support.backup-warning-snoozed-until'),null);
+  h.click('dismissBackupWarning');h.click('snoozeConfigureBackups');
+  assert.equal(h.get('backupSnoozeDialog').open,false);
+  assert.equal(h.get('backupRestoreMenu').open,true,'configure from the warning opens Backup & Restore');
+  assert.equal(h.ctx.localStorage.getItem('dell-support.backup-warning-snoozed-until'),null);
 });
 test('startup warning waits for folder permission and skips connected folders',async()=>{
   for(const permission of ['granted','prompt','denied']) {

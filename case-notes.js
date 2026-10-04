@@ -286,7 +286,7 @@
   async function refreshBackupSummary() {
     const summary = $("backupSummary");
     if (!summary) return;
-    if (!backupFolderHandle) { summary.textContent = supportsBackupFolder() ? "No backup folder connected. Backups download to this device." : "This browser cannot connect a backup folder. Backups download to this device."; return; }
+    if (!backupFolderHandle) { summary.textContent = (supportsBackupFolder() ? "No backup folder connected. Backups download to this device. " : "This browser cannot connect a backup folder. Backups download to this device. ") + dataLossWarning; return; }
     try {
       if (await backupFolderHandle.queryPermission({mode:"readwrite"}) !== "granted") { summary.textContent = "Backup folder needs permission. " + backupTimeLabel(); return; }
       const files = await listFolderFiles(backupFolderHandle), images = await listImageFiles();
@@ -490,6 +490,7 @@
     catch { setBackupFolderStatus("Choose a valid customer-config.json settings backup."); }
   });
   const warningBanner = $("backupWarningBanner");
+  const dataLossWarning = "If you reset your browser or delete browser data, all of this app's settings and notes history will be lost.";
   function hideBackupWarning() { if (warningBanner) warningBanner.hidden = true; }
   // When a saved folder only needs re-approval, ask on the user's next click instead of making them find Reconnect.
   let permissionClickArmed = false;
@@ -520,21 +521,35 @@
     try { snoozedUntil = Number(localStorage.getItem(warningSnoozeKey)) || 0; } catch {}
     if (snoozedUntil > Date.now()) return;
     $("backupWarningMessage").textContent = backupFolderHandle
-      ? "Automatic backups are paused because your saved backup folder needs permission. Your next click on this page asks the browser for access, or open Configure Backups and select Reconnect Backup Folder."
+      ? "Automatic backups are paused because your saved backup folder needs permission. Your next click on this page asks the browser for access, or open Configure Backups and select Reconnect Backup Folder. Until then, if you reset your browser or delete browser data, changes since your last backup will be lost."
       : supportsBackupFolder()
-        ? "Automatic backups are not configured. Choose a backup folder to protect your case notes and site settings."
-        : "Automatic backups are not configured. This browser cannot save directly to a backup folder. Use Chrome or Edge for folder backups, or open Configure Backups to download manual backups.";
+        ? "Automatic backups are not configured. Choose a backup folder to protect your case notes and site settings. " + dataLossWarning
+        : "Automatic backups are not configured. This browser cannot save directly to a backup folder. Use Chrome or Edge for folder backups, or open Configure Backups to download manual backups. " + dataLossWarning;
     if (warningBanner) warningBanner.hidden = false;
   }
-  $("dismissBackupWarning")?.addEventListener("click", () => {
-    hideBackupWarning();
-    try { localStorage.setItem(warningSnoozeKey, String(Date.now() + 7 * CaseBackup.DAY)); } catch {}
-  });
-  $("configureBackups")?.addEventListener("click", () => {
+  // Snoozing needs a second, explicit step so the data-loss risk is acknowledged.
+  const snoozeDialog = $("backupSnoozeDialog");
+  function openBackupSettings() {
     hideBackupWarning();
     window.scrollTo?.(0, 0);
     setBackupMenu(true, true);
+  }
+  $("dismissBackupWarning")?.addEventListener("click", () => {
+    if (!snoozeDialog) return;
+    if (!snoozeDialog.open) snoozeDialog.showModal();
+    $("confirmBackupSnooze")?.focus();
   });
+  $("confirmBackupSnooze")?.addEventListener("click", () => {
+    snoozeDialog?.close();
+    hideBackupWarning();
+    try { localStorage.setItem(warningSnoozeKey, String(Date.now() + 7 * CaseBackup.DAY)); } catch {}
+  });
+  $("snoozeConfigureBackups")?.addEventListener("click", () => {
+    snoozeDialog?.close();
+    openBackupSettings();
+  });
+  $("cancelBackupSnooze")?.addEventListener("click", () => snoozeDialog?.close());
+  $("configureBackups")?.addEventListener("click", openBackupSettings);
   // Check once per page visit, after the saved folder has been loaded.
   restoreBackupFolder().then(warnIfBackupsUnavailable);
   setInterval(automaticBackup,60000);

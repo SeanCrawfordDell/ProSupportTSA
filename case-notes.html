@@ -8,7 +8,7 @@
   <title>Case Notes · Dell Pro-Support</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="case-notes.css?v=20261004-feedback-by-theme">
+  <link rel="stylesheet" href="case-notes.css?v=20261004-backup-loss-warning">
   <link rel="stylesheet" href="escalation-demo.css?v=20260919-support-workflow">
   <script src="vendor/marked.umd.js" defer></script>
   <script src="vendor/purify.min.js" defer></script>
@@ -33,9 +33,9 @@
 <script src="log-helper.js?v=20260919-support-workflow" defer></script>
 <script src="troubleshoot-core.js" defer></script>
 <script src="case-notes-popout.js?v=20260919-support-workflow" defer></script>
-<script src="case-notes.js?v=20261004-feedback-by-theme" defer></script>
+<script src="case-notes.js?v=20261004-backup-loss-warning" defer></script>
 <script src="guided-tour.js?v=20260919-support-workflow" defer></script>
-<script src="case-notes-demo.js?v=20261004-feedback-by-theme" defer></script>
+<script src="case-notes-demo.js?v=20261004-backup-loss-warning" defer></script>
 <script src="case-toolbox-icons.js" defer></script>
 <script src="case-toolbox-links.js" defer></script>
 <script src="case-template-manager.js" defer></script>
@@ -213,6 +213,11 @@
 <p id="backupFolderStatus" class="dropdown-status" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration, note snapshots, and an <strong>images</strong> subfolder for screenshots.</p>
 <p class="dropdown-help">Notes autosave in this browser. With folder access approved, <strong>case-history.json</strong> is refreshed every minute while this page is open and changes are present, a dated snapshot is kept once per hour, and older automatic snapshots are removed by the retention setting. Manual backups and safety copies are always kept. Clearing browser data removes local history.</p>
 <button class="button secondary" id="closeBackupRestore" type="button">Close</button>
+</dialog>
+<dialog id="backupSnoozeDialog" class="toolkit-dialog backup-snooze-dialog" aria-labelledby="backupSnoozeTitle" aria-describedby="backupSnoozeHelp">
+  <h2 id="backupSnoozeTitle">Continue without backups?</h2>
+  <p id="backupSnoozeHelp" class="backup-snooze-warning"><strong>If you reset your browser or delete browser data, all of this app's settings and notes history will be lost.</strong> Case Notes only saves to this browser until a backup folder is set up.</p>
+  <div class="backup-snooze-actions"><button class="button primary" id="snoozeConfigureBackups" type="button">Configure Backups</button><button class="button secondary" id="confirmBackupSnooze" type="button">I understand, remind me in a week</button><button class="button secondary" id="cancelBackupSnooze" type="button">Cancel</button></div>
 </dialog>
 <dialog id="restoreHistoryDialog" class="toolkit-dialog" aria-labelledby="restoreHistoryTitle" aria-describedby="restoreHistoryHelp">
   <h2 id="restoreHistoryTitle">Restore History</h2>
