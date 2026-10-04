@@ -100,3 +100,24 @@ test('duplicate launch cannot clean another running helpers prompt directory',as
   assert.equal((await fs.readdir(workspace)).length,1);assert.equal(runner.get(id).state,'running');
   await runner.cancel(id);
 });
+test('unattended runs pin Devin to normal permission checks when the CLI supports it',async t=>{
+  const workspace=await fs.mkdtemp(path.join(os.tmpdir(),'devin-test-'));t.after(()=>fs.rm(workspace,{recursive:true,force:true}));
+  const fake=path.join(__dirname,'fixtures/fake-devin.cjs');
+  for(const [extra,expected] of [[['--modern'],true],[[],false]]){
+    const runner=createRunner({workspace,executable:process.execPath,prefixArgs:[fake,...extra]});
+    const job=await finished(runner,(await runner.submit('ARGS')).id);
+    const args=JSON.parse(job.response);
+    assert.equal(args.includes('--permission-mode'),expected);
+    if(expected)assert.equal(args[args.indexOf('--permission-mode')+1],'normal');
+    await runner.close();
+  }
+});
+test('relative PATH entries are never searched for the Devin executable',async t=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'devin-path-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const name=process.platform==='win32'?'devin.exe':'devin';
+  await fs.mkdir(path.join(dir,'rel'));await fs.writeFile(path.join(dir,'rel',name),'planted');
+  const cwd=process.cwd(),PATH=process.env.PATH;
+  process.chdir(dir);process.env.PATH='rel';
+  try{const runner=createRunner({workspace:path.join(dir,'ws')});assert.equal((await runner.health()).code,'cli_missing');await runner.close();}
+  finally{process.chdir(cwd);process.env.PATH=PATH;}
+});
