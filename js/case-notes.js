@@ -202,24 +202,31 @@
         await writeImageFiles(files);
         const datedDue = kind !== "auto" || !lastDatedBackupAt || now - new Date(lastDatedBackupAt).getTime() >= CaseBackup.HOUR;
         if (datedDue) await writeFile(backupFolderHandle, CaseBackup.fileName("history", kind, now, reason), history);
-        await writeFile(backupFolderHandle, CaseBackup.LATEST_HISTORY, history);
-        const config = settingsSnapshot(), signature = settingsSignatureOf(config);
-        if (signature !== lastSettingsSignature) {
-          await writeFile(backupFolderHandle, CaseBackup.fileName("settings", "auto", now), config);
-          lastSettingsSignature = signature; try { localStorage.setItem(settingsSignatureKey, signature); } catch {}
-        }
-        await writeFile(backupFolderHandle, CaseBackup.LATEST_SETTINGS, config);
+        // Record the hourly snapshot as soon as it exists, so a later failure cannot cause one every minute.
         if (kind === "auto" && datedDue) { lastDatedBackupAt = new Date(now).toISOString(); try { localStorage.setItem(datedBackupKey, lastDatedBackupAt); } catch {} }
+        await writeFile(backupFolderHandle, CaseBackup.LATEST_HISTORY, history);
         lastBackupAt = new Date(now).toISOString();
         try { localStorage.setItem(backupTimeKey, lastBackupAt); } catch {}
-        setBackupFolderStatus((kind === "safety" ? `Safety copy saved before ${reason.replace(/-/g, " ")}. ` : "Automatic backups enabled. ") + backupTimeLabel());
+        // Case history is safe at this point; a settings failure is reported on its own.
+        let settingsSaved = true;
+        try {
+          const config = settingsSnapshot(), signature = settingsSignatureOf(config);
+          if (signature !== lastSettingsSignature) {
+            await writeFile(backupFolderHandle, CaseBackup.fileName("settings", "auto", now), config);
+            lastSettingsSignature = signature; try { localStorage.setItem(settingsSignatureKey, signature); } catch {}
+          }
+          await writeFile(backupFolderHandle, CaseBackup.LATEST_SETTINGS, config);
+        } catch { settingsSaved = false; }
+        setBackupFolderStatus((kind === "safety" ? `Safety copy saved before ${reason.replace(/-/g, " ")}. ` : "Automatic backups enabled. ") + (settingsSaved ? "" : "Case history was saved, but site configuration could not be written; it will be retried. ") + backupTimeLabel());
         if (kind === "auto" && datedDue) scheduleCleanup();
         return true;
       } finally { backupBusy = false; }
     });
   }
   async function automaticBackup() {
-    if (!writable || loadFailed || copying || backupBusy || !backupFolderHandle || !save()) return;
+    if (!writable || loadFailed || copying || backupBusy || !backupFolderHandle) return;
+    // Back up even when the browser save fails: the folder copy may then be the only copy of recent edits.
+    save();
     try {
       const signature = JSON.stringify([state, settingsSignatureOf(settingsSnapshot())]);
       if (signature === lastBackupSignature) return;
@@ -231,6 +238,12 @@
     if (!backupFolderHandle || loadFailed) return false;
     const text = CaseNotes.backup(state, Date.now());
     try { return await writeHistoryBackup({ kind:"safety", reason, text }); } catch { return false; }
+  }
+  // Before an action that cannot be undone: true when it is safe to continue. Without a folder there is nothing to try.
+  async function confirmSafetySnapshot(reason) {
+    if (!backupFolderHandle) return true;
+    if (await safetySnapshot(reason)) return true;
+    return confirm("The safety copy could not be saved to the backup folder. Check folder access and disk space. Continue anyway without a safety copy?");
   }
   async function cleanupPlan() {
     const files = await listFolderFiles(backupFolderHandle);
@@ -322,10 +335,11 @@
       await refreshBackupSummary();
     } catch { setBackupFolderStatus("Cleanup did not finish. Check folder access and try again. Nothing else was changed."); }
   });
+  const reportSettings = message => { report(message, "backupFolderStatus"); void refreshBackupFolderButton(); };
   async function restoreSettings(importedConfig = null) {
     if (!writable || copying || !save()) return;
     if (!backupFolderHandle && !importedConfig) {
-      setBackupFolderStatus("Set the backup folder first, then restore customer-config.json from ProSupportToolsBackup.");
+      reportSettings("Set the backup folder first, then restore customer-config.json from ProSupportToolsBackup.");
       return;
     }
     try {
@@ -351,9 +365,9 @@
       sectionIds.forEach(id => setSectionCollapsed(id,!!sectionState[id]));
       loadAiTasks(); render();
       if (retentionSelect) retentionSelect.value = retentionSetting();
-      setBackupFolderStatus("Settings restored successfully. Case notes were kept.");
+      reportSettings("Settings restored successfully. Case notes were kept.");
     } catch (error) {
-      setBackupFolderStatus(error?.message || "Could not restore settings. Confirm customer-config.json exists in ProSupportToolsBackup.");
+      reportSettings(error?.message || "Could not restore settings. Confirm customer-config.json exists in ProSupportToolsBackup.");
     }
   }
   // Backup & Restore lives under the Settings gear and opens as a dialog that stays open while its actions report status.
@@ -440,7 +454,7 @@
     const file = $("settingsFile").files[0]; $("settingsFile").value = "";
     if (!file) return;
     try { await restoreSettings(JSON.parse(await file.text())); }
-    catch { setBackupFolderStatus("Choose a valid customer-config.json settings backup."); }
+    catch { reportSettings("Choose a valid customer-config.json settings backup."); }
   });
   const warningBanner = $("backupWarningBanner");
   const dataLossWarning = "If you reset your browser or delete browser data, all of this app's settings and notes history will be lost.";
@@ -663,21 +677,41 @@
       setSectionCollapsed("notes",false); setSectionCollapsed("actionPlan",false); $("notesRich").focus();
     } else summaryCaseId=previousSummary;
   });
-  function status(text, error = false) {
+  function status(text, error = false, warning = false) {
     $("saveStatus").textContent = text;
-    $("saveStatus").classList.toggle("error", error);
+    $("saveStatus").classList.toggle("error", error || warning);
     $("retrySave").hidden = !error || !writable;
   }
+  // Results of actions started from a dialog that has since closed (restore, delete, settings) are shown on the page.
+  // The dialog's own status line keeps the same text for when it is reopened.
+  function report(message, dialogStatus = "backupStatus") {
+    if ($(dialogStatus)) $(dialogStatus).textContent = message;
+    const page = $("pageStatus");
+    if (!page) return;
+    page.textContent = message; page.hidden = false;
+    const active = document.activeElement;
+    if (!active || active === document.body || active.closest?.("dialog:not([open])")) page.focus?.();
+  }
+  // Browsers allow roughly five million characters per site; warn well before saves start failing.
+  const storageWarningChars = 4000000;
+  const imageIds = data => new Set(["cases","archive","trash"].flatMap(collection => (data?.[collection] || []).flatMap(note => Object.keys(note.images || {}))));
   function save() {
     if (!writable || !dirty) return !dirty;
     try {
       state.cases.forEach(note=>CaseNotes.syncEntry(note));
       const previousVersions = JSON.stringify(state.revisions || {});
       CaseNotes.checkpoint(state,savedState,Date.now());
-      try { localStorage.setItem(key, JSON.stringify(state)); }
+      // Screenshots added since the last save may still be waiting for their reference to be inserted.
+      const saved = imageIds(savedState);
+      CaseNotes.pruneImages(state, new Set([...imageIds(state)].filter(id => !saved.has(id))));
+      const text = JSON.stringify(state);
+      try { localStorage.setItem(key, text); }
       catch (error) { state.revisions = JSON.parse(previousVersions); throw error; }
-      savedState = JSON.parse(JSON.stringify(state));
-      dirty = false; status("Saved · " + new Date().toLocaleTimeString()); return true;
+      savedState = JSON.parse(text);
+      dirty = false;
+      if (text.length > storageWarningChars) status(`Saved · Browser storage is ${Math.round(text.length / 50000)}% full. Delete cases from Trash or remove screenshots you no longer need, and keep backups current.`, false, true);
+      else status("Saved · " + new Date().toLocaleTimeString());
+      return true;
     } catch {
       status("Save failed. Changes remain in this tab. Free browser storage and retry before leaving.", true);
       return false;
@@ -729,23 +763,24 @@
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7");
       icon.append(path); remove.append(icon);
-      remove.addEventListener("click", () => {
+      remove.addEventListener("click", async () => {
         if (!writable || copying) return;
         if (!confirm(collection === "trash" ? `Permanently delete ${caseName} and its versions? This cannot be undone.` : `Move ${caseName} to Trash? You can restore it later.`)) return;
         if (!save()) return;
-        if (collection === "trash") void safetySnapshot("delete");
+        if (collection === "trash" && !await confirmSafetySnapshot("delete")) return;
+        if (!writable || copying || !save()) return;
         const updated = JSON.parse(JSON.stringify(state));
         if (collection === "trash") { updated.trash = updated.trash.filter(item => item.id !== note.id); delete updated.revisions[note.id]; }
         else CaseNotes.move(updated,note.id,collection,"trash",Date.now());
         try {
           localStorage.setItem(key, JSON.stringify(updated));
         } catch {
-          $("backupStatus").textContent = "Could not delete the case. Check browser storage and try again. Your case has not been removed.";
+          report("Could not delete the case. Check browser storage and try again. Your case has not been removed.");
           return;
         }
         state = updated; savedState = JSON.parse(JSON.stringify(state)); dirty = false; status("Saved"); render();
-        $("backupStatus").textContent = collection === "trash" ? "Case permanently deleted." : "Case moved to Trash. Select Trash to restore it.";
-        $("copyStatus").textContent = "Copy all fields and tracked time as plain text.";
+        report(collection === "trash" ? `${caseName} was permanently deleted.` : `${caseName} moved to Trash. Choose Trash in the case list to restore it.`);
+        $("copyStatus").textContent = "";
       });
       row.append(button, remove);
       const rowActions = document.createElement("div"); rowActions.className = "case-row-actions";
@@ -776,7 +811,7 @@
       candidate = CaseNotes.parse(JSON.stringify(candidate));
       localStorage.setItem(key,JSON.stringify(candidate));
       state = candidate; savedState = JSON.parse(JSON.stringify(state)); render(); return true;
-    } catch { $("backupStatus").textContent = "Could not save this change. Your saved notes were kept. Free browser storage or export a backup and retry."; return false; }
+    } catch { report("Could not save this change. Your saved notes were kept. Free browser storage or export a backup and retry."); return false; }
   }
   function showStoredCase(note,collection) {
     $("caseRecoveryTitle").textContent = collection === "trash" ? "Case in Trash" : "Archived Case";
@@ -934,7 +969,7 @@
     if (!writable || copying || !save()) return;
     summaryCaseId=null;
     CaseNotes.create(state, crypto.randomUUID(), Date.now()); dirty = true; save(); render();
-    $("copyStatus").textContent = "Copy all fields and tracked time as plain text.";
+    $("copyStatus").textContent = "";
     $("tag").focus();
   }
   function downloadFile(text,name,type) {
@@ -961,9 +996,10 @@
         if (!confirm("Restore this saved version? The current version will remain available in Version History.")) return;
         const ok = commitCaseChange(candidate => {
           const current = candidate.cases.find(note => note.id === id); if (!current) throw Error("Case changed");
-          const snapshot = JSON.parse(JSON.stringify(current)); CaseNotes.stop(snapshot,Date.now());
+          const snapshot = CaseNotes.versionSnapshot(current,Date.now());
           candidate.revisions[id] = [{savedAt:Date.now(),note:snapshot},...(Object.hasOwn(candidate.revisions,id) ? candidate.revisions[id] : [])].slice(0,10);
-          const restored = JSON.parse(JSON.stringify(version.note)); restored.started = null; restored.updated = Date.now(); restored.pinned = current.pinned;
+          // Versions reference the case's screenshots rather than carrying copies.
+          const restored = JSON.parse(JSON.stringify(version.note)); restored.started = null; restored.updated = Date.now(); restored.pinned = current.pinned; restored.images = {...current.images};
           candidate.cases[candidate.cases.findIndex(note => note.id === id)] = restored;
         });
         if (ok) $("caseRecovery").close(); else $("caseRecoveryStatus").textContent = "Could not save the restored version. Current notes were kept.";
@@ -1043,7 +1079,7 @@
   async function restoreFromFolderFile(name) {
     $("backupBrowserDialog").close();
     try { await restoreHistoryText(await (await readFolderFile(backupFolderHandle, name)).text()); }
-    catch (error) { $("backupStatus").textContent = (error?.message || "The snapshot could not be read.") + " Choose another snapshot or a file. Current history was not changed."; }
+    catch (error) { report((error?.message || "The snapshot could not be read.") + " Choose another snapshot or a file. Current history was not changed."); }
   }
   // Shared by file uploads and folder snapshots. Screenshot references are resolved from the folder's images directory.
   async function restoreHistoryText(raw) {
@@ -1054,58 +1090,48 @@
       let data = JSON.parse(raw);
       if (CaseBackup.hasExternalImages(data)) {
         if (!backupFolderHandle) {
-          $("backupStatus").textContent = "This backup keeps screenshots in the backup folder's images subfolder. Connect that backup folder, then use Restore History and choose From backup folder. Current history was not changed.";
+          report("This backup keeps screenshots in the backup folder's images subfolder. Connect that backup folder, then use Restore History and choose From backup folder. Current history was not changed.");
           return;
         }
         if (!await ensureBackupFolderPermission()) throw Error("Folder access was not approved.");
         data = await CaseBackup.inlineImages(data, loadImageFromFolder);
       }
       restored = CaseNotes.parse(JSON.stringify(data));
+      // A custom field renders as an input with its ID, so it must not take the ID of a page control.
+      for (const id of Object.keys(restored.fieldConfig.customFields)) {
+        if (!Object.hasOwn(state.fieldConfig.customFields,id) && document.getElementById(id)) throw Error("A custom field ID in this backup conflicts with a page control: " + id + ".");
+      }
       // Backups freeze elapsed time; never count time spent in an archive.
       restored.cases.forEach(note => { note.started = null; });
     } catch (error) {
-      $("backupStatus").textContent = /Screenshot file missing|Folder access/.test(error?.message || "")
+      report(/Screenshot file missing|Folder access|conflicts with a page control/.test(error?.message || "")
         ? error.message + " Current history was not changed."
-        : "Invalid or unsupported backup. Choose a Case Notes JSON backup with at most 100 cases. Current history was not changed.";
-      return;
-    }
-    if (restored.exportType === "single-case" && restored.cases.length === 1) {
-      const imported = restored.cases[0];
-      if (!confirm("Import this case? An existing case with the same ID will be replaced; other cases are kept.")) return;
-      commitCaseChange(candidate => {
-        for (const collection of ["cases","archive","trash"]) candidate[collection] = candidate[collection].filter(note => note.id !== imported.id);
-        for (const [id,label] of Object.entries(restored.fieldConfig.customFields)) {
-          if (Object.hasOwn(candidate.fieldConfig.customFields,id)) continue;
-          candidate.fieldConfig.customFields[id] = label; candidate.fieldConfig.order.push(id);
-        }
-        Object.keys(candidate.fieldConfig.customFields).forEach(id => { if (!Object.hasOwn(imported,id)) imported[id] = ""; });
-        candidate.cases.unshift(imported); CaseNotes.trimWorkingList(candidate,Date.now()); candidate.selected = imported.id;
-      });
+        : "Invalid or unsupported backup. Choose a Case Notes JSON backup with at most 100 cases. Current history was not changed.");
       return;
     }
     const safety = backupFolderHandle ? "A safety copy of your current history is saved to the backup folder first." : "Download a backup first if you want to keep them.";
     if (!confirm(`Restore ${restored.cases.length} recent, ${restored.archive.length} archived and ${restored.trash.length} deleted cases, plus their versions? This replaces your current history, archive and Trash, including unsaved edits. ${safety} Restored timers will be stopped.`)) return;
-    await safetySnapshot("restore");
+    if (!await confirmSafetySnapshot("restore")) { report("Restore cancelled. Current history was not changed."); return; }
     if (!writable || copying) return;
     try {
       // Commit to storage before replacing in-memory notes, so failure is non-destructive.
       localStorage.setItem(key, JSON.stringify(restored));
     } catch {
-      $("backupStatus").textContent = "Restore could not be saved. Check available browser storage and try again. Current history was not changed.";
+      report("Restore could not be saved. Check available browser storage and try again. Current history was not changed.");
       return;
     }
     state = restored; savedState = JSON.parse(JSON.stringify(state)); dirty = false;
     $("search").value = "";
     status("Saved"); render();
-    $("copyStatus").textContent = "Copy all fields and tracked time as plain text.";
-    $("backupStatus").textContent = `Restored ${state.cases.length} cases. Timers are stopped; editing a case resumes tracking.`;
+    $("copyStatus").textContent = "";
+    report(`Restored ${state.cases.length} cases. Timers are stopped; editing a case resumes tracking.`);
   }
   $("restoreFile").addEventListener("change", async () => {
     const file = $("restoreFile").files[0];
     $("restoreFile").value = "";
     if (!file || !writable || copying) return;
     let raw;
-    try { raw = await file.text(); } catch { $("backupStatus").textContent = "The selected file could not be read. Current history was not changed."; return; }
+    try { raw = await file.text(); } catch { report("The selected file could not be read. Current history was not changed."); return; }
     if (!writable || copying) return;
     await restoreHistoryText(raw);
   });
@@ -1180,30 +1206,26 @@
     loadExampleBtn.addEventListener("click", () => loadExampleNote());
   }
   
-  // Field customization
+  // Field customization. Changes are made to a draft and only reach case history on Save Configuration.
+  let fieldDraft = null;
+  const draftState = () => ({ fieldConfig: fieldDraft, cases: [], archive: [], trash: [], revisions: {} });
+  const draftChanged = () => fieldDraft && JSON.stringify(fieldDraft) !== JSON.stringify(state.fieldConfig);
   function renderFieldCustomizer() {
-    const effectiveFields = CaseNotes.getEffectiveFields(state);
     const orderList = $("fieldOrderList");
-    orderList.innerHTML = "";
-    
-    effectiveFields.forEach(({ id, label }) => {
+    orderList.replaceChildren();
+    CaseNotes.getEffectiveFields(draftState()).forEach(({ id, label }) => {
       const item = document.createElement("div");
       item.className = "field-order-item";
       item.draggable = true;
       item.dataset.fieldId = id;
-      
-      const isBuiltin = CaseNotes.fields[id];
-      item.innerHTML = `
-        <span class="field-handle">⋮⋮</span>
-        <span class="field-name">${escapeHtml(label)}</span>
-        ${isBuiltin ? '<span class="field-builtin">✓ Built-in</span>' : ''}
-      `;
-      
+      const handle = document.createElement("span"); handle.className = "field-handle"; handle.textContent = "⋮⋮"; handle.setAttribute("aria-hidden", "true");
+      const name = document.createElement("span"); name.className = "field-name"; name.textContent = label;
+      item.append(handle, name);
+      if (CaseNotes.fields[id]) { const builtin = document.createElement("span"); builtin.className = "field-builtin"; builtin.textContent = "✓ Built-in"; item.append(builtin); }
       item.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("text/plain", id);
         item.classList.add("dragging");
       });
-      
       item.addEventListener("dragend", () => {
         item.classList.remove("dragging");
       });
@@ -1215,7 +1237,6 @@
           if (neighbor) { orderList.insertBefore(direction < 0 ? item : neighbor,direction < 0 ? neighbor : item); move.focus(); }
         }); item.append(move);
       }
-      
       item.addEventListener("dragover", (e) => {
         e.preventDefault();
         const dragging = orderList.querySelector(".dragging");
@@ -1229,94 +1250,107 @@
           }
         }
       });
-      
       orderList.appendChild(item);
     });
-    
-    // Render custom fields list
     const customList = $("customFieldsList");
-    customList.innerHTML = "";
-    Object.entries(state.fieldConfig.customFields).forEach(([id, label]) => {
+    customList.replaceChildren();
+    Object.entries(fieldDraft.customFields).forEach(([id, label]) => {
       const item = document.createElement("div");
       item.className = "custom-field-item";
-      item.innerHTML = `
-        <span class="field-id">${id}</span>
-        <span class="field-label">${escapeHtml(label)}</span>
-        <button class="remove-field" type="button" data-field-id="${id}">Remove</button>
-      `;
-      item.querySelector(".remove-field").addEventListener("click", () => {
-        if (confirm(`Remove custom field "${label}"? This removes its values from recent cases, Archive, Trash, and saved versions. ${backupFolderHandle ? "A safety copy is saved to the backup folder first." : "Existing backup files are not changed."}`)) {
-          void safetySnapshot("field-removal");
-          try {
-            CaseNotes.removeCustomField(state, id);
-            dirty = true;
-            renderFieldCustomizer();
-            $("customizerStatus").textContent = "Custom field removed. Save to apply changes.";
-          } catch (e) {
-            $("customizerStatus").textContent = e.message;
-          }
+      const idText = document.createElement("span"); idText.className = "field-id"; idText.textContent = id;
+      const labelText = document.createElement("span"); labelText.className = "field-label"; labelText.textContent = label;
+      const remove = document.createElement("button"); remove.className = "remove-field"; remove.type = "button"; remove.textContent = "Remove";
+      remove.setAttribute("aria-label", "Remove " + label);
+      remove.addEventListener("click", () => {
+        try {
+          keepDraftOrder();
+          CaseNotes.removeCustomField(draftState(), id);
+          renderFieldCustomizer();
+          $("customizerStatus").textContent = `"${label}" will be removed when you choose Save Configuration.`;
+        } catch (e) {
+          $("customizerStatus").textContent = e.message;
         }
       });
+      item.append(idText, labelText, remove);
       customList.appendChild(item);
     });
   }
-  
+  // Keep any reordering made in the list when the draft is redrawn.
+  function keepDraftOrder() {
+    const order = Array.from($("fieldOrderList").children).map(item => item.dataset.fieldId).filter(Boolean);
+    if (order.length) fieldDraft.order = order;
+  }
+  function closeCustomizer() {
+    keepDraftOrder();
+    if (draftChanged() && !confirm("Discard your unsaved field changes?")) return;
+    fieldDraft = null;
+    $("fieldCustomizer").close();
+  }
   $("customizeFields").addEventListener("click", () => {
     if (!writable || copying) return;
     window.SiteTopbar?.closeMenus();
+    fieldDraft = JSON.parse(JSON.stringify(state.fieldConfig));
     renderFieldCustomizer();
     $("fieldCustomizer").showModal();
     $("customizerStatus").textContent = "";
   });
-  
-  $("closeCustomizer").addEventListener("click", () => {
-    $("fieldCustomizer").close();
-  });
-  
+  $("closeCustomizer").addEventListener("click", closeCustomizer);
+  $("fieldCustomizer").addEventListener("cancel", event => { event.preventDefault?.(); closeCustomizer(); });
   $("addCustomField").addEventListener("click", () => {
+    if (!fieldDraft) return;
     const fieldId = $("newFieldId").value.trim();
     const fieldLabel = $("newFieldLabel").value.trim();
-    
     if (!fieldId || !fieldLabel) {
       $("customizerStatus").textContent = "Enter both field ID and label.";
       return;
     }
-    
     try {
-      if (document.getElementById(fieldId)) throw Error("That ID is already used by a page control. Choose another ID.");
-      CaseNotes.addCustomField(state, fieldId, fieldLabel);
-      dirty = true;
+      if (document.getElementById(fieldId) && !Object.hasOwn(state.fieldConfig.customFields, fieldId)) throw Error("That ID is already used by a page control. Choose another ID.");
+      keepDraftOrder();
+      CaseNotes.addCustomField(draftState(), fieldId, fieldLabel);
       $("newFieldId").value = "";
       $("newFieldLabel").value = "";
       renderFieldCustomizer();
-      $("customizerStatus").textContent = "Custom field added. Save to apply changes.";
+      $("customizerStatus").textContent = `"${fieldLabel}" will be added when you choose Save Configuration.`;
     } catch (e) {
       $("customizerStatus").textContent = e.message;
     }
   });
-  
-  $("saveFieldConfig").addEventListener("click", () => {
-    const orderList = $("fieldOrderList");
-    const newOrder = Array.from(orderList.children).map(item => item.dataset.fieldId);
-    
+  $("saveFieldConfig").addEventListener("click", async () => {
+    if (!fieldDraft || !writable || copying) return;
+    keepDraftOrder();
+    const draft = fieldDraft;
+    const removed = Object.keys(state.fieldConfig.customFields).filter(id => !Object.hasOwn(draft.customFields, id));
+    if (removed.length) {
+      const names = removed.map(id => `"${state.fieldConfig.customFields[id]}"`).join(", ");
+      if (!confirm(`Remove ${names} and their values from recent cases, Archive, Trash, and saved versions? ${backupFolderHandle ? "A safety copy is saved to the backup folder first." : "Existing backup files are not changed."}`)) return;
+      if (!save() || !await confirmSafetySnapshot("field-removal") || !writable || copying || fieldDraft !== draft) return;
+    }
     try {
-      CaseNotes.reorderFields(state, newOrder);
-      dirty = true;
-      if (!save()) throw Error("Could not save field configuration. Export a backup and check browser storage.");
+      if (!save()) throw Error("Could not save your current notes. Retry saving before changing fields.");
+      const candidate = JSON.parse(JSON.stringify(state));
+      removed.forEach(id => CaseNotes.removeCustomField(candidate, id));
+      Object.entries(draft.customFields).forEach(([id, label]) => { if (!Object.hasOwn(candidate.fieldConfig.customFields, id)) CaseNotes.addCustomField(candidate, id, label); });
+      CaseNotes.reorderFields(candidate, draft.order);
+      const parsed = CaseNotes.parse(JSON.stringify(candidate));
+      localStorage.setItem(key, JSON.stringify(parsed));
+      state = parsed; savedState = JSON.parse(JSON.stringify(state)); dirty = false;
+      fieldDraft = null;
       $("fieldCustomizer").close();
-      render(); // Re-render form with new field order
+      render();
       $("copyStatus").textContent = "Field configuration saved.";
     } catch (e) {
-      $("customizerStatus").textContent = e.message;
+      $("customizerStatus").textContent = e?.message && !/quota|storage/i.test(e.name || "") ? e.message : "Could not save field configuration. Export a backup and check browser storage.";
     }
   });
-  
-  $("resetFields").addEventListener("click", () => {
+  $("resetFields").addEventListener("click", async () => {
+    if (!writable || copying) return;
     if (confirm(`Reset field order and remove custom fields and their values from recent cases, Archive, Trash, and saved versions? This cannot be undone. ${backupFolderHandle ? "A safety copy is saved to the backup folder first." : "Existing backup files are not changed."}`)) {
-      void safetySnapshot("field-reset");
+      if (!save() || !await confirmSafetySnapshot("field-reset") || !writable || copying) return;
       CaseNotes.resetCustomFields(state);
       dirty = true;
       if (!save()) return;
+      fieldDraft = null;
       $("fieldCustomizer").close();
       render();
       $("copyStatus").textContent = "Fields reset to default.";
@@ -1357,7 +1391,7 @@
     note[event.target.id] = event.target.value; note.updated = now; dirty = true;
     CaseNotes.syncEntry(note,now);
     status("Unsaved changes");
-    $("copyStatus").textContent = "Copy all fields and tracked time as plain text.";
+    $("copyStatus").textContent = "";
     if (restarting) save();
     tick(); history();
     if (event.target.id === "os") window.CaseToolkit?.refreshChecklist();
