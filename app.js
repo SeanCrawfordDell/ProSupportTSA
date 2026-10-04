@@ -8,7 +8,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 let formHasData = false;
 
 const fieldIds = ["problem", "impact", "timeline", "country", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
-const required = ["problem", "severity", "production", "affected", "impact", "timeline", "country", "os", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "changes", "supportType", "osVersion"];
+const required = ["problem", "severity", "production", "affected", "impact", "timeline", "country", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "changes", "supportType", "osVersion"];
 // A plain "none" is an acceptable answer for Recent changes, unlike other required fields.
 const noChanges = /^(?:none(?: known)?|no(?: known| recent)? changes?(?: known)?|nothing changed)\.?$/i;
 // Reproduction steps are required, shown, scored, and copied only when the issue is answered as reproducible; Log Location likewise only when logs were gathered.

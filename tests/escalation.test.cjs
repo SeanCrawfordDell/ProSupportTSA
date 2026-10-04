@@ -113,6 +113,16 @@ test('required logs is a required Yes/No select; No asks for the reason, Yes sho
  assert.equal(h.run('evaluate({...samples.strong,evidence:"No",logReason:"Host unavailable during production outage",logLocation:"x"}).warnings.some(w=>w.field==="logLocation")'),false,'a hidden Log Location raises no findings');
  const handoff=harness({imported:{problem:'x',os:'',country:'',troubleshooting:'',sourceNote:'',evidence:''}});assert.equal(handoff.get('evidence').value,'','a Case Notes import without logs leaves the question for the technician');
 });
+test('exact errors and timestamps are required; stating that no error is shown is an answer',()=>{
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
+ assert.match(html,/<label class="field wide">Exact errors and timestamps <b>Required<\/b><textarea id="errors"/);
+ const h=harness();
+ const missing=h.run('evaluate({...samples.strong,errors:""})');
+ assert.ok(missing.blocking_issues.some(item=>item.field==='errors'&&item.reason==='Required information is missing.'));assert.equal(missing.ready_to_escalate,false);
+ assert.ok(h.run('evaluate({...samples.strong,errors:"Unknown"})').blocking_issues.some(item=>item.field==='errors'),'a vague answer blocks');
+ const noError=h.run('evaluate({...samples.strong,errors:"No error is shown on screen."})');
+ assert.ok(!noError.blocking_issues.some(item=>item.field==='errors'));assert.equal(noError.categories.completeness,35);
+});
 test('Log Location is required when logs were gathered, and only then',()=>{
  const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
  assert.match(html,/<label class="field wide" id="logLocationField" hidden>Log Location <b>Required<\/b><input id="logLocation"/);
@@ -252,9 +262,9 @@ test('incomplete action pairs receive no fabricated outcome credit or overall re
 
 // --- Content scoring: fixtures from the scoring review (items 9-15) ---
 const lorem='Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident 1.';
-const requiredText=['problem','impact','timeline','changes','reproduction','troubleshooting','results','osVersion'];
+const requiredText=['problem','impact','timeline','errors','changes','reproduction','troubleshooting','results','osVersion'];
 const baseForm={evidence:'Yes',logLocation:'Case attachments',reproducible:'Yes',supportType:'OEM OS',country:'US',os:'Windows Server',severity:'Sev 2',production:'Service unavailable',affected:'1 host'};
-const honest={...baseForm,problem:'Hyper-V host crashes.',impact:'Production down for all users.',timeline:'Started 2026-10-01, happens daily',changes:'None',reproduction:'1. Start VMs\n2. Wait',troubleshooting:'1. Rebooted\n2. Checked logs',results:'No change observed.',osVersion:'Windows Server 2022'};
+const honest={...baseForm,problem:'Hyper-V host crashes.',impact:'Production down for all users.',timeline:'Started 2026-10-01, happens daily',changes:'None',reproduction:'1. Start VMs\n2. Wait',troubleshooting:'1. Rebooted\n2. Checked logs',results:'No change observed.',errors:'No error is shown on screen.',osVersion:'Windows Server 2022'};
 function run(h,form){h.ctx.fixture=form;return h.run('evaluate(fixture)');}
 test('lorem ipsum in every required field is flagged as placeholder text and is not Ready',()=>{
  const h=harness();const form={...baseForm,severity:'',production:'',affected:''};for(const id of requiredText)form[id]=lorem;
