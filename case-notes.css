@@ -379,6 +379,9 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 /* Backup & Restore: inline warning, retention control, snapshot browser */
 .backup-warning { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; margin-bottom:12px; border-color:var(--blue); color:var(--ink); }
 .backup-warning-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.backup-snooze-dialog { width:min(480px, calc(100vw - 32px)); }
+.backup-snooze-warning { margin:0 0 16px; padding:12px 14px; border:1px solid var(--line); border-left:4px solid #d97706; border-radius:8px; line-height:1.5; }
+.backup-snooze-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .topbar-dropdown .dropdown-field, .backup-dialog .dropdown-field { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0; padding:6px 10px; font:600 13px Inter,"Segoe UI",Arial,sans-serif; color:var(--ink); }
 .topbar-dropdown .dropdown-field select, .backup-dialog .dropdown-field select { max-width:60%; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--panel-bg); color:var(--ink); font:inherit; }
 .backup-browser-list { display:grid; gap:6px; max-height:50vh; margin:12px 0 16px; overflow:auto; }
