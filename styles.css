@@ -31,7 +31,8 @@ h2,h3,p { margin-top:0; }
 .section-heading h2 { margin:1px 0 3px; font-size:18px; }
 .section-heading p { margin:0; color:var(--muted); font-size:13px; }
 .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-.field { display:grid; gap:7px; color:var(--field-color); font-size:13px; font-weight:700; }
+/* Keep rows packed at the top so a field beside a taller neighbour does not stretch its badge. */
+.field { display:grid; align-content:start; gap:7px; color:var(--field-color); font-size:13px; font-weight:700; }
 .field.wide { grid-column:1/-1; }
 .field b { justify-self:start; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--field-badge-text); background:var(--field-badge-bg); padding:3px 6px; border-radius:4px; }
 .field small { color:var(--field-small); font-weight:400; }
