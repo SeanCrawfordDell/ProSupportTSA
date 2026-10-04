@@ -1,5 +1,11 @@
 # Case Notes: saving, recovery, and exports
 
+## Sample case and guided tour
+
+**Training → Load Example** adds a sample case to Recent cases: a PowerEdge R750 Hyper-V host whose virtual machines lose network connectivity after a NIC driver update. It has three dated notes on three different days (initial contact, log review, and verification), every case detail, a completed evidence checklist and verification, a screenshot, a follow-up, customer update and handoff drafts, and a knowledge draft. It scores 100 on the note quality check. Your other cases are not changed. Loading it again asks before resetting the sample; archive or delete it like any other case.
+
+**Training → Tutorial Demo** walks through every area of Case Notes using the sample case, adding it first if needed. When the tour ends, the case you had open is selected again.
+
 ## Dated notes within a case
 
 Use **+ New Case** for a different service request. For another day of work on the same request, use **+ New note** in the Notes heading beside **Pop out**. Each entry has its own notes and action plan, while case details, screenshots, workflow context, and total time remain shared.

@@ -1,8 +1,8 @@
 "use strict";
 window.GuidedTour = (() => {
-  function create({triggerId,steps,finishLabel="Finish tour"}) {
+  function create({triggerId,steps,finishLabel="Finish tour",onStart,onFinish}) {
     const $=id=>document.getElementById(id),dialog=$("featureDemo"),trigger=$(triggerId);
-    let index=0,active=false,target=null,undo=[],originalScroll=0;
+    let index=0,active=false,target=null,undo=[],originalScroll=0,context;
     const shield=document.createElement("div"),spotlight=document.createElement("div");
     shield.className="tour-shield";spotlight.className="tour-spotlight";
     shield.hidden=spotlight.hidden=true;spotlight.setAttribute("aria-hidden","true");
@@ -69,6 +69,8 @@ window.GuidedTour = (() => {
     }
     function open(){
       if(active)return;
+      // onStart may prepare the page (for example, open sample data); onFinish receives what it returned.
+      context=onStart?.();
       originalScroll=window.scrollY;active=true;index=0;
       document.body.classList.add("tour-running");shield.hidden=spotlight.hidden=false;
       dialog.classList.add("guided-tour");dialog.setAttribute("aria-modal","true");dialog.show();render();$("demoNext").focus({preventScroll:true});
@@ -76,6 +78,7 @@ window.GuidedTour = (() => {
     function finish(){
       if(!active)return;
       active=false;restoreStep();shield.hidden=spotlight.hidden=true;dialog.close();dialog.removeAttribute("aria-modal");
+      onFinish?.(context);context=undefined;
       document.body.classList.remove("tour-running");window.scrollTo({top:originalScroll,behavior:"instant"});trigger.focus({preventScroll:true});
     }
     trigger.addEventListener("click",open);$("skipDemo").textContent="Skip tour";$("skipDemo").addEventListener("click",finish);
