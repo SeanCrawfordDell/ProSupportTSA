@@ -87,7 +87,7 @@ test('timestamps survive closure, resume adds time, copy includes every field an
   assert.ok(text.includes('First line\nSecond line'));assert.ok(text.endsWith('00:00:15'));
   assert.throws(()=>C.parse('{bad'));assert.throws(()=>C.parse('{"version":2}'));
 });
-function harness({writeError=false,copyError=false,locked=false,folder=null,aiIntegration=false,initial=null}={}) {
+function harness({writeError=false,copyError=false,locked=false,folder=null,aiIntegration=false,initial=null,hash=''}={}) {
   const elements={}, intervals=[], events={};let stored=initial, now=1000;
   const preferences = new Map();
   function element(){
@@ -149,6 +149,8 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
       });return request;
     }};
   }
+  ctx.window.SiteTopbar={closed:0,closeMenus(){this.closed++;}};
+  if(hash){ctx.window.location={hash,pathname:'/case-notes.html',search:''};ctx.window.history={replaceState(){ctx.window.location.hash='';}};}
   if(aiIntegration){ctx.window.DevinConnection={createClient:()=>({})};ctx.window.DevinIntegration={init(api){ctx.ai=api;return {refresh(){}};}};}
   vm.runInNewContext(fs.readFileSync(require.resolve('../case-notes.js'),'utf8'),ctx);
   return {get,events,intervals,ctx,setTime:n=>now=n,stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
@@ -164,23 +166,10 @@ test('missing backups show an inline banner on startup and configure opens backu
   const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
   assert.ok(!html.includes('id="backupWarningDialog"'),'the modal nag is gone');assert.ok(html.includes('id="backupWarningBanner"'));
 });
-test('Settings dropdown opens Customize Fields without changing case data and closes on selection',()=>{
-  const h=harness();h.get('settingsMenuList').hidden=true;
-  assert.ok(h.get('openSettingsMenu').listeners.click,'Settings toggle is wired');
-  const before=h.stored();h.click('openSettingsMenu');
-  assert.equal(h.get('settingsMenuList').hidden,false);
-  assert.equal(h.get('openSettingsMenu').attributes['aria-expanded'],'true');
+test('Customize Fields opens the customizer from the shared Settings menu without changing case data',()=>{
+  const h=harness();const before=h.stored();
   h.click('customizeFields');assert.equal(h.get('fieldCustomizer').open,true);
-  assert.equal(h.get('settingsMenuList').hidden,true);assert.equal(h.stored(),before);
-});
-test('Tools dropdown dismisses on outside click and Escape restores toggle focus',()=>{
-  const h=harness();h.get('toolsMenuList').hidden=true;
-  assert.ok(h.get('openToolsMenu').listeners.click,'Tools toggle is wired');
-  h.click('openToolsMenu');assert.equal(h.get('toolsMenuList').hidden,false);
-  h.events.click({target:{}});assert.equal(h.get('toolsMenuList').hidden,true);
-  h.click('openToolsMenu');h.events.keydown({key:'Escape'});
-  assert.equal(h.get('toolsMenuList').hidden,true);
-  assert.equal(h.get('openToolsMenu').focused,true);
+  assert.equal(h.ctx.window.SiteTopbar.closed,1,'the shared Settings menu is closed');assert.equal(h.stored(),before);
 });
 test('dismissed backup warning snoozes for a week across visits',async()=>{
   const h=harness();h.get('backupWarningBanner').hidden=true;await new Promise(setImmediate);
@@ -258,20 +247,26 @@ test('a saved folder that needs permission asks on the next click outside the ba
   await new Promise(setImmediate);const inMenu={};menuClick.get('backupRestoreMenu').append(inMenu);
   await menuClick.events.click({target:inMenu});
 });
-test('Backup & Restore lives under Settings and opens a dialog without changing notes',async()=>{
+test('Backup & Restore opens a dialog from the shared Settings menu without changing notes',async()=>{
   const h=harness();const before=h.stored();
-  h.get('settingsMenuList').hidden=true;h.click('openSettingsMenu');assert.equal(h.get('settingsMenuList').hidden,false);
   await h.click('openBackupRestore');
-  assert.equal(h.get('settingsMenuList').hidden,true,'settings menu closes when the dialog opens');
+  assert.equal(h.ctx.window.SiteTopbar.closed,1,'settings menu closes when the dialog opens');
   assert.equal(h.get('backupRestoreMenu').open,true);
   assert.equal(h.get('chooseBackupFolder').textContent,'Set Backup Folder');
   h.click('closeBackupRestore');
   assert.equal(h.get('backupRestoreMenu').open,false);
   assert.equal(h.stored(),before);
   const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
-  assert.ok(!html.includes('id="backupMenu"'),'no separate top bar menu');
-  assert.match(html,/id="settingsMenuList"[^>]*>(?:(?!<\/div>).)*id="openBackupRestore"/s,'entry sits inside the Settings dropdown');
   assert.match(html,/<dialog id="backupRestoreMenu"/);
+});
+test('links from other pages open Backup & Restore or Customize Fields in Case Notes',async()=>{
+  for(const [hash,dialog] of [['#backup-restore','backupRestoreMenu'],['#customize-fields','fieldCustomizer']]){
+    const h=harness({hash});await new Promise(setImmediate);
+    assert.equal(h.get(dialog).open,true,hash);
+    assert.equal(h.ctx.window.location.hash,'','the link is consumed so a reload does not reopen it');
+  }
+  const plain=harness();await new Promise(setImmediate);
+  assert.equal(plain.get('backupRestoreMenu').open,false);assert.equal(plain.get('fieldCustomizer').open,false);
 });
 test('folder control reconnects a saved folder then offers change folder',async()=>{
   let permission='prompt',requests=0;

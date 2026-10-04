@@ -367,60 +367,11 @@
     } else if (menu.open) menu.close();
   }
   $("openBackupRestore")?.addEventListener("click", async () => {
-    setActionMenu("settings", false);
+    window.SiteTopbar?.closeMenus();
     setBackupMenu(true, true);
     await refreshBackupFolderButton();
   });
   $("closeBackupRestore")?.addEventListener("click", () => setBackupMenu(false));
-  // The tutorial opens dropdowns to show their items; its Next clicks must not close them again.
-  const tourRunning = () => !!document.body?.classList?.contains?.("tour-running");
-  // Training dropdown: Tutorial Demo and Load Example. Closes after a choice, outside click, or Escape.
-  function setTrainingMenu(open, focusFirst = false) {
-    const menu = $("trainingMenuList"), toggle = $("openTraining");
-    if (!menu || !toggle) return;
-    menu.hidden = !open;
-    toggle.setAttribute("aria-expanded", String(open));
-    if (open && focusFirst) [...menu.querySelectorAll("button")].find(item => !item.disabled)?.focus();
-  }
-  $("openTraining")?.addEventListener("click", () => setTrainingMenu($("trainingMenuList").hidden));
-  $("trainingMenuList")?.addEventListener("click", event => { if (event.target?.closest?.("button")) setTrainingMenu(false); });
-  document.addEventListener?.("click", event => {
-    const menu = $("trainingMenu");
-    if (menu && !tourRunning() && !$("trainingMenuList").hidden && event.target && menu.contains && !menu.contains(event.target)) setTrainingMenu(false);
-  });
-  document.addEventListener?.("keydown", event => {
-    if (event.key === "Escape" && !$("trainingMenuList")?.hidden) { setTrainingMenu(false); $("openTraining").focus(); }
-  });
-  // Small action menus use native buttons/links and the same dismissal pattern as Training.
-  const actionMenus = ["settings", "tools"];
-  function setActionMenu(name, open, focusFirst = false) {
-    const list = $(name + "MenuList"), toggle = $(name === "settings" ? "openSettingsMenu" : "openToolsMenu");
-    if (!list || !toggle) return;
-    list.hidden = !open;
-    toggle.setAttribute("aria-expanded", String(open));
-    if (open) {
-      for (const other of actionMenus) if (other !== name) setActionMenu(other, false);
-      setTrainingMenu(false);
-      if (focusFirst) [...list.querySelectorAll("button, a")].find(item => !item.disabled)?.focus();
-    }
-  }
-  for (const name of actionMenus) {
-    const toggle = $(name === "settings" ? "openSettingsMenu" : "openToolsMenu");
-    toggle?.addEventListener("click", () => setActionMenu(name, $(name + "MenuList").hidden));
-    toggle?.addEventListener("keydown", event => {
-      if (event.key === "ArrowDown") { event.preventDefault(); setActionMenu(name, true, true); }
-    });
-    $(name + "MenuList")?.addEventListener("click", event => {
-      if (event.target?.closest?.("button, a")) setActionMenu(name, false);
-    });
-    document.addEventListener?.("click", event => {
-      const container = $(name + "Menu");
-      if (!tourRunning() && !$(name + "MenuList")?.hidden && event.target && container?.contains && !container.contains(event.target)) setActionMenu(name, false);
-    });
-    document.addEventListener?.("keydown", event => {
-      if (event.key === "Escape" && !$(name + "MenuList")?.hidden) { setActionMenu(name, false); toggle?.focus(); }
-    });
-  }
   backupFolderButton?.addEventListener("click", async () => {
     try {
       if (!backupFolderHandle || await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted") {
@@ -1303,7 +1254,7 @@
   
   $("customizeFields").addEventListener("click", () => {
     if (!writable || copying) return;
-    setActionMenu("settings", false);
+    window.SiteTopbar?.closeMenus();
     renderFieldCustomizer();
     $("fieldCustomizer").showModal();
     $("customizerStatus").textContent = "";
@@ -1647,6 +1598,14 @@
     if (!writable && (event.key === key || event.key === null)) { load(); render(); }
     if (writable && (event.key === troubleshootCore?.handoffKey || event.key === null)) checkHandoff();
   });
+  // Other pages' Settings menus link here (case-notes.html#backup-restore or #customize-fields).
+  function openSettingsFromLink() {
+    const target = {"#backup-restore":"openBackupRestore","#customize-fields":"customizeFields"}[window.location?.hash];
+    if (!target) return;
+    // window.history: this file defines its own history() for the case list.
+    try { window.history.replaceState(null, "", window.location.pathname + window.location.search); } catch {}
+    $(target)?.click();
+  }
   async function acquire() {
     load(); render();
     if (loadFailed) return;
@@ -1669,6 +1628,7 @@
           state.selected=notesPopout.caseId;
         }
         writable = true; $("lockNotice").hidden = true; render(); checkHandoff();
+        openSettingsFromLink();
         await new Promise(resolve => { release = resolve; });
       });
     } catch {
