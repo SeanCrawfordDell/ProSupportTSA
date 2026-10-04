@@ -194,6 +194,9 @@ test('Load Example adds a separate sample case with three dated notes and keeps 
   let saved=JSON.parse(h.stored());
   assert.equal(saved.selected,h.ctx.CaseExample.ID);
   assert.equal(saved.cases.find(n=>n.id===mine).tag,'MINE123','your own case is unchanged');
+  assert.notEqual(saved.cases.find(n=>n.id===mine).started,null,'its timer keeps running');
+  assert.equal(saved.cases.find(n=>n.id===h.ctx.CaseExample.ID).started,null);
+  assert.match(h.get('historyList').children.find(row=>row.children[0].children[0].textContent.startsWith('Sample')).children[0].children[0].textContent,/^Sample · /);
   const sample=saved.cases.find(n=>n.id===h.ctx.CaseExample.ID);
   assert.equal(sample.entries.length,3);assert.equal(new Set(sample.entries.map(e=>new Date(e.created).toDateString())).size,3);
   assert.match(h.get('copyStatus').textContent,/Sample case loaded/);
@@ -809,4 +812,24 @@ test('one damaged saved preference is skipped and named instead of stopping the 
   assert.deepEqual(captured.skipped,['sections']);assert.deepEqual(captured.pins,['a']);
   assert.equal('sections' in captured,false);assert.equal(JSON.stringify(captured).includes('skipped'),false);
   assert.throws(()=>S.validate({fieldConfig:C.empty().fieldConfig,preferences:{aiTasks:{t:{label:'x'.repeat(81),instruction:'y'}}}},C.fields),/Invalid settings backup/);
+});
+test('Load Example never archives a real case when Recent cases is full',()=>{
+  const state=C.empty();for(let i=0;i<100;i++)C.create(state,'case'+i,1000+i);state.cases.forEach(n=>C.stop(n,5000));
+  const h=harness({initial:JSON.stringify(state)});const before=h.stored();
+  h.click('loadExampleNote');
+  assert.equal(h.stored(),before);assert.match(h.get('pageStatus').textContent,/Recent cases is full/);
+});
+test('unreadable stored history can be downloaded and replaced from a backup file',async()=>{
+  const h=harness({initial:'{"version":3,"cases":"broken"}'});await new Promise(setImmediate);
+  assert.equal(h.get('recoveryActions').hidden,false);assert.equal(h.get('recoverFromFile').disabled,false);
+  assert.match(h.get('lockNotice').textContent,/download the stored data/);
+  const downloads=[];h.ctx.URL={createObjectURL(blob){downloads.push(blob);return 'blob:x';},revokeObjectURL(){}};h.ctx.Blob=Blob;h.ctx.setTimeout=()=>{};
+  h.ctx.document.body={append(link){link.remove=()=>{};}};
+  h.click('downloadStoredData');assert.equal(await downloads[0].text(),'{"version":3,"cases":"broken"}');
+  h.click('recoverFromFile');assert.equal(h.get('restoreFile').clickCount,1);
+  const backup=C.empty();C.create(backup,'saved',1000).notes='Recovered';
+  h.get('restoreFile').files=[{size:100,text:async()=>JSON.stringify(backup)}];await h.get('restoreFile').listeners.change();
+  assert.equal(C.parse(h.stored()).cases[0].notes,'Recovered');
+  assert.equal(h.get('recoveryActions').hidden,true);assert.equal(h.get('lockNotice').hidden,true);
+  h.edit('notes','Editing again');assert.equal(C.parse(h.stored()).cases[0].started!==undefined,true);
 });

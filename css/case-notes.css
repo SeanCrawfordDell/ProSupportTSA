@@ -64,6 +64,8 @@ button:disabled { cursor:not-allowed; opacity:.55; }
 .editor-heading { flex-wrap:wrap; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:8px; gap:8px 16px; }
 #saveStatus { color:var(--muted); font-size:12px; }
 .page-status { color:var(--ink); border-left:4px solid var(--blue); }
+.recovery-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.recovery-actions[hidden] { display:none; }
 #saveStatus.error { color:var(--red); }
 .timer { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:12px; margin-left:auto; text-align:right; min-width:0; }
 .timer span { display:block; color:var(--muted); font-size:11px; margin-bottom:4px; }

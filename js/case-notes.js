@@ -244,7 +244,7 @@
   }
   // Before an action that cannot be undone: true when it is safe to continue. Without a folder there is nothing to try.
   async function confirmSafetySnapshot(reason) {
-    if (!backupFolderHandle) return true;
+    if (!backupFolderHandle || loadFailed) return true;
     if (await safetySnapshot(reason)) return true;
     return confirm("The safety copy could not be saved to the backup folder. Check folder access and disk space. Continue anyway without a safety copy?");
   }
@@ -726,9 +726,18 @@
     catch {
       loadFailed = true;
       $("lockNotice").hidden = false;
-      $("lockNotice").textContent = "Case history could not be read. Editing is disabled to protect stored notes. Check browser storage access and reload.";
+      $("lockNotice").textContent = "Case history could not be read. Editing is disabled to protect stored notes. Reload to try again. If it still fails, download the stored data to keep a copy, then restore your latest backup file.";
+      $("recoveryActions").hidden = false;
     }
   }
+  $("downloadStoredData")?.addEventListener("click", () => {
+    let raw = null;
+    try { raw = localStorage.getItem(key); } catch {}
+    if (raw === null) { report("Browser storage could not be read, so there is nothing to download. Check that site data is allowed for this page."); return; }
+    downloadFile(raw, "case-notes-stored-data-" + new Date().toISOString().slice(0, 10) + ".json", "application/json");
+    report("Stored data download started. Keep this file: it holds your notes exactly as the browser stored them.");
+  });
+  $("recoverFromFile")?.addEventListener("click", () => { if (canRestore()) $("restoreFile").click(); });
   function history() {
     const query = $("search").value.trim().toLowerCase();
     const filter = $("followupFilter").value || "all";
@@ -744,7 +753,7 @@
       const button = document.createElement("button"); button.className = "case-item";
       button.setAttribute("aria-current", String(note.id === state.selected));
       button.disabled = copying;
-      const title = document.createElement("strong"); title.textContent = note.request || note.tag || "Untitled case";
+      const title = document.createElement("strong"); title.textContent = (note.id === CaseExample.ID ? "Sample · " : "") + (note.request || note.tag || "Untitled case");
       const issue = document.createElement("span"); issue.textContent = query ? CaseNotes.excerpt(note,query) : note.issue || "No issue description yet";
       const meta = document.createElement("small"); meta.textContent = `${note.tag ? note.tag + " · " : ""}${new Date(note.created).toLocaleString()}`;
       button.append(title, issue, meta);
@@ -1092,8 +1101,11 @@
   // Backups with screenshots inline can be large, but anything past these limits cannot be a real export and would stall the tab.
   const maxImportBytes = 200 * 1024 * 1024, maxSettingsBytes = 5 * 1024 * 1024;
   // Shared by file uploads and folder snapshots. Screenshot references are resolved from the folder's images directory.
+  // While stored history is unreadable this tab holds the editor lock but cannot edit; it may only restore.
+  let recovering = false;
+  const canRestore = () => (writable || recovering) && !copying;
   async function restoreHistoryText(raw) {
-    if (!writable || copying) return;
+    if (!canRestore()) return;
     let restored;
     try {
       if (raw.trim() === "null") throw Error("Not a backup");
@@ -1122,7 +1134,7 @@
     const safety = backupFolderHandle ? "A safety copy of your current history is saved to the backup folder first." : "Download a backup first if you want to keep them.";
     if (!confirm(`Restore ${restored.cases.length} recent, ${restored.archive.length} archived and ${restored.trash.length} deleted cases, plus their versions? This replaces your current history, archive and Trash, including unsaved edits. ${safety} Restored timers will be stopped.`)) return;
     if (!await confirmSafetySnapshot("restore")) { report("Restore cancelled. Current history was not changed."); return; }
-    if (!writable || copying) return;
+    if (!canRestore()) return;
     try {
       // Commit to storage before replacing in-memory notes, so failure is non-destructive.
       localStorage.setItem(key, JSON.stringify(restored));
@@ -1131,6 +1143,7 @@
       return;
     }
     state = restored; savedState = JSON.parse(JSON.stringify(state)); dirty = false;
+    if (recovering) { recovering = false; loadFailed = false; writable = true; $("lockNotice").hidden = true; $("recoveryActions").hidden = true; }
     $("search").value = "";
     status("Saved"); render();
     $("copyStatus").textContent = "";
@@ -1139,11 +1152,11 @@
   $("restoreFile").addEventListener("change", async () => {
     const file = $("restoreFile").files[0];
     $("restoreFile").value = "";
-    if (!file || !writable || copying) return;
+    if (!file || !canRestore()) return;
     if (file.size > maxImportBytes) { report("That file is too large to be a Case Notes backup. Current history was not changed."); return; }
     let raw;
     try { raw = await file.text(); } catch { report("The selected file could not be read. Current history was not changed."); return; }
-    if (!writable || copying) return;
+    if (!canRestore()) return;
     await restoreHistoryText(raw);
   });
   $("stopTimer").addEventListener("click", () => {
@@ -1179,17 +1192,26 @@
     } catch { return null; }
   }
   const exampleExists = () => ["cases","archive","trash"].some(collection => (state[collection] || []).some(note => note.id === CaseExample.ID));
-  // Adds the sample case, or resets it when it already exists. Your other cases are unchanged.
+  // Adds the sample case, or resets it when it already exists. Other cases, and any running timer, are unchanged.
   function loadExampleNote({ confirmReset = true } = {}) {
     if (!writable || copying || !save()) return false;
     if (confirmReset && exampleExists() && !confirm("Reset the sample case? Any changes you made to it will be replaced.")) return false;
+    // Never archive a real case to make room for the sample.
+    if (!state.cases.some(note => note.id === CaseExample.ID) && state.cases.length >= 100) {
+      report("Recent cases is full (100). Archive or delete a case, then load the sample again. Your cases were not changed.");
+      return false;
+    }
     const now = Date.now(), image = exampleScreenshot();
     summaryCaseId = null;
     const loaded = commitCaseChange(candidate => {
+      // The sample's timer stays stopped, so a running case keeps its timer.
+      const running = candidate.cases.find(note => note.started !== null && note.id !== CaseExample.ID);
+      const timer = running && { started: running.started, elapsed: running.elapsed, lastSession: running.lastSession };
       for (const collection of ["cases","archive","trash"]) candidate[collection] = (candidate[collection] || []).filter(note => note.id !== CaseExample.ID);
       if (candidate.revisions) delete candidate.revisions[CaseExample.ID];
       CaseNotes.create(candidate, CaseExample.ID, now);
-      Object.assign(candidate.cases.find(note => note.id === CaseExample.ID), CaseExample.build({ now, customFields: candidate.fieldConfig.customFields, image }));
+      Object.assign(candidate.cases.find(note => note.id === CaseExample.ID), CaseExample.build({ now, customFields: candidate.fieldConfig.customFields, image }), { started: null });
+      if (running) Object.assign(running, timer);
     });
     if (loaded) $("copyStatus").textContent = "Sample case loaded with three dated notes. Explore or edit it freely; archive or delete it from Recent cases when you are done.";
     return loaded;
@@ -1555,17 +1577,25 @@
   }
   async function acquire() {
     load(); render();
-    if (loadFailed) return;
     if (!navigator.locks) {
+      if (loadFailed) return;
       $("lockNotice").textContent = "Read-only: this browser cannot protect notes against simultaneous editing. Open this site over HTTPS or localhost in a browser supporting Web Locks.";
       return;
     }
-    $("lockNotice").hidden = false;
-    $("lockNotice").textContent = "Read-only while another tab is editing Case Notes. Close that tab to edit here.";
+    if (!loadFailed) {
+      $("lockNotice").hidden = false;
+      $("lockNotice").textContent = "Read-only while another tab is editing Case Notes. Close that tab to edit here.";
+    }
     try {
       await navigator.locks.request("dell-support.case-notes.editor", async () => {
         load();
-        if (loadFailed) return;
+        if (loadFailed) {
+          // Hold the lock so no other tab writes over the unreadable data, and allow only a restore.
+          recovering = true; $("recoverFromFile").disabled = false;
+          await new Promise(resolve => { release = resolve; });
+          recovering = false;
+          return;
+        }
         if(notesPopout?.caseId) {
           if(!state.cases.some(note=>note.id===notesPopout.caseId)) {
             state.selected=null;notesPopout.unavailable();render();
