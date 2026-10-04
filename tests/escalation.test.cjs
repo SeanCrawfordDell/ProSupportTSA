@@ -35,22 +35,22 @@ test('valid log select earns full completeness and no-log exception needs a reas
  assert.equal(h.run('evaluate({...samples.strong,evidence:"No",logReason:"Host unavailable during production outage"}).ready_to_escalate'),true);
 });
 test('10-second autosave restores all fields, checks and paired actions; storage failure remains dirty',()=>{
- const h=harness();h.get('serviceRequest').value='SR-77';h.run('actions=[{action:"Restarted service",result:"Failure returned"}];renderActions();checks={incident:true};markChanged()');
+ const h=harness();h.get('osVersion').value='Build 77';h.run('actions=[{action:"Restarted service",result:"Failure returned"}];renderActions();checks={incident:true};markChanged()');
  assert.equal(h.timers[0].ms,10000);h.timers[0].f();assert.match(h.get('draftStatus').textContent,/Saved/);
- const recovered=harness({stored:h.stored()});assert.equal(recovered.get('serviceRequest').value,'SR-77');assert.equal(recovered.run('readActions()[0].result'),'Failure returned');assert.equal(recovered.run('checks.incident'),true);
+ const recovered=harness({stored:h.stored()});assert.equal(recovered.get('osVersion').value,'Build 77');assert.equal(recovered.run('readActions()[0].result'),'Failure returned');assert.equal(recovered.run('checks.incident'),true);
  h.setFail(true);h.get('platform').value='R750';h.run('markChanged();saveDraft()');assert.match(h.get('draftStatus').textContent,/Save failed/);assert.equal(h.run('dirty'),true);
  let prevented=false;h.listeners.beforeunload({preventDefault(){prevented=true}});assert.equal(prevented,true);
  h.setFail(false);h.run('saveDraft()');assert.equal(h.run('dirty'),false);
 });
 test('edits invalidate review; copy requires a fresh review and reports clipboard failure',async()=>{
- const h=harness();await h.click('loadStrong');assert.equal(h.get('copyButton').disabled,false);await h.click('copyButton');assert.match(h.copied(),/^CASE TITLE:\nPowerEdge R750 \| Windows Server \|/);assert.match(h.copied(),/SERVICE REQUEST NUMBER:\n123456789/);
+ const h=harness();await h.click('loadStrong');assert.equal(h.get('copyButton').disabled,false);await h.click('copyButton');assert.match(h.copied(),/^CASE TITLE:\nPowerEdge R750 \| Windows Server \|/);assert.match(h.copied(),/AFFECTED SYSTEMS \/ USERS:\n1 of 24 hosts/);assert.doesNotMatch(h.copied(),/SERVICE REQUEST|SERVICE TAG|EXPECTED BEHAVIOR/);
  h.get('problem').value='Changed';h.run('markChanged()');assert.equal(h.get('copyButton').disabled,true);assert.match(h.get('resultTitle').textContent,/review again/);
  await h.click('copyButton');assert.match(h.get('copyStatus').textContent,/Review/);
  const f=harness({failClipboard:true});await f.click('loadStrong');await f.click('copyButton');assert.match(f.get('copyStatus').textContent,/Copy failed/);assert.equal(f.get('copyPreview').selected,true);
 });
 test('Copy to AI includes current escalation facts and its selected task',async()=>{
  const h=harness();await h.click('loadStrong');h.get('devinTask').value='logs';await h.click('copyDevin');
- assert.match(h.copied(),/Task: Recommend logs to collect/);assert.match(h.copied(),/SERVICE REQUEST NUMBER:\n123456789/);assert.match(h.get('devinStatus').textContent,/Copied for AI/);
+ assert.match(h.copied(),/Task: Recommend logs to collect/);assert.match(h.copied(),/SEVERITY:\nSev 3/);assert.match(h.get('devinStatus').textContent,/Copied for AI/);
 });
 test('DE case title is composed from imported platform OS and issue and survives draft restore',()=>{
  const note=core.create(core.empty(),'title',100);
@@ -76,7 +76,7 @@ test('paired rows contribute to review and copy while incomplete pairs block rea
 test('Notes handoff imports structured metadata and replaces old paired rows before saving',()=>{
  const note={...core.create(core.empty(),'n',100),request:'SR-555',platform:'R750',supportType:'PSP',logLocation:'Case attachment',toolkit:{impact:'Production degraded',checks:{incident:true},issueType:'network'}};
  const incoming=core.escalation(note,100), h=harness({imported:incoming});
- assert.equal(h.get('serviceRequest').value,'SR-555');assert.equal(h.get('platform').value,'R750');assert.equal(h.get('impact').value,'Production degraded');assert.equal(h.run('checks.incident'),true);
+ assert.equal(h.run('fieldIds.includes("serviceRequest")'),false);assert.equal(h.get('platform').value,'R750');assert.equal(h.get('impact').value,'Production degraded');assert.equal(h.run('checks.incident'),true);
  const saved=JSON.parse(h.stored());saved.actions=[{action:'Old',result:'Old'}];
  const replaced=harness({stored:JSON.stringify(saved),imported:incoming});assert.equal(JSON.parse(replaced.stored()).actions.length,0);
 });
@@ -155,7 +155,7 @@ test('every Case Notes field reaches its corresponding escalation input and surv
  Object.assign(note,{tag:'TAG1234',platform:'PowerEdge R750',request:'000456',os:'Ubuntu',country:'GB',supportType:'Solution Support includes OS',logLocation:'https://example.com/logs',issue:'Application timeout',notes:'<p>Restarted service</p><p>Timeout persisted</p>',next:'<p>Collect service diagnostics</p>'});
  note.toolkit.impact='Two users affected';
  const h=harness({imported:core.escalation(note,200)});
- const expected={tag:note.tag,platform:note.platform,serviceRequest:note.request,os:note.os,country:note.country,supportType:note.supportType,logLocation:note.logLocation,problem:note.issue,troubleshooting:core.plainText(note.notes),impact:note.toolkit.impact};
+ const expected={platform:note.platform,os:note.os,country:note.country,supportType:note.supportType,logLocation:note.logLocation,problem:note.issue,troubleshooting:core.plainText(note.notes),impact:note.toolkit.impact};
  const restored=harness({stored:h.stored()});
  for(const [id,value] of Object.entries(expected)){assert.equal(h.get(id).value,value,id);assert.equal(restored.get(id).value,value,id+' restored');}
  // Log Location is set, so the handoff answers the gathered-logs question; results stay empty for outcomes to be recorded.
@@ -218,7 +218,7 @@ test('optional, removed fields and helper plans do not inflate or penalize readi
  assert.equal(h.run('evaluate({...samples.strong,tag:"",request:"",workaround:"",deadline:"",nextSteps:""}).score'),base.score);
  assert.equal(h.run('evaluate({...samples.strong,collectionPlan:"Collect every log",checks:{incident:true}}).categories.evidence'),base.categories.evidence);
  assert.equal(h.run('evaluate({...samples.strong,logLocation:""}).categories.evidence'),base.categories.evidence-2);
- assert.equal(h.run('evaluate({...samples.strong,expected:"Dashboard loads"}).categories.completeness'),35);
+ assert.equal(h.run('evaluate({...samples.strong,expected:"Dashboard loads",serviceRequest:"123456789"}).score'),base.score);
 });
 test('incomplete action pairs receive no fabricated outcome credit or overall ready praise',async()=>{
  const h=harness();await h.click('loadStrong');h.get('results').value='';h.run('actions=[{action:"Restarted controller",result:""}];renderActions()');
@@ -228,12 +228,12 @@ test('incomplete action pairs receive no fabricated outcome credit or overall re
 
 // --- Content scoring: fixtures from the scoring review (items 9-15) ---
 const lorem='Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident 1.';
-const requiredText=['problem','impact','timeline','expected','reproduction','troubleshooting','results','osVersion'];
-const baseForm={evidence:'Yes',supportType:'OEM OS',country:'US',os:'Windows Server'};
-const honest={...baseForm,problem:'Hyper-V host crashes.',impact:'Production down for all users.',timeline:'Started 2026-10-01, happens daily',expected:'Host stays up.',reproduction:'1. Start VMs\n2. Wait',troubleshooting:'1. Rebooted\n2. Checked logs',results:'No change observed.',osVersion:'Windows Server 2022'};
+const requiredText=['problem','impact','timeline','changes','reproduction','troubleshooting','results','osVersion'];
+const baseForm={evidence:'Yes',supportType:'OEM OS',country:'US',os:'Windows Server',severity:'Sev 2',production:'Service unavailable',affected:'1 host'};
+const honest={...baseForm,problem:'Hyper-V host crashes.',impact:'Production down for all users.',timeline:'Started 2026-10-01, happens daily',changes:'None',reproduction:'1. Start VMs\n2. Wait',troubleshooting:'1. Rebooted\n2. Checked logs',results:'No change observed.',osVersion:'Windows Server 2022'};
 function run(h,form){h.ctx.fixture=form;return h.run('evaluate(fixture)');}
 test('lorem ipsum in every required field is flagged as placeholder text and is not Ready',()=>{
- const h=harness();const form={...baseForm};for(const id of requiredText)form[id]=lorem;
+ const h=harness();const form={...baseForm,severity:'',production:'',affected:''};for(const id of requiredText)form[id]=lorem;
  const result=run(h,form);
  assert.equal(result.ready_to_escalate,false);assert.ok(result.score<75,String(result.score));
  assert.ok(result.warnings.some(w=>/repeated or placeholder/.test(w.reason)));
@@ -242,7 +242,7 @@ test('lorem ipsum in every required field is flagged as placeholder text and is 
 });
 test('repeated gibberish with step prefixes, one keyword and one digit per field is not Ready and earns no praise',()=>{
  const h=harness();const g=k=>`1. blah blah blah blah ${k} 7\n2. blah blah blah blah blah`;
- const form={...baseForm,problem:g('error'),impact:g('users'),timeline:g('since'),expected:g('always'),reproduction:g('every'),troubleshooting:g('failed'),results:g('observed'),osVersion:g('build'),errors:g('timestamp')};
+ const form={...baseForm,problem:g('error'),impact:g('users'),timeline:g('since'),changes:g('always'),reproduction:g('every'),troubleshooting:g('failed'),results:g('observed'),osVersion:g('build'),errors:g('timestamp')};
  const result=run(h,form);
  assert.equal(result.ready_to_escalate,false);assert.ok(result.score<75,String(result.score));
  for(const field of ['overall','reproduction','troubleshooting'])assert.ok(!result.strengths.some(s=>s.field===field),field);
@@ -273,19 +273,37 @@ test('cross-field duplicates warn, name both fields and credit only the first co
  assert.ok(result.categories.completeness<base.categories.completeness);assert.ok(result.score<base.score);
  assert.ok(!result.warnings.some(w=>w.field==='problem'));
 });
-test('severity, service impact and affected systems earn specificity points and satisfy the impact quantity check',()=>{
+test('severity, service impact and affected systems are required and earn specificity points',()=>{
  const h=harness();const strong=h.run('samples.strong');const base=run(h,strong);
  assert.equal(base.score,100);
  const none=run(h,{...strong,severity:'',production:'',affected:''});
  assert.equal(base.categories.specificity-none.categories.specificity,7);
- assert.equal(base.score-run(h,{...strong,severity:''}).score,2);
- assert.equal(base.score-run(h,{...strong,production:''}).score,2);
- assert.equal(base.score-run(h,{...strong,affected:''}).score,3);
- assert.equal(base.score-run(h,{...strong,affected:'ok'}).score,3);
+ for(const [field,points] of [['severity',2],['production',2],['affected',3]]){
+  const missing=run(h,{...strong,[field]:''});
+  assert.equal(base.categories.specificity-missing.categories.specificity,points,field);
+  assert.equal(missing.status,'blocked',field);assert.ok(missing.blocking_issues.some(i=>i.field===field),field+' is required');
+ }
+ assert.ok(run(h,{...strong,affected:'ok'}).blocking_issues.some(i=>i.field==='affected'),'a vague answer is blocked');
  const impact='Month-end close cannot be completed while the share is unreachable, and the finance close is late.';
  assert.ok(run(h,{...strong,impact,affected:''}).warnings.some(w=>w.field==='impact'));
  assert.ok(!run(h,{...strong,impact,affected:'40 users'}).warnings.some(w=>w.field==='impact'));
- assert.ok(none.warnings.some(w=>w.field==='affected'));
+});
+test('Recent changes is required; a plain None is accepted but Unknown is not',()=>{
+ const h=harness();const strong=h.run('samples.strong');
+ const missing=run(h,{...strong,changes:''});assert.equal(missing.status,'blocked');assert.ok(missing.blocking_issues.some(i=>i.field==='changes'));
+ for(const answer of ['None','none.','No changes','No known changes','Nothing changed'])assert.equal(run(h,{...strong,changes:answer}).ready_to_escalate,true,answer);
+ for(const answer of ['Unknown','n/a','tbd'])assert.ok(run(h,{...strong,changes:answer}).blocking_issues.some(i=>i.field==='changes'),answer);
+});
+test('Service Tag, Service Request Number and Expected behavior are removed from the form and the copy',()=>{
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
+ for(const id of ['tag','serviceRequest','expected'])assert.ok(!html.includes(`id="${id}"`),id);
+ for(const label of ['Severity','Service Impact','Affected Systems / Users','Recent changes'])assert.ok(html.includes(`>${label} <b>Required</b>`),label);
+ const h=harness();for(const id of ['tag','serviceRequest','expected'])assert.equal(h.run(`fieldIds.includes("${id}")`),false,id);
+ // An older saved draft that still has the removed fields restores without them.
+ h.run('populate(samples.strong);markChanged();saveDraft()');const old=JSON.parse(h.stored());Object.assign(old.fields,{tag:'ABC1234',serviceRequest:'123',expected:'Loads'});
+ const restored=harness({stored:JSON.stringify(old)});
+ assert.equal(restored.get('problem').value,h.run('samples.strong').problem);
+ assert.doesNotMatch(restored.run('formatEscalation(reviewData())'),/ABC1234|EXPECTED/);
 });
 test('a short honest entry in real words scores no lower than lorem ipsum',()=>{
  const h=harness();const form={...baseForm};for(const id of requiredText)form[id]=lorem;
@@ -325,13 +343,13 @@ test('Case Notes handoff fills recent changes, service impact and gathered logs,
  const notesHtml=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
  const options=markup=>[...markup.matchAll(/<option([^>]*)>([^<]*)<\/option>/g)].filter(m=>!/value=""/.test(m[1])).map(m=>m[2]);
  const triage=options(notesHtml.match(/<select data-workflow-field="severity">[\s\S]*?<\/select>/)[0]).filter(o=>o!=='Unspecified');
- const escalation=options(html.match(/<select id="production">[\s\S]*?<\/select>/)[0]);
+ const escalation=options(html.match(/<select id="production"[^>]*>[\s\S]*?<\/select>/)[0]);
  assert.deepEqual(escalation,triage);assert.deepEqual(triage,['Service unavailable','Service degraded','Deployment','How-to / planning']);
- assert.match(html,/<label class="field">Service Impact<select id="production">/);assert.match(notesHtml,/<label class="field">Service Impact<select data-workflow-field="severity">/);
+ assert.match(html,/<label class="field">Service Impact <b>Required<\/b><select id="production" required>/);assert.match(notesHtml,/<label class="field">Service Impact<select data-workflow-field="severity">/);
  for(const severity of triage){note.toolkit.workflow.severity=severity;assert.equal(core.escalation(note,200).production,severity);}
  note.toolkit.workflow.severity='Unspecified';assert.equal(core.escalation(note,200).production,'');
  assert.match(html,/left empty on import: document outcomes there/);
- assert.match(html,/repeated or placeholder text/);assert.match(html,/Severity \(2\), Service Impact \(2\) and Affected systems \/ users \(3\)/);
+ assert.match(html,/repeated or placeholder text/);assert.match(html,/Severity \(2\), Service Impact \(2\) and Affected Systems \/ Users \(3\)/);
 });
 test('saved drafts and reviews still carrying the former Production status values map onto the shared options',()=>{
  const h=harness();const strong=h.run('samples.strong');

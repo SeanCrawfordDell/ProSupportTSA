@@ -7,8 +7,10 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 
 let formHasData = false;
 
-const fieldIds = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "serviceRequest", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
-const required = ["problem", "impact", "timeline", "expected", "country", "os", "reproduction", "troubleshooting", "results", "evidence", "supportType", "osVersion"];
+const fieldIds = ["problem", "impact", "timeline", "country", "os", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "changes", "sourceNote", "platform", "supportType", "osVersion", "severity", "production", "affected", "logLocation", "logReason", "collectionPlan"];
+const required = ["problem", "severity", "production", "affected", "impact", "timeline", "country", "os", "reproduction", "troubleshooting", "results", "evidence", "changes", "supportType", "osVersion"];
+// A plain "none" is an acceptable answer for Recent changes, unlike other required fields.
+const noChanges = /^(?:none(?: known)?|no(?: known| recent)? changes?(?: known)?|nothing changed)\.?$/i;
 // Yes/No questions shown as checkboxes; they keep "Yes"/"No" values so drafts, imports, and copies are unchanged.
 const checkboxFields = ["evidence", "reproducible"];
 // Reproduction steps are required only when the issue is reproducible. A form without the answer is treated as reproducible.
@@ -18,7 +20,7 @@ const requiredFor = form => required.filter(id => id !== "reproduction" || isRep
 // An unchecked box is the default answer, not content: a form with only "No" answers counts as empty.
 const hasContent = form => fieldIds.some(id => checkboxFields.includes(id) ? form[id] === "Yes" : form[id]);
 const labels = {
-  serviceRequest: "Service Request Number", platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected systems / users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "Service Tag", os: "OS/Solution", errors: "exact errors and timestamps", reproducible: "Is this issue reproducible?", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Do you have the Required Logs for this Escalation?", changes: "recent changes"
+  platform: "System/Platform", supportType: "OS Support Entitlement Verification", osVersion: "OS version / build", severity: "Severity", production: "Service Impact", affected: "Affected Systems / Users", logLocation: "Log Location", collectionPlan: "Planned log collection (not yet collected)", logReason: "Reason logs cannot be obtained", sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", country: "customer country", os: "OS/Solution", errors: "exact errors and timestamps", reproducible: "Is this issue reproducible?", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "Do you have the Required Logs for this Escalation?", changes: "recent changes"
 };
 // Short answers that match one of these as a prefix or whole word are too vague to score (fields under 25 characters only).
 const weakPhrases = /(?:^|[^a-z0-9])(?:n\/a|na|none|unknown|not working|not sure|broken|issue|problem|see above|as above|same|latest|newest|current|tbd|tba|asap|ok|okay|fine|ask customer|pending|wip)(?![a-z0-9])/i;
@@ -29,7 +31,7 @@ const evidenceTerms = /\b(log|trace|screenshot|diagnostic|timestamp|event|dump|b
 const resultTerms = /\b(result|observed|confirmed|remained|changed|passed|failed|resolved|returned|showed|revealed|reproduced|did not|no change)\b/i;
 const quantityTerms = /\b(\d+|one|two|three|all|single|multiple|production|customer|user|users|team|hosts?|blocked|degraded|down)\b/i;
 // Free-text fields checked for repeated or placeholder text and for copies of one another (earlier fields keep the credit).
-const textFields = ["problem", "impact", "timeline", "expected", "errors", "reproduction", "troubleshooting", "results", "changes"];
+const textFields = ["problem", "impact", "timeline", "errors", "reproduction", "troubleshooting", "results", "changes"];
 const shortTextFields = ["osVersion", "affected", "logLocation"];
 
 // Text plausibility, kept identical to CaseRubricCore.text in case-rubric-core.js (this page loads without that module).
@@ -65,11 +67,11 @@ const textQuality = (() => {
 })();
 
 const samples = {
-  weak: { osVersion:"Unknown", supportType:"OEM OS", problem:"System not working", impact:"Users affected", timeline:"Started recently", expected:"It should work", country:"US", tag:"Server", os:"Windows Server", errors:"Unknown", reproduction:"Try to use it", troubleshooting:"Restarted and checked things", results:"No change", evidence:"No", changes:"Unknown" },
-  strong: { problem:"PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.", impact:"The infrastructure team cannot use the UI to complete a scheduled firmware compliance review for host DC2-HV-047. One of 24 hosts is affected; production workloads continue running, but the maintenance window closes at 22:00 UTC.", timeline:"First observed 2026-09-10 at 14:18 UTC after the monthly credential rotation. Reproduces on every login attempt. Last confirmed at 16:42 UTC.", expected:"After authentication, the iDRAC dashboard should load and display system health and firmware inventory.", country:"US", tag:"PowerEdge R750, service tag ABC1234, asset DC2-HV-047", os:"Windows Server", errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Yes", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known." }
+  weak: { osVersion:"Unknown", supportType:"OEM OS", problem:"System not working", impact:"Users affected", timeline:"Started recently", country:"US", os:"Windows Server", errors:"Unknown", reproduction:"Try to use it", troubleshooting:"Restarted and checked things", results:"No change", evidence:"No", changes:"Unknown" },
+  strong: { problem:"PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.", impact:"The infrastructure team cannot use the UI to complete a scheduled firmware compliance review for host DC2-HV-047. One of 24 hosts is affected; production workloads continue running, but the maintenance window closes at 22:00 UTC.", timeline:"First observed 2026-09-10 at 14:18 UTC after the monthly credential rotation. Reproduces on every login attempt. Last confirmed at 16:42 UTC.", country:"US", os:"Windows Server", errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Yes", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known." }
 };
 
-Object.assign(samples.strong, {serviceRequest:"123456789", platform:"PowerEdge R750", tag:"ABC1234", supportType:"OEM OS", osVersion:"Windows Server 2022; iDRAC 7.10.30.00", severity:"Sev 3", production:"Service degraded", affected:"1 of 24 hosts; infrastructure team", logLocation:"Case attachments: Lifecycle Controller log and browser trace"});
+Object.assign(samples.strong, {platform:"PowerEdge R750", supportType:"OEM OS", osVersion:"Windows Server 2022; iDRAC 7.10.30.00", severity:"Sev 3", production:"Service degraded", affected:"1 of 24 hosts; infrastructure team", logLocation:"Case attachments: Lifecycle Controller log and browser trace"});
 
 function value(id) {
   const input = document.getElementById(id);
@@ -123,7 +125,7 @@ function evaluate(input = {}) {
   const blockers = [], warnings = [], strengths = [], requiredFields = requiredFor(form);
   requiredFields.forEach(id => {
     if (!form[id]) addFinding(blockers, id, "Required information is missing.", "blocker");
-    else if (isWeak(form[id]) || placeholderPattern.test(form[id])) addFinding(blockers, id, "The response is too vague to support an escalation.", "blocker");
+    else if ((isWeak(form[id]) && !(id === "changes" && noChanges.test(form[id]))) || placeholderPattern.test(form[id])) addFinding(blockers, id, "The response is too vague to support an escalation.", "blocker");
   });
 
   for (const [id,options] of [["supportType",supportTypeOptions],["evidence",["Yes","No"]],["reproducible",["Yes","No"]]]) {
@@ -157,8 +159,7 @@ function evaluate(input = {}) {
   if (!form.errors) addFinding(warnings, "errors", "Provide exact errors and timestamps, or explicitly state that no error is displayed.", "warning");
   if (form.evidence === "No" && (!form.logReason || isWeak(form.logReason))) addFinding(blockers, "logReason", "Explain why logs cannot be obtained before escalating.", "blocker");
   if (form.evidence === "Yes" && !form.logLocation) addFinding(warnings, "logLocation", "Record where DE can find the collected logs.", "warning");
-  if (!form.changes) addFinding(warnings, "changes", "Document recent changes or explicitly state that none are known.", "warning");
-  if (!form.severity || !form.production || !hasDetail(form.affected, 2) || discounted.has("affected")) addFinding(warnings, "affected", "Set Severity and Service Impact, and record the affected systems or users.", "warning");
+  if (credit("affected") && !hasDetail(form.affected, 2)) addFinding(warnings, "affected", "Record which systems or users are affected, with counts.", "warning");
 
   const completedRequired = requiredFields.filter(id => credit(id) && !blockers.some(item => item.field === id)).length;
   const completeness = Math.round(scoreMaxima.completeness * completedRequired / requiredFields.length);
@@ -166,11 +167,11 @@ function evaluate(input = {}) {
   const coreText = ["problem", "impact", "timeline", "os", "osVersion"].filter(credit).map(id => form[id]).join(" ");
   const context = (hasDetail(form.severity, 1) ? 2 : 0) + (hasDetail(form.production, 1) ? 2 : 0) + (hasDetail(form.affected, 2) && !discounted.has("affected") ? 3 : 0);
   const specificity = Math.min(scoreMaxima.specificity, Math.round(Math.min(coreText.length, 500) / 500 * 7) + (specificityTerms.test(coreText) ? 3 : 0) + (/\d/.test(coreText) ? 3 : 0) + context);
-  // Reproducibility: steps (6 for detail + up to 5 steps) and expected behavior (4). Without steps to give, a detailed
+  // Reproducibility: steps (10 for detail + up to 5 numbered steps). Without steps to give, a detailed
   // timeline of when and how often it occurs takes the steps' place.
-  const occurrence = detail("timeline", 45) && timelinePattern.test(form.timeline) ? 11 : credit("timeline") ? 4 : 0;
-  const steps = isReproducible(form) ? (detail("reproduction", 60) ? 6 : credit("reproduction") ? 2 : 0) + (credit("reproduction") ? Math.min(numberedSteps(form.reproduction), 5) : 0) : occurrence;
-  const reproduction = Math.min(15, steps + (credit("expected") ? 4 : 0));
+  const occurrence = detail("timeline", 45) && timelinePattern.test(form.timeline) ? 15 : credit("timeline") ? 5 : 0;
+  const steps = isReproducible(form) ? (detail("reproduction", 60) ? 10 : credit("reproduction") ? 3 : 0) + (credit("reproduction") ? Math.min(numberedSteps(form.reproduction), 5) : 0) : occurrence;
+  const reproduction = Math.min(15, steps);
   const evidenceText = ["errors", "timeline"].filter(credit).map(id => form[id]).join(" ");
   const evidence = Math.min(15, (detail("errors", 20) ? 5 : credit("errors") ? 1 : 0) + (form.evidence === "Yes" ? 3 + (credit("logLocation") && hasDetail(form.logLocation, 1) ? 2 : 0) : 0) + (evidenceTerms.test(evidenceText) ? 3 : 0) + (/\d/.test(evidenceText) ? 2 : 0));
   // Troubleshooting: actions (4 + up to 4 steps), results detail (3), and outcomes paired with actions (4; full credit at 50% coverage).
@@ -268,7 +269,7 @@ function reviewData() {
 }
 function formatEscalation(form) {
   if (!hasContent(form)) return "";
-  const order = ["serviceRequest", "tag", "platform", "os", "osVersion", "supportType", "country", "severity", "production", "affected", "problem", "impact", "timeline", "expected", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "logReason", "collectionPlan", "changes", "sourceNote"];
+  const order = ["platform", "os", "osVersion", "supportType", "country", "severity", "production", "affected", "problem", "impact", "timeline", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "logReason", "collectionPlan", "changes", "sourceNote"];
   const sections = order.filter(id => form[id] && (id !== "logReason" || form.evidence === "No") && (id !== "logLocation" || hasLogs(form)) && (id !== "reproduction" || isReproducible(form))).map(id => `${labels[id].toUpperCase()}:\n${form[id]}`);
   const title=caseTitle(form);
   if(title)sections.unshift("CASE TITLE:\n"+title);
@@ -511,7 +512,7 @@ try {
     const key = "dell-support.escalation." + token, raw = sessionStorage.getItem(key);
     if (!raw) return;
     const imported = JSON.parse(raw);
-    if (!imported || !["problem","tag","os","country","troubleshooting","sourceNote"].every(id => typeof imported[id] === "string")) throw Error("Invalid note");
+    if (!imported || !["problem","os","country","troubleshooting","sourceNote"].every(id => typeof imported[id] === "string")) throw Error("Invalid note");
     if (hasWork() && !confirm("Start a new escalation from Case Notes and replace the saved escalation draft?")) return;
     populate(imported); actions = []; checks = imported.checks && typeof imported.checks === "object" ? Object.fromEntries(Object.entries(imported.checks).filter(([,v]) => typeof v === "boolean")) : {};
     issueType = Object.hasOwn(CaseToolkitCore.templates,imported.issueType) ? imported.issueType : "general";
