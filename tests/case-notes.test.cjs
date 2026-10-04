@@ -803,3 +803,10 @@ test('a restored backup whose custom field would take a page control ID is rejec
   h.get('restoreFile').files=[{text:async()=>JSON.stringify(backup)}];await h.get('restoreFile').listeners.change();
   assert.equal(h.stored(),before);assert.match(h.get('pageStatus').textContent,/conflicts with a page control: restoreFile/);
 });
+test('one damaged saved preference is skipped and named instead of stopping the settings backup',()=>{
+  const S=require('../js/case-settings-core.js');
+  const captured=S.capture({getItem:key=>key==='dell-support.case-notes-sections'?'{broken':key==='dell-support.pinned-resources.v1'?'["a"]':null});
+  assert.deepEqual(captured.skipped,['sections']);assert.deepEqual(captured.pins,['a']);
+  assert.equal('sections' in captured,false);assert.equal(JSON.stringify(captured).includes('skipped'),false);
+  assert.throws(()=>S.validate({fieldConfig:C.empty().fieldConfig,preferences:{aiTasks:{t:{label:'x'.repeat(81),instruction:'y'}}}},C.fields),/Invalid settings backup/);
+});

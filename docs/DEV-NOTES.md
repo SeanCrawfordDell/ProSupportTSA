@@ -47,7 +47,8 @@ Run `python -m http.server 4187 --bind 127.0.0.1` from the repository root and o
 `http://127.0.0.1:4187/case-notes.html`. Run `node --test tests/*.test.cjs` for
 regression tests. AI Settings generates a one-command bootstrap: on localhost it
 fetches `companion/Connect-Devin.ps1` from that preview server; in production it
-fetches from the repository main branch. The bootstrap downloads only the two
+fetches from the commit pinned in `COMPANION_COMMIT` (`js/devin-integration.js`)
+and verifies runtime checksums (see "Releasing companion changes" in `companion/README.md`). The bootstrap downloads only the two
 runtime files into a unique temporary folder. It does not install dependencies
 or register startup tasks. The legacy ZIP packaging script remains for developer
 testing, but the user setup no longer links to it.

@@ -55,7 +55,7 @@ const CaseSettings = (() => {
         if (name === "aiTasks") {
           if (!object(value)) bad();
           for (const [id, task] of Object.entries(value)) {
-            if (!/^[a-zA-Z0-9_-]+$/.test(id) || reserved.has(id) || !object(task) || typeof task.label !== "string" || typeof task.instruction !== "string") bad();
+            if (!/^[a-zA-Z0-9_-]+$/.test(id) || reserved.has(id) || !object(task) || typeof task.label !== "string" || typeof task.instruction !== "string" || task.label.length > 80 || task.instruction.length > 8000) bad();
           }
         }
         result.values[keys[name]] = rawKeys.includes(name) ? value : JSON.stringify(value);
@@ -64,10 +64,15 @@ const CaseSettings = (() => {
     return result;
   }
   function capture(storage) {
-    const result = {};
+    // `skipped` is non-enumerable so it never reaches the saved settings file.
+    const result = {}, skipped = [];
+    Object.defineProperty(result, "skipped", { value: skipped });
     for (const [name,key] of Object.entries(keys)) {
       const raw = storage.getItem(key);
-      result[name] = rawKeys.includes(name) ? raw : JSON.parse(raw || (name === "pins" ? "[]" : "{}"));
+      if (rawKeys.includes(name)) { result[name] = raw; continue; }
+      // One damaged preference must not stop every backup: leave it out and let the caller report it.
+      try { result[name] = JSON.parse(raw || (name === "pins" ? "[]" : "{}")); }
+      catch { skipped.push(name); }
     }
     return result;
   }

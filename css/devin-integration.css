@@ -10,3 +10,5 @@
 .devin-dialog #devinConnectionCommand { min-height: 120px; font-family: monospace; font-size: 0.85rem; }
 .devin-dialog .button { margin: 4px 8px 4px 0; }
 .devin-dialog [hidden] { display: none !important; }
+.devin-hint { flex-basis:100%; display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:4px 0 0; font-size:13px; color:var(--muted); }
+.devin-hint .button { padding:4px 10px; font-size:12px; }

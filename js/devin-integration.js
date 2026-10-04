@@ -1,5 +1,7 @@
 "use strict";
 const DevinIntegration = (() => {
+  // Commit whose companion/ files the connection command runs. Update only after reviewing that commit's companion changes.
+  const COMPANION_COMMIT='d05a7dbb592a4d83782d6fefa647a6f7e6e827da';
   const connection=typeof module!=="undefined"?require('./devin-connection-core.js'):DevinConnection;
   function init(api, env=window) {
     const doc=env.document, $=id=>doc.getElementById(id);
@@ -16,8 +18,8 @@ const DevinIntegration = (() => {
     intro.addEventListener('cancel',event=>{event.preventDefault();acknowledge();});
     intro.addEventListener('close',()=>{if(!introSeen)acknowledge();});
 
-    const setup=dialog('Connect Devin on this Windows PC','devinSetup');
-    setup.append(el('p','Optional setup. Your helper stays on this PC; Devin uses the account you sign in with. Copy to AI is always available.'));
+    const setup=dialog('Connect Devin on this Windows PC (advanced)','devinSetup');
+    setup.append(el('p','Advanced, IT-assisted setup: most people should keep using Copy to AI, which needs no installation.'),el('p','Optional setup. Your helper stays on this PC; Devin uses the account you sign in with. Copy to AI is always available.'));
     const steps=el('ol');
     for(const line of [
       'Install Devin CLI for Windows using the official instructions below. Open a new terminal afterward.',
@@ -28,9 +30,9 @@ const DevinIntegration = (() => {
       'Paste the helper’s pairing token here and select Connect Devin. Allow this site’s local-network access request if your browser asks.'
     ])steps.append(el('li',line));
     setup.append(steps);
-    let sourceBase='https://raw.githubusercontent.com/SeanCrawfordDell/EscalationQuality/main/companion',previewOrigin='';
+    let sourceBase='https://raw.githubusercontent.com/SeanCrawfordDell/EscalationQuality/'+COMPANION_COMMIT+'/companion',previewOrigin='';
     try{const url=new URL(env.location?.href);if(url.protocol==='http:'&&['127.0.0.1','localhost'].includes(url.hostname)){previewOrigin=url.origin;sourceBase=previewOrigin+'/companion';}}catch{}
-    const command="[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; $devinLoader=New-Object Net.WebClient; $devinLoader.Encoding=[Text.Encoding]::UTF8; & ([scriptblock]::Create($devinLoader.DownloadString('"+sourceBase+"/Connect-Devin.ps1')))"+(previewOrigin?" -SourceBase '"+sourceBase+"' -AllowOrigin '"+previewOrigin+"'":'');
+    const command="[Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; $devinLoader=New-Object Net.WebClient; $devinLoader.Encoding=[Text.Encoding]::UTF8; & ([scriptblock]::Create($devinLoader.DownloadString('"+sourceBase+"/Connect-Devin.ps1'))) -SourceBase '"+sourceBase+"'"+(previewOrigin?" -AllowOrigin '"+previewOrigin+"'":'');
     const commandField=textArea('PowerShell connection command','devinConnectionCommand');commandField.node.rows=4;commandField.node.value=command;
     const commandStatus=el('p','', 'devinConnectionCommandStatus');commandStatus.setAttribute('role','status');
     setup.append(commandField.label,button('Copy connection command','devinCopyConnectionCommand',async()=>{
@@ -38,7 +40,7 @@ const DevinIntegration = (() => {
       catch(e){commandStatus.textContent=e.message;commandField.node.focus();commandField.node.select();}
     }),commandStatus,el('p',previewOrigin?'Local preview command: fetches from this development server. Keep the preview server running.':'This command runs code from the EscalationQuality GitHub repository. Review the source or obtain IT approval before running it.'));
     const links=el('p');
-    for(const [label,url] of [['Devin Windows setup','https://docs.devin.ai/cli'],['Devin sign-in help','https://docs.devin.ai/cli/enterprise/devin-auth'],['Node.js downloads','https://nodejs.org/en/download'],['Review connection source',sourceBase+'/Connect-Devin.ps1'],['Connection setup guide','companion/README.md']]){
+    for(const [label,url] of [['Devin Windows setup','https://docs.devin.ai/cli'],['Devin sign-in help','https://docs.devin.ai/cli/enterprise/devin-auth'],['Node.js downloads','https://nodejs.org/en/download'],['Review connection source',sourceBase+'/Connect-Devin.ps1'],['Connection setup guide','companion/README.md'],['Setup screenshot','docs/devin-setup-preview.jpg']]){
       const a=el('a',label);a.href=url;if(url.startsWith('https:')){a.target='_blank';a.rel='noopener noreferrer';}links.append(a,el('span',' · '));
     }setup.append(links);
     const tokenLabel=el('label','Pairing token'),token=el('input',null,'devinPairingToken');tokenLabel.className='field';token.type='password';token.autocomplete='off';token.maxLength=64;token.spellcheck=false;tokenLabel.append(token);setup.append(tokenLabel);
@@ -50,7 +52,8 @@ const DevinIntegration = (() => {
     setup.append(el('p','Pairing lasts for this tab session. Restarting the helper changes its token. Tokens are excluded from case and settings backups. Devin may retain session history according to its own settings.'));
 
     const review=dialog('Review prompt before sending','devinRequest');
-    const disclosure=el('p','Review the included case data. Send submits this text to Devin CLI using your configured account.');
+    const warning='Review the included case data. Send submits this text to Devin CLI using your configured account. Text pasted from customers (logs, emails, error messages) can contain instructions aimed at the AI: Devin runs with normal permission checks, and you should review every response before using it.';
+    const disclosure=el('p',warning);
     const prompt=textArea('Prompt to send','devinPromptText'),response=textArea('Devin response — review before using','devinResponseText');response.label.hidden=true;
     const requestStatus=el('p','', 'devinRequestStatus');requestStatus.setAttribute('role','status');
     const submit=button('Send','devinSubmit',send);
@@ -125,7 +128,7 @@ const DevinIntegration = (() => {
       let value;try{value=api.snapshot();}catch(e){$('devinStatus').textContent=e.message;return;}
       if(!value)return;request={...value,state:'preview',appended:false};
       prompt.node.value=value.prompt;response.node.value='';prompt.label.hidden=false;response.label.hidden=true;
-      $('devinRequestTitle').textContent='Review prompt before sending';disclosure.textContent='Review the included case data. Send submits this text to Devin CLI using your configured account.';
+      $('devinRequestTitle').textContent='Review prompt before sending';disclosure.textContent=warning;
       requestStatus.textContent='';refresh();review.showModal();
     });
     env.addEventListener?.('pagehide',()=>{if(pollTimer)env.clearTimeout(pollTimer);});
@@ -134,10 +137,14 @@ const DevinIntegration = (() => {
     refresh();
     if(client.isPaired())void check(false);
     try{introSeen=env.localStorage.getItem('dell-support.devin-onboarding.v1')==='1';}catch{}
+    // A quiet inline hint instead of a modal on page load: the intro opens only when asked for.
     if(api.sourceLabel==='Case Notes'&&!api.isPopout&&!introSeen){
-      const showIntro=()=>{if(!introSeen&&!intro.open&&!doc.querySelector('dialog[open]'))intro.showModal();};
-      env.setTimeout(showIntro,0);
-      doc.addEventListener?.('close',()=>{if(!introSeen)env.setTimeout(showIntro,0);},true);
+      const hint=el('p',null,'devinHint');hint.className='devin-hint';
+      hint.append(el('span','Optional, advanced: send AI prompts straight to Devin CLI on this PC. '),
+        button('Learn more','devinHintMore',()=>{hint.hidden=true;if(!intro.open&&!doc.querySelector('dialog[open]'))intro.showModal();}),
+        button('Dismiss','devinHintDismiss',()=>{hint.hidden=true;acknowledge();}));
+      intro.addEventListener('close',()=>{hint.hidden=true;});
+      $('devinStatus')?.after?.(hint);
     }
     return {refresh,openSettings};
   }
