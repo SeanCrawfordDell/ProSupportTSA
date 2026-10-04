@@ -318,9 +318,9 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .topbar-menu > .button[aria-expanded="true"] { background:#173448; color:#8ed6ff; }
 .topbar-dropdown { position:absolute; top:calc(100% + 8px); left:0; z-index:60; width:340px; max-width:calc(100vw - 32px); padding:8px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); color:var(--ink); box-shadow:0 14px 34px #0f1f3840; }
 .topbar-dropdown[hidden] { display:none; }
-.topbar-dropdown .history-backup, .topbar-dropdown .backup-location { display:grid; gap:2px; margin:0; padding:0; border:0; }
-.topbar-dropdown .dropdown-label { margin:10px 10px 4px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
-.topbar-dropdown .dropdown-label:first-child { margin-top:4px; }
+.topbar-dropdown .history-backup, .topbar-dropdown .backup-location, .backup-dialog .history-backup, .backup-dialog .backup-location { display:grid; gap:2px; margin:0; padding:0; border:0; }
+.topbar-dropdown .dropdown-label, .backup-dialog .dropdown-label { margin:10px 10px 4px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.topbar-dropdown .dropdown-label:first-child, .backup-dialog h2 + .dropdown-label { margin-top:4px; }
 .dropdown-item { display:block; width:100%; padding:9px 10px; border:0; border-radius:6px; background:transparent; color:var(--ink); font:600 13px Inter,"Segoe UI",Arial,sans-serif; text-align:left; cursor:pointer; }
 .dropdown-item:hover:not(:disabled), .dropdown-item:focus-visible { background:var(--secondary-hover); color:var(--blue); outline:none; }
 .dropdown-item:disabled { opacity:.45; cursor:not-allowed; }
@@ -376,8 +376,11 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 /* Backup & Restore: inline warning, retention control, snapshot browser */
 .backup-warning { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; margin-bottom:12px; border-color:var(--blue); color:var(--ink); }
 .backup-warning-actions { display:flex; flex-wrap:wrap; gap:8px; }
-.topbar-dropdown .dropdown-field { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0; padding:6px 10px; font:600 13px Inter,"Segoe UI",Arial,sans-serif; color:var(--ink); }
-.topbar-dropdown .dropdown-field select { max-width:60%; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--panel-bg); color:var(--ink); font:inherit; }
+.topbar-dropdown .dropdown-field, .backup-dialog .dropdown-field { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0; padding:6px 10px; font:600 13px Inter,"Segoe UI",Arial,sans-serif; color:var(--ink); }
+.topbar-dropdown .dropdown-field select, .backup-dialog .dropdown-field select { max-width:60%; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--panel-bg); color:var(--ink); font:inherit; }
 .backup-browser-list { display:grid; gap:6px; max-height:50vh; margin:12px 0 16px; overflow:auto; }
 .backup-entry { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--ink); font:500 13px Inter,"Segoe UI",Arial,sans-serif; text-align:left; cursor:pointer; }
 .backup-entry:hover, .backup-entry:focus-visible { border-color:var(--blue); background:var(--secondary-hover); color:var(--blue); outline:none; }
+.backup-dialog { width:min(460px, calc(100vw - 32px)); padding:18px 12px 16px; }
+.backup-dialog h2 { margin:0 10px 6px; font-size:18px; }
+.backup-dialog #closeBackupRestore { margin:12px 10px 0; }
