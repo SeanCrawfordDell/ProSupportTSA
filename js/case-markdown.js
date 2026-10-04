@@ -5,10 +5,14 @@ window.CaseMarkdown = (() => {
   const fields = ["notes", "next"];
   const $ = id => document.getElementById(id);
   const raster = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
+  // An attribute allowlist: no class (page styles could disguise note text as controls), no srcset
+  // (a remote image could load when an exported email is opened), no style, id or name.
+  const purifyConfig = {
+    USE_PROFILES: { html: true }, FORBID_TAGS: ["style", "input", "form", "button", "video", "audio"],
+    ALLOWED_ATTR: ["href", "src", "alt", "title", "width", "target", "rel", "align", "colspan", "rowspan", "start"], ALLOW_DATA_ATTR: false
+  };
   function sanitize(html) {
-    const safe = DOMPurify.sanitize(html, {
-      USE_PROFILES: { html: true }, FORBID_TAGS: ["style", "input", "form", "button", "video", "audio"], FORBID_ATTR: ["style", "id", "name"], RETURN_DOM_FRAGMENT: true
-    });
+    const safe = DOMPurify.sanitize(html, { ...purifyConfig, RETURN_DOM_FRAGMENT: true });
     safe.querySelectorAll("img").forEach(img => { if (!raster.test(img.getAttribute("src") || "")) img.replaceWith(document.createTextNode(`[Image: ${img.alt || "external image"}]`)); });
     safe.querySelectorAll("a").forEach(link => { link.target = "_blank"; link.rel = "noopener noreferrer"; });
     return safe;
@@ -181,7 +185,10 @@ window.CaseMarkdown = (() => {
           const container = document.createElement("div");
           if (html) container.append(sanitize(html));
           else container.textContent = event.clipboardData?.getData("text/plain") || "";
-          insert(field, container.innerHTML.replace(/\n/g, "<br>")); return;
+          // Sanitize the final markup again: serializing and editing sanitized HTML can change how it parses.
+          const markup = document.createElement("div");
+          markup.append(sanitize(container.innerHTML.replace(/\n/g, "<br>")));
+          insert(field, markup.innerHTML); return;
         }
         const caseId = api.current().id, entryId = api.current().activeEntryId;
         const selection = window.getSelection();
@@ -213,7 +220,7 @@ window.CaseMarkdown = (() => {
       $(field + "Toolbar").querySelectorAll("button").forEach(button => { button.disabled = !editable; });
     });
   }
-  return { init, emailHtml, setEditable, renderContent: renderedMarkdown, refresh() {
+  return { init, emailHtml, setEditable, sanitize, renderContent: renderedMarkdown, refresh() {
     if (!api || !api.current()) return;
     fields.forEach(field => {
       resizeHandles.get(field)?.handle.remove(); resizeHandles.delete(field);

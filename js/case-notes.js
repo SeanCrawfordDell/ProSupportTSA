@@ -456,6 +456,7 @@
   $("settingsFile")?.addEventListener("change", async () => {
     const file = $("settingsFile").files[0]; $("settingsFile").value = "";
     if (!file) return;
+    if (file.size > maxSettingsBytes) { reportSettings("That file is too large to be a customer-config.json settings backup."); return; }
     try { await restoreSettings(JSON.parse(await file.text())); }
     catch { reportSettings("Choose a valid customer-config.json settings backup."); }
   });
@@ -1081,9 +1082,15 @@
   }
   async function restoreFromFolderFile(name) {
     $("backupBrowserDialog").close();
-    try { await restoreHistoryText(await (await readFolderFile(backupFolderHandle, name)).text()); }
+    try {
+      const file = await readFolderFile(backupFolderHandle, name);
+      if (file.size > maxImportBytes) throw Error("That snapshot is too large to restore.");
+      await restoreHistoryText(await file.text());
+    }
     catch (error) { report((error?.message || "The snapshot could not be read.") + " Choose another snapshot or a file. Current history was not changed."); }
   }
+  // Backups with screenshots inline can be large, but anything past these limits cannot be a real export and would stall the tab.
+  const maxImportBytes = 200 * 1024 * 1024, maxSettingsBytes = 5 * 1024 * 1024;
   // Shared by file uploads and folder snapshots. Screenshot references are resolved from the folder's images directory.
   async function restoreHistoryText(raw) {
     if (!writable || copying) return;
@@ -1133,6 +1140,7 @@
     const file = $("restoreFile").files[0];
     $("restoreFile").value = "";
     if (!file || !writable || copying) return;
+    if (file.size > maxImportBytes) { report("That file is too large to be a Case Notes backup. Current history was not changed."); return; }
     let raw;
     try { raw = await file.text(); } catch { report("The selected file could not be read. Current history was not changed."); return; }
     if (!writable || copying) return;

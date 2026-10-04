@@ -1,5 +1,11 @@
 "use strict";
-// Shared by every tool. No saved preference means follow the operating system.
+// Shared by every tool and loaded first. GitHub Pages cannot send frame-ancestors or X-Frame-Options,
+// so refuse to render inside another site's frame (clickjacking) and take over the top window instead.
+if (window.top !== window.self) {
+  document.documentElement.style.display = "none";
+  try { window.top.location = window.self.location.href; } catch { /* The page stays hidden. */ }
+}
+// No saved preference means follow the operating system.
 (() => {
   const system = window.matchMedia("(prefers-color-scheme: dark)");
   const valid = value => value === "dark" || value === "light" ? value : null;
