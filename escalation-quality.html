@@ -21,13 +21,13 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
   <link rel="stylesheet" href="devin-integration.css?v=20261003-one-command">
   <link rel="stylesheet" href="log-helper.css?v=20260919-support-workflow">
 <script src="log-helper-core.js?v=20260919-support-workflow" defer></script>
-<script src="log-helper.js?v=20261004-helper-no-add" defer></script>
+<script src="log-helper.js?v=20261004-shared-log-helper" defer></script>
 <link rel="stylesheet" href="escalation-mascot.css">
 <script src="escalation-mascot.js" defer></script>
-<script src="app.js?v=20261003-content-scoring" defer></script>
+<script src="app.js?v=20261004-shared-log-helper" defer></script>
   <link rel="stylesheet" href="escalation-demo.css?v=20260919-support-workflow">
   <script src="guided-tour.js?v=20260919-support-workflow" defer></script>
-  <script src="escalation-demo.js?v=20260919-support-workflow" defer></script>
+  <script src="escalation-demo.js?v=20261004-shared-log-helper" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -142,17 +142,6 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
     <p class="demo-safety">This demo leaves your case details unchanged.</p>
     <div class="demo-footer"><button id="demoBack" class="button secondary" type="button">Back</button><button id="demoNext" class="button primary" type="button">Next</button></div>
   </dialog>
-<dialog id="logHelperDialog" class="log-helper-dialog" aria-labelledby="logHelperTitle">
-<div class="log-helper-heading"><h2 id="logHelperTitle">Which logs should I collect?</h2><button class="button secondary" id="closeLogHelper" type="button">Close</button></div>
-<p id="helperContext"></p>
-<p>Recommendations only — nothing runs automatically. Review permissions, production impact, and approved storage before collection. Logs and dumps can contain sensitive customer data. Defer host commands if Windows is unavailable.</p>
-<div class="field-grid">
-<label class="field">OS/Solution<select id="helperOS"></select></label>
-<label class="field">Issue type for this plan<select id="helperSymptom" aria-describedby="helperContext"></select></label>
-</div><div id="helperResults"></div>
-<details id="helperPlain"><summary>Plain text plan</summary><textarea id="helperPlanText" aria-label="Log collection plan" readonly></textarea></details>
-<div class="log-helper-actions"><button id="helperCopy" class="button secondary" type="button">Copy plan</button><button id="helperAdd" class="button primary" type="button">Add plan</button><button class="button secondary" id="closeLogHelperBottom" type="button">Close</button></div><p id="helperStatus" role="status"></p>
-</dialog>
 <dialog id="aiTasksDialog" class="ai-tasks-dialog" aria-labelledby="aiTasksTitle">
 <div class="ai-tasks-heading"><h2 id="aiTasksTitle">Add your Own AI Prompt/skills</h2><button class="button secondary" id="closeAiTasks" type="button">Close</button></div>
 <p class="ai-tasks-help">Add custom AI tasks to the dropdown. These tasks are saved in your browser and will be available in both Case Notes and Escalation Quality.</p>
