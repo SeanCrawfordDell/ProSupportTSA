@@ -301,48 +301,12 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .log-location-row { display:flex; align-items:flex-end; flex-wrap:wrap; gap:10px; min-width:0; }
 .log-location-row .field { flex:1 1 180px; min-width:0; }
 .log-location-row .button { flex-shrink:0; }
-#requestFeature,#openTroubleshoot { text-decoration:none; display:inline-flex; align-items:center; }
-/* Case Notes page actions live in the top bar, styled like the site's primary navigation. */
-.topbar { gap:20px; }
-.topbar-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-right:auto; }
-.topbar-actions .button, .topbar-actions .button.primary, .topbar-actions .button.secondary { height:40px; min-height:0; padding:0 14px; border:0; border-radius:5px; background:transparent; box-shadow:none; color:#b8cad4; font-size:14px; font-weight:650; text-decoration:none; display:inline-flex; align-items:center; }
-.topbar-actions .button:hover:not(:disabled), .topbar-actions .button:focus-visible { background:#173448; color:#8ed6ff; }
-.topbar-actions .button:disabled { opacity:.45; cursor:not-allowed; }
-.topbar .appearance-actions { display:flex; align-items:center; gap:6px; margin-left:auto; flex-shrink:0; }
-.topbar .theme-controls { margin-left:0; }
-.topbar .appearance-actions #requestFeature { height:40px; padding:0 14px; border:0; border-radius:5px; background:transparent; box-shadow:none; color:#b8cad4; font-size:14px; font-weight:650; white-space:nowrap; }
-.topbar .appearance-actions #requestFeature:hover, .topbar .appearance-actions #requestFeature:focus-visible { background:#173448; color:#8ed6ff; }
-@media (min-width:1101px) and (max-width:1420px) { .topbar .appearance-actions #requestFeature { padding:0 7px; font-size:13px; } }
-@media (max-width:1100px) { .topbar { height:auto; min-height:64px; flex-wrap:wrap; padding-block:10px; row-gap:6px; } .topbar .appearance-actions { order:2; } .topbar-actions { order:3; width:100%; margin-right:0; } }
-@media (min-width:1101px) and (max-width:1420px) { .topbar-actions .button, .topbar-actions .button.primary, .topbar-actions .button.secondary { padding:0 7px; font-size:13px; } .topbar-actions { gap:2px; } }
-/* Backup & Restore dropdown in the top bar. */
-.topbar-menu { position:relative; }
-.topbar-menu > .button span { font-size:11px; margin-left:6px; }
-.topbar-menu > .button[aria-expanded="true"] { background:#173448; color:#8ed6ff; }
-.topbar-dropdown { position:absolute; top:calc(100% + 8px); left:0; z-index:60; width:340px; max-width:calc(100vw - 32px); padding:8px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); color:var(--ink); box-shadow:0 14px 34px #0f1f3840; }
-.topbar-dropdown[hidden] { display:none; }
-.topbar-dropdown .history-backup, .topbar-dropdown .backup-location, .backup-dialog .history-backup, .backup-dialog .backup-location { display:grid; gap:2px; margin:0; padding:0; border:0; }
-.topbar-dropdown .dropdown-label, .backup-dialog .dropdown-label { margin:10px 10px 4px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
-.topbar-dropdown .dropdown-label:first-child, .backup-dialog h2 + .dropdown-label { margin-top:4px; }
-.dropdown-item { display:block; width:100%; padding:9px 10px; border:0; border-radius:6px; background:transparent; color:var(--ink); font:600 13px Inter,"Segoe UI",Arial,sans-serif; text-align:left; cursor:pointer; }
-.dropdown-item:hover:not(:disabled), .dropdown-item:focus-visible { background:var(--secondary-hover); color:var(--blue); outline:none; }
-.dropdown-item:disabled { opacity:.45; cursor:not-allowed; }
+.backup-dialog .history-backup, .backup-dialog .backup-location { display:grid; gap:2px; margin:0; padding:0; border:0; }
+.backup-dialog .dropdown-label { margin:10px 10px 4px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.backup-dialog h2 + .dropdown-label { margin-top:4px; }
 .dropdown-status { margin:2px 10px 4px; font-size:12px; line-height:1.45; color:var(--muted); }
 .dropdown-status:empty { display:none; }
 .dropdown-help { margin:10px 10px 4px; padding-top:10px; border-top:1px solid var(--line); font-size:11px; line-height:1.5; color:var(--muted); }
-@media (max-width:1100px) { .topbar-dropdown { left:auto; right:0; } }
-.training-dropdown { left:auto; right:0; width:220px; }
-.settings-dropdown { width:220px; left:auto; right:0; }
-.tools-dropdown { width:260px; }
-.topbar .appearance-actions .settings-toggle,
-.topbar .theme-controls .theme-icon-toggle { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0; margin:0; border:0; border-radius:0; background:transparent; box-shadow:none; color:#b8cad4; cursor:pointer; }
-.topbar .appearance-actions .settings-toggle:hover,
-.topbar .theme-controls .theme-icon-toggle:hover { background:transparent; color:#8ed6ff; }
-.topbar .appearance-actions .settings-toggle:focus-visible { outline:3px solid #4a9eff; outline-offset:2px; }
-.theme-icon-toggle .theme-sun { display:none; }
-[data-theme="dark"] .theme-icon-toggle .theme-moon { display:none; }
-[data-theme="dark"] .theme-icon-toggle .theme-sun { display:block; }
-.topbar-dropdown a.dropdown-item { box-sizing:border-box; text-decoration:none; }
 .troubleshoot-handoff { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; border-left:4px solid var(--blue); color:var(--ink); }
 .troubleshoot-handoff[hidden] { display:none; }
 .troubleshoot-handoff-actions { display:flex; gap:8px; }
@@ -382,8 +346,8 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .backup-snooze-dialog { width:min(480px, calc(100vw - 32px)); }
 .backup-snooze-warning { margin:0 0 16px; padding:12px 14px; border:1px solid var(--line); border-left:4px solid #d97706; border-radius:8px; line-height:1.5; }
 .backup-snooze-actions { display:flex; flex-wrap:wrap; gap:8px; }
-.topbar-dropdown .dropdown-field, .backup-dialog .dropdown-field { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0; padding:6px 10px; font:600 13px Inter,"Segoe UI",Arial,sans-serif; color:var(--ink); }
-.topbar-dropdown .dropdown-field select, .backup-dialog .dropdown-field select { max-width:60%; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--panel-bg); color:var(--ink); font:inherit; }
+.backup-dialog .dropdown-field { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0; padding:6px 10px; font:600 13px Inter,"Segoe UI",Arial,sans-serif; color:var(--ink); }
+.backup-dialog .dropdown-field select { max-width:60%; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--panel-bg); color:var(--ink); font:inherit; }
 .backup-browser-list { display:grid; gap:6px; max-height:50vh; margin:12px 0 16px; overflow:auto; }
 .backup-entry { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--ink); font:500 13px Inter,"Segoe UI",Arial,sans-serif; text-align:left; cursor:pointer; }
 .backup-entry:hover, .backup-entry:focus-visible { border-color:var(--blue); background:var(--secondary-hover); color:var(--blue); outline:none; }

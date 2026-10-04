@@ -42,7 +42,8 @@ test('onStart prepares the page and onFinish receives its result once',()=>{
 });
 test('Case Notes tour covers every area of the tool and points at real controls',()=>{
  let captured;vm.runInNewContext(fs.readFileSync(require.resolve('../case-notes-demo.js'),'utf8'),{GuidedTour:{create:options=>captured=options}});
- const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+ const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../site-topbar.js'),'utf8'),{window,document:{getElementById:()=>null}});
+ const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8')+window.SiteTopbar.markup('case-notes');
  assert.equal(typeof captured.onStart,'function');assert.equal(typeof captured.onFinish,'function');
  const dynamic=new Set(['#caseSummaryTab']);
  for(const {target} of captured.steps){

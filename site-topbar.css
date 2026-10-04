@@ -1,0 +1,35 @@
+/* Shared top bar for Case Notes and Escalation Quality, rendered by site-topbar.js. */
+.topbar #requestFeature, .topbar #openTroubleshoot { text-decoration:none; display:inline-flex; align-items:center; }
+.topbar { gap:20px; }
+.topbar-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-right:auto; }
+.topbar-actions .button, .topbar-actions .button.primary, .topbar-actions .button.secondary { height:40px; min-height:0; padding:0 14px; border:0; border-radius:5px; background:transparent; box-shadow:none; color:#b8cad4; font-size:14px; font-weight:650; text-decoration:none; display:inline-flex; align-items:center; }
+.topbar-actions .button:hover:not(:disabled), .topbar-actions .button:focus-visible { background:#173448; color:#8ed6ff; }
+.topbar-actions .button:disabled { opacity:.45; cursor:not-allowed; }
+.topbar .appearance-actions { display:flex; align-items:center; gap:6px; margin-left:auto; flex-shrink:0; }
+.topbar .theme-controls { margin-left:0; }
+.topbar .appearance-actions #requestFeature { height:40px; padding:0 14px; border:0; border-radius:5px; background:transparent; box-shadow:none; color:#b8cad4; font-size:14px; font-weight:650; white-space:nowrap; }
+.topbar .appearance-actions #requestFeature:hover, .topbar .appearance-actions #requestFeature:focus-visible { background:#173448; color:#8ed6ff; }
+@media (min-width:1101px) and (max-width:1420px) { .topbar .appearance-actions #requestFeature { padding:0 7px; font-size:13px; } }
+@media (max-width:1100px) { .topbar { height:auto; min-height:64px; flex-wrap:wrap; padding-block:10px; row-gap:6px; } .topbar .appearance-actions { order:2; } .topbar-actions { order:3; width:100%; margin-right:0; } }
+@media (min-width:1101px) and (max-width:1420px) { .topbar-actions .button, .topbar-actions .button.primary, .topbar-actions .button.secondary { padding:0 7px; font-size:13px; } .topbar-actions { gap:2px; } }
+.topbar-menu { position:relative; }
+.topbar-menu > .button span { font-size:11px; margin-left:6px; }
+.topbar-menu > .button[aria-expanded="true"] { background:#173448; color:#8ed6ff; }
+.topbar-dropdown { position:absolute; top:calc(100% + 8px); left:0; z-index:60; width:340px; max-width:calc(100vw - 32px); padding:8px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); color:var(--ink); box-shadow:0 14px 34px #0f1f3840; }
+.topbar-dropdown[hidden] { display:none; }
+.dropdown-item { display:block; width:100%; padding:9px 10px; border:0; border-radius:6px; background:transparent; color:var(--ink); font:600 13px Inter,"Segoe UI",Arial,sans-serif; text-align:left; cursor:pointer; }
+.dropdown-item:hover:not(:disabled), .dropdown-item:focus-visible { background:var(--secondary-hover); color:var(--blue); outline:none; }
+.dropdown-item:disabled { opacity:.45; cursor:not-allowed; }
+@media (max-width:1100px) { .topbar-dropdown { left:auto; right:0; } }
+.training-dropdown { left:auto; right:0; width:220px; }
+.settings-dropdown { width:220px; left:auto; right:0; }
+.tools-dropdown { width:260px; }
+.topbar .appearance-actions .settings-toggle,
+.topbar .theme-controls .theme-icon-toggle { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0; margin:0; border:0; border-radius:0; background:transparent; box-shadow:none; color:#b8cad4; cursor:pointer; }
+.topbar .appearance-actions .settings-toggle:hover,
+.topbar .theme-controls .theme-icon-toggle:hover { background:transparent; color:#8ed6ff; }
+.topbar .appearance-actions .settings-toggle:focus-visible { outline:3px solid #4a9eff; outline-offset:2px; }
+.theme-icon-toggle .theme-sun { display:none; }
+[data-theme="dark"] .theme-icon-toggle .theme-moon { display:none; }
+[data-theme="dark"] .theme-icon-toggle .theme-sun { display:block; }
+.topbar-dropdown a.dropdown-item { box-sizing:border-box; text-decoration:none; }

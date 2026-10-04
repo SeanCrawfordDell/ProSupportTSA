@@ -13,6 +13,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="site-topbar.css?v=20261004-shared-topbar">
   <script src="case-workflow-core.js?v=20260919-support-workflow" defer></script>
   <script src="case-toolkit-core.js?v=20260919-support-workflow" defer></script>
   <script src="devin-prompt-core.js" defer></script>
@@ -24,21 +25,14 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 <script src="log-helper.js?v=20261004-shared-log-helper" defer></script>
 <link rel="stylesheet" href="escalation-mascot.css">
 <script src="escalation-mascot.js" defer></script>
-<script src="app.js?v=20261004-shared-log-helper" defer></script>
+<script src="app.js?v=20261004-shared-topbar" defer></script>
   <link rel="stylesheet" href="escalation-demo.css?v=20260919-support-workflow">
   <script src="guided-tour.js?v=20260919-support-workflow" defer></script>
-  <script src="escalation-demo.js?v=20261004-shared-log-helper" defer></script>
+  <script src="escalation-demo.js?v=20261004-shared-topbar" defer></script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand home-link" href="index.html" aria-label="Back to Technical Support Assistant"><span class="brand-mark">←</span><span>Support Assistant</span></a>
-    <div class="topbar-right">
-<a class="button secondary topbar-link" href="troubleshooting.html">Troubleshooting Guides</a>
-<div class="theme-controls" role="group" aria-label="Appearance">
-        <button class="theme-switch" id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button>
-      </div>
-    </div>
-  </header>
+  <header class="topbar" id="siteTopbar" data-page="escalation"></header>
+  <script src="site-topbar.js?v=20261004-shared-topbar"></script>
 
   <main>
     <section class="hero">
@@ -46,11 +40,6 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
         <p class="eyebrow">Domain Engineer Escalation Request</p>
         <h1>Is this escalation ready?</h1>
         <p>Check that a senior technician has enough specific, actionable evidence to begin work.</p>
-      </div>
-      <div class="hero-actions">
-        <button class="button secondary" id="showDemo" type="button">Feature demo</button>
-        <button class="button secondary" id="loadWeak" type="button">Load weak sample</button>
-        <button class="button secondary" id="loadStrong" type="button">Load strong sample</button>
       </div>
     </section>
 

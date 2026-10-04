@@ -1,5 +1,5 @@
 "use strict";
-GuidedTour.create({triggerId:"showDemo",finishLabel:"Finish walkthrough",steps:[
+GuidedTour.create({triggerId:"tutorialDemo",finishLabel:"Finish walkthrough",steps:[
   {target:"#caseTitle",container:".panel",title:"Identify the case at a glance",what:"Case Title combines Server Type/System Platform, OS, and Issue Description. It updates from the source fields and appears first in the copied escalation.",why:"The receiving engineer can quickly recognize the affected environment and symptom."},
   {target:"#problem",container:".panel",title:"Explain the issue and impact",what:"Describe what fails, who is affected, when it happens, and what should happen. Record severity and service impact.",why:"The next engineer needs both a precise technical problem and the customer impact to prioritize the handoff."},
   {target:"#platform",container:".panel",title:"Provide technical context",what:"Record platform, OS/build, support details, exact errors, and reproduction steps. Case Notes pre-fills matching fields when you use Escalate to DE.",why:"This gives the recipient a starting point and reduces clarification requests about the environment."},
