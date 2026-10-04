@@ -9,7 +9,8 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 if __name__ == "__main__":
-    PORT = 8080
-    with socketserver.TCPServer(("", PORT), NoCacheHandler) as httpd:
-        print(f"Serving on port {PORT} with caching disabled")
+    # Loopback only, on the port the docs and the Devin companion preview expect.
+    PORT = 4187
+    with socketserver.TCPServer(("127.0.0.1", PORT), NoCacheHandler) as httpd:
+        print(f"Serving http://127.0.0.1:{PORT}/ with caching disabled")
         httpd.serve_forever()

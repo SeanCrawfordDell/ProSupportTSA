@@ -2,7 +2,7 @@
 
 Extend the existing Case Notes workspace with case context, shared evidence, resolution verification, editable knowledge candidates, and local repeat-pattern review in Support Trends. All data stays within the existing case history and backup/version workflow. Existing Copy to Lightning and escalation transfer include recorded workflow results. Collection guidance lives under Evidence; the duplicate suggested-tools section has been removed from Triage.
 
-Run: `python3 -m http.server 4187 --bind 127.0.0.1` from the repository root (or `python3 scripts/nocache_server.py` for a no-cache server on port 8080).
+Run: `python3 -m http.server 4187 --bind 127.0.0.1` from the repository root (or `python3 scripts/nocache_server.py` for the same address with caching disabled).
 Preview: http://127.0.0.1:4187/index.html
 Tests: `node --test tests/*.test.cjs`
 
@@ -50,8 +50,7 @@ fetches `companion/Connect-Devin.ps1` from that preview server; in production it
 fetches from the commit pinned in `COMPANION_COMMIT` (`js/devin-integration.js`)
 and verifies runtime checksums (see "Releasing companion changes" in `companion/README.md`). The bootstrap downloads only the two
 runtime files into a unique temporary folder. It does not install dependencies
-or register startup tasks. The legacy ZIP packaging script remains for developer
-testing, but the user setup no longer links to it.
+or register startup tasks.
 
 The Windows helper uses Node.js 22+ with no npm dependencies. See
 `companion/README.md` for CLI installation, login, pairing, workspace trust,
