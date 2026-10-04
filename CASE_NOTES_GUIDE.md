@@ -14,11 +14,30 @@ Existing notes migrate intact into one entry using the original case creation da
 
 ## Saving and backups
 
-Notes autosave in this browser every ten seconds. Open **Backup & Restore** in the top bar for history backups, settings backups, and restore options. Choose **Set Backup Folder** to select an approved location, preferably a work OneDrive-synced Documents folder. The app creates `ProSupportToolsBackup` there (or uses that folder if selected directly). The same folder button becomes **Reconnect Backup Folder** when permission is needed, or **Change Backup Folder** when connected.
+Notes autosave in this browser every ten seconds. Open **Backup & Restore** in the top bar for history backups, settings backups, restore options, and cleanup. The menu header shows how many snapshots the folder holds, their total size, and the retention setting. Choose **Set Backup Folder** to select an approved location, preferably a work OneDrive-synced Documents folder. The app creates `ProSupportToolsBackup` there (or uses that folder if selected directly). The same folder button becomes **Reconnect Backup Folder** when permission is needed, or **Change Backup Folder** when connected.
 
-Once access is approved, changed notes and settings are backed up approximately every minute while Case Notes is open. Browser background throttling can delay this; it is not a background service. **Backup History** saves immediately. The status shows the last successful folder backup; **Reconnect Backup Folder** requests access again when permission expires. Browsers without folder access can download history and settings instead.
+Once access is approved, changed notes and settings are backed up approximately every minute while Case Notes is open. Browser background throttling can delay this; it is not a background service. **Backup Case History** saves immediately. The status shows the last successful folder backup. When a saved folder only needs re-approval after the browser restarts, your next click anywhere on the page asks the browser for access; **Reconnect Backup Folder** does the same. Browsers without folder access can download history and settings instead.
 
-Each successful folder backup writes dated history and settings files plus the latest `customer-config.json`. Backup files are not automatically pruned. Folder backups contain customer information and are not encrypted by this app: use an approved protected location and follow your organization's retention policy. OneDrive synchronizes the folder independently; the app cannot confirm cloud upload completion.
+When backups are not configured, an inline banner at the top of the page offers **Configure Backups**. **Remind me in a week** hides it for seven days.
+
+### What the backup folder contains
+
+- `case-history.json` is the latest complete history. It is refreshed on every automatic backup and is what **Restore History → From backup folder** lists first.
+- `case-history-YYYY-MM-DD_HHMMSS.json` are hourly snapshots in your local time. During active work, at most one is written per hour.
+- `case-history-manual-…json` are created by **Backup Case History**. They are never removed by cleanup.
+- `case-history-before-restore-…`, `…before-field-removal-…`, `…before-field-reset-…`, and `…before-delete-…` are safety copies written automatically just before an action that cannot be undone. They are never removed by cleanup.
+- `customer-config.json` is the latest settings file; `customer-config-…json` dated copies are written only when settings actually change, or by **Backup Site Configuration**.
+- `images/` holds every screenshot once, named by its content hash. Snapshots reference these files instead of embedding the image, which keeps hourly snapshots small. Screenshots are removed from `images/` only when no remaining snapshot references them.
+
+Because snapshots in the folder reference `images/`, restore them with **From backup folder** or keep the whole `ProSupportToolsBackup` folder together when copying to another computer. Downloaded backups (no folder connected) still embed screenshots and are self-contained.
+
+### Cleanup and retention
+
+**Keep snapshots** in the Backup folder section chooses 7, 30, or 90 days, or **Forever**. Automatic snapshots are thinned to every snapshot from the last 24 hours, one per day for up to 30 days, then one per week to the retention limit. Manual backups, safety copies, the latest files, and anything the app did not create are always kept, and the newest automatic snapshot is never removed. Snapshots written by earlier versions of the app (UTC file names) are included in cleanup.
+
+Automatic cleanup is off until you run **Clean Up Old Snapshots** once or change the retention setting. Until then, the status reports how much could be removed after each hourly snapshot. **Clean Up Old Snapshots** shows how many files and how much space would be removed before anything happens. After that, cleanup runs on its own after each hourly snapshot. OneDrive keeps removed files in its recycle bin, which gives an extra safety net.
+
+Folder backups contain customer information and are not encrypted by this app: use an approved protected location and follow your organization's retention policy. OneDrive synchronizes the folder independently; the app cannot confirm cloud upload completion.
 
 ## Recovery and retention
 
@@ -37,13 +56,13 @@ Search includes case fields, note content, next steps, custom fields, and suppor
 
 ## Restoring settings and notes
 
-**Backup Site Configuration** saves `customer-config.json` and a dated settings copy directly to your configured `ProSupportToolsBackup` folder. Without a connected folder, it downloads the settings file instead. If folder access is denied or a write fails, the status explains the failure so you can reconnect and retry; it does not silently download elsewhere. Settings backups do not change your case-note backup files or the last successful full-backup time.
+**Backup Site Configuration** saves `customer-config.json` and a dated `customer-config-manual-…json` copy directly to your configured `ProSupportToolsBackup` folder. Without a connected folder, it downloads the settings file instead. If folder access is denied or a write fails, the status explains the failure so you can reconnect and retry; it does not silently download elsewhere. Settings backups do not change your case-note backup files or the last successful full-backup time.
 
-Settings include field configuration, toolbox URLs/order/colors/launcher icon/size/icon size/circle/animation, custom AI prompts, personal and edited built-in troubleshooting templates, theme, floating-panel preference, collapsed sections/history, and pinned site resources. They do not include browser folder permissions or the temporary dragged position of the toolbox.
+Settings include field configuration, toolbox URLs/order/colors/launcher icon/size/icon size/circle/animation, custom AI prompts, personal and edited built-in troubleshooting templates, theme, floating-panel preference, collapsed sections/history, pinned site resources, and the backup retention choice. They do not include browser folder permissions or the temporary dragged position of the toolbox.
 
 **Restore Settings** offers two sources: **From backup folder** reads `customer-config.json` from the connected folder, and **Choose a file** accepts a downloaded or dated settings file. Imports are validated before applying; a confirmation explains that existing preferences will change. Older field/toolbox-only settings backups are supported.
 
-**Restore History** replaces the complete current history with a history backup after confirmation, including Archive, Trash, and versions. Export current history first if you need to retain it. Settings are restored separately. Previously created individual-case JSON exports remain importable, replacing only a matching case ID after confirmation.
+**Restore History** offers two sources. **From backup folder** lists every snapshot in `ProSupportToolsBackup`, newest first, with its time, type (latest, hourly, manual, or safety copy), and size; select one to restore it. **Choose a file** accepts a downloaded backup or a file from another computer. Either way you confirm before the complete current history is replaced, including Archive, Trash, and versions. When a backup folder is connected, a `case-history-before-restore-…` safety copy of your current history is written first. Settings are restored separately. Previously created individual-case JSON exports remain importable, replacing only a matching case ID after confirmation.
 
 ## Custom fields
 
@@ -51,7 +70,7 @@ Open the gear-icon **Settings** menu to the right of the sun/moon theme toggle
 in the top bar and choose **Customize Fields**. The theme icon switches between
 light and dark mode; its tooltip and accessible label identify the next mode.
 
-New field labels support up to 120 characters. Older backups with longer labels remain restorable. Removing a field or resetting custom fields removes its values from recent cases, Archive, Trash, and saved versions after confirmation. Previously exported backup files are not changed. Both plain-text and HTML email exports include custom fields.
+New field labels support up to 120 characters. Older backups with longer labels remain restorable. Removing a field or resetting custom fields removes its values from recent cases, Archive, Trash, and saved versions after confirmation. When a backup folder is connected, a safety copy of the history is saved first. Previously exported backup files are not changed. Both plain-text and HTML email exports include custom fields.
 
 ## Personal troubleshooting templates
 
