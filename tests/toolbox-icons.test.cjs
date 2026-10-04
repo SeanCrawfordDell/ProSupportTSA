@@ -1,9 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const C = require('../case-notes-core.js');
-const S = require('../case-settings-core.js');
-const Icons = require('../case-toolbox-icons.js');
+const C = require('../js/case-notes-core.js');
+const S = require('../js/case-settings-core.js');
+const Icons = require('../js/case-toolbox-icons.js');
 const withAppearance = extra => ({fieldConfig:C.empty().fieldConfig,toolbox:{shortcuts:[],appearance:{order:[],colors:{},...extra}}});
 
 test('toolbox icon list has unique ids, a valid default and no inline styles blocked by the page CSP', () => {
@@ -21,7 +21,7 @@ test('toolbox icon list has unique ids, a valid default and no inline styles blo
 });
 
 test('every animation class used by an icon has a stylesheet rule', () => {
-  const css = fs.readFileSync(__dirname + '/../case-toolbox-links.css', 'utf8');
+  const css = fs.readFileSync(__dirname + '/../css/case-toolbox-links.css', 'utf8');
   const classes = new Set(Icons.list.flatMap(icon => [...icon.svg.matchAll(/class="([^"]+)"/g)].flatMap(m => m[1].split(' '))));
   for (const name of classes) if (name.startsWith('tbi-')) assert.ok(css.includes('.' + name + '{'), name);
 });

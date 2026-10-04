@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const K=require('../knowledge-export.js');
+const K=require('../js/knowledge-export.js');
 test('exports the edited draft without importing hidden case details and escapes HTML',()=>{
  const result=K.article('Storage <review>','Issue:\n<script>alert(1)</script>\n\nResolution / workaround:\nKeep A & B');
  assert.match(result.markdown,/^# Storage <review>/);assert.match(result.markdown,/## Issue/);

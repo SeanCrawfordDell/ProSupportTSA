@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const T=require('../case-toolkit-core.js'),C=require('../case-notes-core.js'),S=require('../case-settings-core.js');
+const T=require('../js/case-toolkit-core.js'),C=require('../js/case-notes-core.js'),S=require('../js/case-settings-core.js');
 const custom={name:'Storage checks',notes:'Check controller\n<img src=x onerror=alert(1)>',next:'Collect logs'};
 test('personal templates override built-in names and content without changing defaults',()=>{
  const original=T.templates.boot.name;

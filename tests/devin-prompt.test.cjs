@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const DevinPrompt = require('../devin-prompt-core.js');
+const DevinPrompt = require('../js/devin-prompt-core.js');
 
 test('each AI task produces a clear bounded prompt', () => {
   for (const [task, details] of Object.entries(DevinPrompt.defaultTasks)) {

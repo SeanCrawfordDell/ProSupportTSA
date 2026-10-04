@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const B = require('../case-backup-core.js');
-const C = require('../case-notes-core.js');
+const B = require('../js/case-backup-core.js');
+const C = require('../js/case-notes-core.js');
 const HOUR = 3600000, DAY = 86400000;
 test('snapshot names use readable local time and round-trip through the parser', () => {
   const at = new Date(2026, 9, 3, 14, 22, 5).getTime();

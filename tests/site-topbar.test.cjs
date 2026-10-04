@@ -24,7 +24,7 @@ function harness(page){
  }});
  const document={body,activeElement:null,getElementById:id=>nodes[id]??null,addEventListener:(k,f)=>docEvents[k]=f};
  const window={};
- vm.runInNewContext(fs.readFileSync(require.resolve('../site-topbar.js'),'utf8'),{window,document,encodeURIComponent});
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/site-topbar.js'),'utf8'),{window,document,encodeURIComponent});
  const click=(id,target)=>{const node=nodes[id];node.handlers.click?.({target:target||node});docEvents.click?.({target:target||node});};
  return {nodes,document,body,window,docEvents,click,get:id=>nodes[id]};
 }
@@ -53,14 +53,14 @@ test('Case Notes and Escalation Quality render the same top bar',()=>{
 test('both pages load the shared top bar and keep no copy of their own',()=>{
  for(const [file,page] of [['../case-notes.html','case-notes'],['../escalation-quality.html','escalation']]){
   const html=fs.readFileSync(require.resolve(file),'utf8');
-  assert.match(html,new RegExp(`<header class="topbar" id="siteTopbar" data-page="${page}"></header>\\s*<script src="site-topbar\\.js\\?v=[^"]+"></script>`),file+' renders the bar before its deferred scripts run');
-  assert.match(html,/<link rel="stylesheet" href="site-topbar\.css\?v=[^"]+">/);
+  assert.match(html,new RegExp(`<header class="topbar" id="siteTopbar" data-page="${page}"></header>\\s*<script src="js/site-topbar\\.js\\?v=[^"]+"></script>`),file+' renders the bar before its deferred scripts run');
+  assert.match(html,/<link rel="stylesheet" href="css\/site-topbar\.css\?v=[^"]+">/);
   for(const id of ['openToolsMenu','openTraining','openSettingsMenu','themeToggle','requestFeature','tutorialDemo'])assert.ok(!html.includes(`id="${id}"`),file+' has no own '+id);
   assert.equal((html.match(/class="topbar"/g)||[]).length,1);
  }
  const versions=['../case-notes.html','../escalation-quality.html'].map(f=>/site-topbar\.js\?v=([^"]+)"/.exec(fs.readFileSync(require.resolve(f),'utf8'))[1]);
  assert.equal(versions[0],versions[1]);
- assert.equal(/triggerId:"([^"]+)"/.exec(fs.readFileSync(require.resolve('../escalation-demo.js'),'utf8'))[1],'tutorialDemo');
+ assert.equal(/triggerId:"([^"]+)"/.exec(fs.readFileSync(require.resolve('../js/escalation-demo.js'),'utf8'))[1],'tutorialDemo');
  assert.ok(!fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8').includes('hero-actions'),'tour and samples moved into Training');
 });
 test('menus open one at a time and close on a choice, an outside click, or Escape',()=>{

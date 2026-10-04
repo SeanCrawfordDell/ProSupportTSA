@@ -2,14 +2,14 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-const C=require('../case-notes-core.js'),T=require('../case-toolkit-core.js');
+const C=require('../js/case-notes-core.js'),T=require('../js/case-toolkit-core.js');
 function setup(){
  const elements={};
  const get=id=>elements[id]??={value:'',textContent:'',disabled:false,handlers:{},replaceChildren(...items){this.children=items;},append(item){this.children.push(item);},addEventListener(k,f){this.handlers[k]=f;}};
  const note=C.create(C.empty(),'example',1000);note.notes='<p>Existing notes</p>';note.next='<p>Existing plan</p>';
  let editable=true;
  const window={};
- vm.runInNewContext(fs.readFileSync(require.resolve('../case-toolkit.js'),'utf8'),{window,document:{createElement:()=>({}),getElementById:id=>id==='logChecklist'?null:get(id),querySelectorAll:()=>[]},CaseToolkitCore:T,CaseNotes:C,marked:{parse:text=>text}});
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-toolkit.js'),'utf8'),{window,document:{createElement:()=>({}),getElementById:id=>id==='logChecklist'?null:get(id),querySelectorAll:()=>[]},CaseToolkitCore:T,CaseNotes:C,marked:{parse:text=>text}});
  window.CaseToolkit.init({current:()=>note,canEdit:()=>editable,mutate:f=>f(note),refreshEditors(){},save(){}});
  return {get,note,ui:window.CaseToolkit,readonly(){editable=false;window.CaseToolkit.setEditable(false);}};
 }

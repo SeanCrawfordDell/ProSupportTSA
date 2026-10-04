@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const P=require('../case-notes-popout.js');
+const P=require('../js/case-notes-popout.js');
 function setup({blocked=false,failSave=false,compact=false,opener=null}={}){
  const nodes={},classes=new Set(),events={};let releases=0,resumes=0,saves=0,opens=0,focused=0,closed=0;
  const node=id=>nodes[id]??={hidden:false,disabled:false,textContent:'',listeners:{},addEventListener(k,f){this.listeners[k]=f}};

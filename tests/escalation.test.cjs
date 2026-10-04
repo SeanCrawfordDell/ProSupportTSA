@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
-const core=require('../case-notes-core.js');
+const core=require('../js/case-notes-core.js');
 test('Devin escalation snapshot uses latest facts and cannot append notes',()=>{
  const h=harness({aiIntegration:true});h.get('problem').value='Management UI timeout';
  assert.ok(h.ctx.ai);const shot=h.ctx.ai.snapshot();assert.equal(shot.caseId,null);assert.match(shot.prompt,/Management UI timeout/);
@@ -24,9 +24,9 @@ function harness({stored=null,failStorage=false,failClipboard=false,imported=nul
  for(const [whole,tag,id]of html.matchAll(/<(\w+)[^>]*\bid="([^"]+)"[^>]*>/g)){const node=get(id);node.tagName=tag.toUpperCase();const type=/\btype="([^"]+)"/.exec(whole)?.[1];if(type){node.type=type;node.checked=false;}if(/\shidden[\s>]/.test(whole))node.hidden=true;}
  get('reviewState').hidden=true;
  const storage={getItem(){if(failStorage)throw Error('blocked');return stored},setItem(k,v){if(failStorage)throw Error('quota');stored=v;writes++}};
- const ctx=vm.createContext({document:{getElementById:get,createElement:t=>new Element(t),createTextNode:t=>t,querySelectorAll:()=>[],addEventListener:(k,f)=>listeners[k]=f},localStorage:storage,sessionStorage:{getItem:()=>imported&&JSON.stringify(imported),removeItem(){imported=null}},location:{hash:imported?'#import=test':'',pathname:'/escalation-quality.html',search:''},history:{replaceState(){}},window:{addEventListener:(k,f)=>listeners[k]=f},setInterval:(f,ms)=>timers.push({f,ms}),confirm:()=>confirmAnswer,navigator:{clipboard:{async writeText(text){if(failClipboard)throw Error('denied');copied=text}}},URLSearchParams,console,CaseToolkitCore:require('../case-toolkit-core.js'),DevinPrompt:require('../devin-prompt-core.js')});
+ const ctx=vm.createContext({document:{getElementById:get,createElement:t=>new Element(t),createTextNode:t=>t,querySelectorAll:()=>[],addEventListener:(k,f)=>listeners[k]=f},localStorage:storage,sessionStorage:{getItem:()=>imported&&JSON.stringify(imported),removeItem(){imported=null}},location:{hash:imported?'#import=test':'',pathname:'/escalation-quality.html',search:''},history:{replaceState(){}},window:{addEventListener:(k,f)=>listeners[k]=f},setInterval:(f,ms)=>timers.push({f,ms}),confirm:()=>confirmAnswer,navigator:{clipboard:{async writeText(text){if(failClipboard)throw Error('denied');copied=text}}},URLSearchParams,console,CaseToolkitCore:require('../js/case-toolkit-core.js'),DevinPrompt:require('../js/devin-prompt-core.js')});
  if(aiIntegration){ctx.window.DevinConnection={createClient:()=>({})};ctx.window.DevinIntegration={init(api){ctx.ai=api;return {refresh(){}};}};}
- vm.runInContext(fs.readFileSync(require.resolve('../app.js'),'utf8'),ctx);
+ vm.runInContext(fs.readFileSync(require.resolve('../js/app.js'),'utf8'),ctx);
  return {get,ctx,run:s=>vm.runInContext(s,ctx),async click(id){for(const f of get(id).listeners.click||[])await f()},stored:()=>stored,copied:()=>copied,timers,listeners,setFail:v=>failStorage=v,setConfirm:v=>confirmAnswer=v,writes:()=>writes,externalSave:value=>stored=value};
 }
 test('valid log select earns full completeness and no-log exception needs a reason',()=>{
@@ -124,7 +124,7 @@ test('customer working time zone is a required select beside Customer Country an
  const restored=harness({stored:JSON.stringify(old)});assert.equal(restored.get('problem').value,h.get('problem').value,'drafts saved before the question still restore');assert.equal(restored.get('timezone').value,'');
 });
 test('Issue and impact pairs fields of matching height and paired controls line up',()=>{
- const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8'),css=fs.readFileSync(require.resolve('../styles.css'),'utf8');
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8'),css=fs.readFileSync(require.resolve('../css/styles.css'),'utf8');
  const section=html.match(/<h2>Issue and impact<\/h2>[\s\S]*?<\/section>/)[0];
  const order=[...section.matchAll(/<label class="(field(?: wide)?)">[^<]*<b>Required<\/b><(\w+) id="(\w+)"/g)].map(m=>`${m[3]}:${m[2]}${m[1].includes('wide')?':wide':''}`);
  assert.deepEqual(order,['problem:textarea:wide','severity:select','production:select','affected:input:wide','impact:textarea','timeline:textarea','country:select','timezone:select']);
@@ -132,7 +132,7 @@ test('Issue and impact pairs fields of matching height and paired controls line 
  assert.match(css,/\.field input:not\(\[type="checkbox"\]\),\.field select \{ min-height:41px; \}/,'inputs and selects share a height');
 });
 test('required badges keep their size beside taller fields',()=>{
- const css=fs.readFileSync(require.resolve('../styles.css'),'utf8');
+ const css=fs.readFileSync(require.resolve('../css/styles.css'),'utf8');
  assert.match(css,/\.field \{ display:grid; align-content:start;/,'grid rows must not stretch to fill a taller cell');
 });
 test('exact errors and timestamps are required; stating that no error is shown is an answer',()=>{
@@ -394,16 +394,16 @@ test('built-in samples keep their verdicts',()=>{
  assert.equal(h.run('Object.values(scoreMaxima).reduce((a,b)=>a+b,0)'),100);
 });
 test('escalation text plausibility stays identical to the shared Case Notes helper',()=>{
- const h=harness(),R=require('../case-rubric-core.js');
+ const h=harness(),R=require('../js/case-rubric-core.js');
  const strong=h.run('samples.strong');
- const samplesText=['','x','blah blah blah blah blah blah blah blah','No change.\nNo change.\nNo change.',lorem,honest.troubleshooting,strong.results,strong.troubleshooting,fs.readFileSync(require.resolve('../CASE_NOTES_GUIDE.md'),'utf8')];
+ const samplesText=['','x','blah blah blah blah blah blah blah blah','No change.\nNo change.\nNo change.',lorem,honest.troubleshooting,strong.results,strong.troubleshooting,fs.readFileSync(require.resolve('../docs/CASE_NOTES_GUIDE.md'),'utf8')];
  for(const text of samplesText){h.ctx.fixture=text;assert.equal(h.run('textQuality.filler(fixture)'),R.text.filler(text),text.slice(0,40));}
  for(const [a,b] of [[strong.results,strong.troubleshooting],[strong.problem,strong.problem],[honest.problem,honest.impact]]){h.ctx.a=a;h.ctx.b=b;assert.equal(h.run('textQuality.similarity(a,b)'),R.text.similarity(a,b));}
 });
 test('Case Notes handoff fills recent changes, service impact and gathered logs, and leaves results empty with the import hint',()=>{
  const note=core.create(core.empty(),'handoff-map',100);
  Object.assign(note,{issue:'Cluster node evictions',logLocation:'https://example.com/logs',notes:'<p>Collected cluster log</p>'});
- note.toolkit.workflow={...require('../case-workflow-core.js').defaults(),recentChange:'Patched node 2 on 2026-09-30',severity:'Service unavailable'};
+ note.toolkit.workflow={...require('../js/case-workflow-core.js').defaults(),recentChange:'Patched node 2 on 2026-09-30',severity:'Service unavailable'};
  const h=harness({imported:core.escalation(note,200)});
  assert.equal(h.get('changes').value,'Patched node 2 on 2026-09-30');assert.equal(h.get('production').value,'Service unavailable');
  assert.equal(h.get('evidence').value,'Yes');assert.equal(h.get('results').value,'');

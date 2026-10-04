@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const C = require('../case-notes-core.js');
+const C = require('../js/case-notes-core.js');
 const first = Date.parse('2026-10-02T15:00:00Z');
 const second = Date.parse('2026-10-03T16:00:00Z');
 function fixture() { const state=C.empty(); const note=C.create(state,'case-a',first); note.request='123'; note.notes='<p>Day one</p>'; note.next='Collect logs'; return {state,note}; }
@@ -68,6 +68,6 @@ test('legacy custom fields that collide with entry metadata migrate without losi
   assert.equal(n[entriesKey],'Old custom value');assert.equal(n[idKey],'Old custom ID');
   assert.equal(n.legacy_entries,'Keep existing');assert.equal(n.entries.length,1);
  }
- const settings=require('../case-settings-core.js').validate({fieldConfig:state.fieldConfig},C.fields);
+ const settings=require('../js/case-settings-core.js').validate({fieldConfig:state.fieldConfig},C.fields);
  assert.deepEqual(settings.fieldConfig,parsed.fieldConfig);
 });

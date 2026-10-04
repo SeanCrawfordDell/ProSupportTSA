@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const C=require('../case-notes-core.js'),T=require('../case-toolkit-core.js');
+const C=require('../js/case-notes-core.js'),T=require('../js/case-toolkit-core.js');
 test('old case histories receive toolkit defaults and new metadata round-trips through backup',()=>{
  const state=C.empty(),note=C.create(state,'old',1000);delete note.toolkit;
  const restored=C.parse(JSON.stringify(state));assert.equal(restored.cases[0].toolkit.status,'Open');

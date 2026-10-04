@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const C = require('../case-notes-core.js');
-const S = require('../case-settings-core.js');
+const C = require('../js/case-notes-core.js');
+const S = require('../js/case-settings-core.js');
 test('overflow archives all older cases with their screenshots, fields and revisions', () => {
   const state = C.empty(); C.addCustomField(state,'siteName','Site');
   const first = C.create(state,'first',1000); first.siteName = 'Lab'; first.notes = 'before';
