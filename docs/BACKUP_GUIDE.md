@@ -20,7 +20,7 @@ Until a folder is set up, a banner at the top of the page reminds you that your 
 - Once an hour, while you are working, a dated **automatic snapshot** is saved, so you can go back to how things looked earlier in the day or last week.
 - **Back Up Now** saves immediately and adds a **manual backup**. Manual backups are never deleted automatically. Use it before risky edits or at the end of a case.
 - Before anything is replaced or removed (a restore, removing a custom field, resetting fields) a **safety copy** is saved first. Safety copies are never deleted automatically, so those actions can be undone.
-- Settings (fields, toolbox, templates, preferences) are backed up with the case history: a dated settings copy is saved with every hourly history snapshot and every manual backup, and also whenever a setting changes (within about a minute), even if you have not edited a note.
+- Settings (fields, toolbox, preferences) are backed up with the case history: a dated settings copy is saved with every hourly history snapshot and every manual backup, and also whenever a setting changes (within about a minute), even if you have not edited a note.
 
 If the browser closes and reopens, it may need permission again. The card says **Backups are paused**; select **Reconnect Backup Folder** and approve.
 
@@ -42,7 +42,7 @@ Nothing changes until you confirm, and your current data is saved as a safety co
 Everything you can customize, so a restore brings your whole setup back:
 
 - **Toolbox:** your shortcut links (up to four), the order of its buttons and their colors, the launcher icon, its size, icon size, and the circle and animation options.
-- **Custom case fields** and their order, your own **AI prompts**, and personal or edited **note templates**.
+- **Custom case fields** and their order, and your own **AI prompts**.
 - **Preferences:** light/dark theme, floating action panel, collapsed sections and Recent Cases panel, pinned site resources, and the backup retention choice.
 
 Not included: the temporary dragged position of the toolbox, and the browser's folder permission. After a settings restore the page reloads once so every restored setting takes effect. Settings changes (for example a new toolbox color) are picked up and backed up within about a minute, even if you have not edited a note.
@@ -55,7 +55,7 @@ In **Backup & Restore**, open **Delete backups or start fresh**:
 | --- | --- | --- |
 | **Delete** button next to one backup (in Restore…) | That one backup file, and screenshots only it used | Kept |
 | **Delete All Backups…** | Every backup the app made in the folder, including manual backups, safety copies and screenshots. Files that are not the app's are never touched. | Kept. Automatic backups start again when your notes next change. |
-| **Start Fresh…** | Everything above, **and** all case notes, settings, templates and preferences in this browser | Erased. No safety copy. Cannot be undone. |
+| **Start Fresh…** | Everything above, **and** all case notes, settings and preferences in this browser | Erased. No safety copy. Cannot be undone. |
 | **Stop Using This Folder** | Nothing. Backups stop; the folder and its files stay. | Kept |
 
 Both **Delete All Backups** and **Start Fresh** require typing **DELETE**. OneDrive keeps removed files in its recycle bin for a while, which can help if you change your mind about a delete.

@@ -1,13 +1,16 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const R=require('../js/case-rubric-core.js'),C=require('../js/case-notes-core.js'),T=require('../js/case-toolkit-core.js');
 const blank=()=>C.create(C.empty(),'n1',1000);
+// Scaffolding the former Apply template button wrote into notes; older cases still hold it.
+const legacyNotes=key=>`<h3>${T.issueTypes[key].name}</h3>`+T.issueTypes[key].prompts.map(p=>`<p><strong>${p}:</strong> [Add details]</p>`).join('');
+const legacyNext='<h3>Next steps</h3><p>Action: [Add next action]</p><p>Owner: [Assign owner]</p><p>Follow-up: [Agree date and time]</p>';
 test('empty note scores zero and lists the biggest gaps first',()=>{
  const r=R.score(blank());assert.equal(r.total,0);assert.equal(r.rating,'Incomplete');
  assert.equal(Object.values(R.maxima).reduce((a,b)=>a+b,0),100);
  for(let i=1;i<r.gaps.length;i++)assert.ok(r.gaps[i-1].points>=r.gaps[i].points);
 });
-test('applied template prompts alone earn no troubleshooting credit',()=>{
- const note=blank();note.notes=T.templateHtml('network');
+test('legacy template prompts alone earn no troubleshooting credit',()=>{
+ const note=blank();note.notes=legacyNotes('network');
  assert.equal(R.score(note).categories.troubleshooting,0);
 });
 test('a complete, specific note scores Strong',()=>{
@@ -27,7 +30,7 @@ test('legacy OS support codes migrate to the entitlement options',()=>{
  assert.equal(C.escalation({...note,supportType:'OEM'},2000).supportType,'OEM OS');
 });
 test('untouched default next-step scaffolding earns no next-step credit',()=>{
- const note=blank();note.next=T.templateNextHtml('network');
+ const note=blank();note.next=legacyNext;
  assert.equal(R.score(note).categories.next,0);
 });
 test('No OS plans list the iDRAC collection once on PowerEdge platforms',()=>{
@@ -95,12 +98,11 @@ test('impact, recent change and owner written in the note text score the same as
  assert.ok(b.gaps.some(g=>/name the owner and date in the Action Plan/.test(g.text)));
 });
 test('template prompt labels with short answers earn nothing while real answers after the label count',()=>{
- const note=blank();note.notes=T.templateHtml('network').replace(/\[Add details\]/g,'ok');
+ const note=blank();note.notes=legacyNotes('network').replace(/\[Add details\]/g,'ok');
  assert.equal(R.score(note).categories.troubleshooting,0);
  assert.equal(R.clean('<p><strong>Expected versus observed connectivity:</strong> ping to 10.0.0.5 fails with timeout</p>'),'ping to 10.0.0.5 fails with timeout');
  assert.equal(R.clean('<p><strong>Expected versus observed connectivity:</strong> n/a</p>'),'');
  assert.equal(R.clean('<p>Owner: ok</p><p>Action: Replace the failed DIMM in slot A3 and retest.</p>'),'Replace the failed DIMM in slot A3 and retest.');
- note.notes=T.templateHtml('network').replace('Source and destination: [Add details]','Source and destination: 10.0.0.5 to 10.0.1.9').replace('Tests performed and results: [Add details]','Tests performed and results: ping returned 100% loss, traceroute stopped at the core switch');
  note.notes='<h3>Network / DNS connectivity</h3><p><strong>Source and destination:</strong> 10.0.0.5 to 10.0.1.9 over VLAN 120</p><p><strong>Tests performed and results:</strong> ping returned 100% loss and traceroute stopped at the core switch</p>';
  assert.ok(R.score(note).categories.troubleshooting>0);
 });
