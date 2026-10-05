@@ -6,13 +6,10 @@ your approved AI tool.
 
 ## Setup
 
-1. Install Devin CLI using its [official Windows instructions](https://docs.devin.ai/cli).
-   Open a new terminal so the updated PATH is available.
-2. Run `devin auth login` and complete the browser sign-in, then run
-   `devin auth status`. Your account must have access to Devin CLI.
-3. Install [Node.js](https://nodejs.org/en/download), version 22 or newer, if
-   needed. Verify `node --version` in a new PowerShell window.
-4. Open **AI Settings** and select **Copy connection command**. Paste it into
+1. Register and then Install Devin Desktop and Devin CLI (DEVIN CLI IS REQUIRED DO NOT SKIP THIS STEP)
+   Guides found [HERE](https://dell.sharepoint.com/sites/Windsurf/SitePages/Onboarding%20Windsurf.aspx) 
+2. Install Node.js, version 22 or newer from the company Portal.
+3. Open **AI Settings** and select **Copy connection command**. Paste it into
    PowerShell on this PC. The command fetches `Connect-Devin.ps1` from this
    repository, then automatically downloads the two runtime files into a unique
    temporary folder and starts the connection. No ZIP download or extraction is
@@ -27,7 +24,7 @@ your approved AI tool.
    is required each time.
    An ordinary exit or Ctrl+C removes the downloaded runtime files; abruptly
    closing or terminating PowerShell may leave that temporary folder behind.
-5. The helper displays its workspace path. If your CLI requires workspace
+4. The helper displays its workspace path. If your CLI requires workspace
    trust, open a second PowerShell window, create/open that workspace, and start
    Devin interactively there:
 
@@ -41,11 +38,11 @@ your approved AI tool.
    Review the trust prompt and approve it if appropriate. Exit that interactive
    session before sending a request from Case Notes. The companion preserves
    ordinary Devin permissions and does not bypass workspace trust.
-6. In Case Notes, open **AI Settings**, paste the helper's pairing token, and
+5. In Case Notes, open **AI Settings**, paste the helper's pairing token, and
    select **Connect Devin**. Allow the site's local-network access permission
    if prompted. **Test connection** verifies CLI presence and supported flags;
    account authentication can still fail when you send a prompt.
-7. Select an AI task, choose **Send to Devin**, review the exact prompt, and
+6. Select an AI task, choose **Send to Devin**, review the exact prompt, and
    select **Send**. Review the returned suggestion. **Copy response** works on
    both pages; **Append to Notes** is available in Case Notes for the original,
    currently selected, editable case.
