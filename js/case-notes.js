@@ -531,6 +531,47 @@
   let actionDockFloating = true;
   try { actionDockFloating = localStorage.getItem(actionDockPreferenceKey) !== "false"; } catch { /* Keep floating as the default. */ }
   const rightRailQuery = window.matchMedia?.("(min-width: 1500px) and (min-height: 780px)");
+  const actionRailWidthKey = "dell-support.case-notes.action-rail-width";
+  const actionRailResizer = $("actionRailResizer");
+  const actionRailMinimumWidth = 180, actionRailMaximumWidth = 480;
+  let actionRailWidth = 270;
+  try { actionRailWidth = Number.parseInt(localStorage.getItem(actionRailWidthKey), 10) || actionRailWidth; } catch {}
+  const clampActionRailWidth = width => Math.min(actionRailMaximumWidth, Math.max(actionRailMinimumWidth, width));
+  function setActionRailWidth(width, persist = false) {
+    actionRailWidth = clampActionRailWidth(width);
+    caseWorkArea?.style?.setProperty("--action-rail-width", `${actionRailWidth}px`);
+    actionRailResizer?.setAttribute("aria-valuenow", String(actionRailWidth));
+    if (!persist) return;
+    try { localStorage.setItem(actionRailWidthKey, String(actionRailWidth)); } catch {}
+  }
+  setActionRailWidth(actionRailWidth);
+  function resizeActionRail(event) {
+    const edge = actionDock?.getBoundingClientRect?.().right;
+    if (typeof edge === "number") setActionRailWidth(edge - event.clientX, true);
+  }
+  actionRailResizer?.addEventListener("pointerdown", event => {
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
+    const pointerId = event.pointerId;
+    actionRailResizer.setPointerCapture?.(pointerId);
+    const onMove = move => { if (move.pointerId === pointerId) resizeActionRail(move); };
+    const onEnd = end => {
+      if (end.pointerId !== pointerId) return;
+      actionRailResizer.releasePointerCapture?.(pointerId);
+      window.removeEventListener?.("pointermove", onMove);
+      window.removeEventListener?.("pointerup", onEnd);
+      window.removeEventListener?.("pointercancel", onEnd);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onEnd);
+    window.addEventListener("pointercancel", onEnd);
+  });
+  actionRailResizer?.addEventListener("keydown", event => {
+    const widths = { ArrowLeft:actionRailWidth + 20, ArrowRight:actionRailWidth - 20, Home:actionRailMinimumWidth, End:actionRailMaximumWidth };
+    if (!(event.key in widths)) return;
+    event.preventDefault();
+    setActionRailWidth(widths[event.key], true);
+  });
   function updateActionDockMode() {
     if (!actionDock) return;
     actionDock.classList.toggle("floating-disabled", !actionDockFloating);
