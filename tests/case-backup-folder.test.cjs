@@ -209,3 +209,8 @@ test('cleanup deletes the surplus settings copies on disk but never the latest o
   assert.ok(list.some(f => f.name === 'customer-config.json'));
   assert.equal(JSON.parse(await S.loadSettingsText(root, 'customer-config.json')).fieldConfig, 99);
 });
+
+test('case list cards are not forced to the full row height, so Pin/Archive never overlap the next card', () => {
+  const css = require('node:fs').readFileSync(require.resolve('../css/case-notes.css'), 'utf8');
+  assert.ok(!/\.case-row\s+\.case-item\s*\{[^}]*height\s*:\s*100%/.test(css));
+});
