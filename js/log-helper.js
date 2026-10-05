@@ -10,7 +10,6 @@ window.LogHelper = (() => {
 <label class="field">OS/Solution<select id="helperOS"></select></label>
 <label class="field">Issue type for this plan<select id="helperSymptom" aria-describedby="helperContext"></select></label>
 </div><div id="helperResults"></div>
-<details id="helperPlain"><summary>Plain text plan</summary><textarea id="helperPlanText" aria-label="Log collection plan" readonly></textarea></details>
 <div class="log-helper-actions"><button class="button secondary" id="closeLogHelperBottom" type="button">Close</button></div><p id="helperStatus" role="status"></p>`;
   function mount() {
     const dialog=document.createElement("dialog");
@@ -43,7 +42,6 @@ window.LogHelper = (() => {
         if(item.url){const link=document.createElement("a");link.href=item.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Collection guide ↗";section.append(link);}
         return section;
       }));
-      $("helperPlanText").value=LogHelperCore.text(activePlan);
       $("helperStatus").textContent="";
     }
     $("openLogHelper").addEventListener("click",()=>{
