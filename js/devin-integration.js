@@ -18,13 +18,12 @@ const DevinIntegration = (() => {
     intro.addEventListener('cancel',event=>{event.preventDefault();acknowledge();});
     intro.addEventListener('close',()=>{if(!introSeen)acknowledge();});
 
-    const setup=dialog('Connect Devin on this Windows PC (advanced)','devinSetup');
-    setup.append(el('p','Advanced, IT-assisted setup: most people should keep using Copy to AI, which needs no installation.'),el('p','Optional setup. Your helper stays on this PC; Devin uses the account you sign in with. Copy to AI is always available.'));
+    const setup=dialog('Connect Case Notes to Devin CLI on Windows','devinSetup');
+    setup.append(el('p','This optional companion connects Case Notes and Escalation Quality AI actions to Devin CLI on your PC. Copy to AI remains available without it.'));
     const steps=el('ol');
     for(const line of [
-      'Install Devin CLI for Windows using the official instructions below. Open a new terminal afterward.',
-      'Sign in with devin auth login and check devin auth status.',
-      'Install Node.js 22 or newer if needed.',
+      'Register, then install Devin Desktop and Devin CLI. Devin CLI is required; use the Dell onboarding guide below.',
+      'Install Node.js 22 or newer from the company portal.',
       'Copy the connection command below and paste it into PowerShell. It fetches and runs the connection automatically; no ZIP or manual script download is needed. Keep that window open. Follow your organization’s policy for running downloaded code.',
       'If Devin requires workspace trust, follow the companion guide to open Devin interactively in its workspace first.',
       'Paste the helper’s pairing token here and select Connect Devin. Allow this site’s local-network access request if your browser asks.'
@@ -40,7 +39,7 @@ const DevinIntegration = (() => {
       catch(e){commandStatus.textContent=e.message;commandField.node.focus();commandField.node.select();}
     }),commandStatus,el('p',previewOrigin?'Local preview command: fetches from this development server. Keep the preview server running.':'This command runs code from the EscalationQuality GitHub repository. Review the source or obtain IT approval before running it.'));
     const links=el('p');
-    for(const [label,url] of [['Devin Windows setup','https://docs.devin.ai/cli'],['Devin sign-in help','https://docs.devin.ai/cli/enterprise/devin-auth'],['Node.js downloads','https://nodejs.org/en/download'],['Review connection source',sourceBase+'/Connect-Devin.ps1'],['Connection setup guide','companion/README.md'],['Setup screenshot','docs/devin-setup-preview.jpg']]){
+    for(const [label,url] of [['Dell Devin onboarding guide','https://dell.sharepoint.com/sites/Windsurf/SitePages/Onboarding%20Windsurf.aspx'],['Review connection source',sourceBase+'/Connect-Devin.ps1'],['Connection setup guide','companion/README.md'],['Setup screenshot','docs/devin-setup-preview.jpg']]){
       const a=el('a',label);a.href=url;if(url.startsWith('https:')){a.target='_blank';a.rel='noopener noreferrer';}links.append(a,el('span',' · '));
     }setup.append(links);
     const tokenLabel=el('label','Pairing token'),token=el('input',null,'devinPairingToken');tokenLabel.className='field';token.type='password';token.autocomplete='off';token.maxLength=64;token.spellcheck=false;tokenLabel.append(token);setup.append(tokenLabel);
