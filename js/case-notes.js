@@ -51,7 +51,7 @@
   // ---- Backup & Restore ------------------------------------------------------------------------------
   // Engine and file handling live in case-sync-core.js; this block is the dialogs and the page wiring.
   const retentionKey = "dell-support.backup-retention-days", snoozeKey = "dell-support.backup-warning-snoozed-until";
-  const DAY_MS = 86400000;
+  const DAY_MS = 86400000, noticeKey = "dell-support.restore-notice";
   let backupChosen = null, backupRoot = null, backupQueue = Promise.resolve(), backupTimer = null, lastBackupRun = 0;
   let backupInfo = null, backupProblem = null, needsPermission = false, awaitingChoice = false, restoreKind = "history";
   const supportsSync = () => typeof window.showDirectoryPicker === "function" && typeof indexedDB !== "undefined";
@@ -182,7 +182,7 @@
       if (!root) { renderBackupState(); if (manual) throw Error("Reconnect the backup folder first."); return null; }
       try {
         const result = await CaseSync.backup(root, { state, settingsJson: settingsSnapshot(), manual, retention: retentionSetting() });
-        lastBackupRun = Date.now(); backupProblem = null;
+        lastBackupRun = Date.now(); backupProblem = null; backedUpSettings = settingsFingerprint();
         await refreshSummary(root);
         return result;
       } catch (error) { backupProblem = friendlyError(error); renderBackupState(); throw error; }
@@ -193,6 +193,15 @@
     if (!backupChosen || !writable || awaitingChoice || backupTimer) return;
     backupTimer = setTimeout(() => { backupTimer = null; runBackup().catch(() => {}); }, Math.max(3000, 30000 - (Date.now() - lastBackupRun)));
   }
+  // Toolbox, theme, templates and other preferences live outside the case history, so a settings change must trigger a backup on its own.
+  const settingsFingerprint = () => { try { const value = JSON.parse(settingsSnapshot()); delete value.exportedAt; return JSON.stringify(value); } catch { return ""; } };
+  let backedUpSettings = null;
+  setInterval(() => {
+    if (!backupChosen || !writable || awaitingChoice || backupTimer) return;
+    const now = settingsFingerprint();
+    if (backedUpSettings === null) { backedUpSettings = now; return; }
+    if (now !== backedUpSettings) { backedUpSettings = now; scheduleBackup(); }
+  }, 12000);
   async function chooseBackupFolder() {
     if (!supportsSync()) { backupMessage("This browser can't save to a folder. Use Chrome or Edge, or download a copy instead."); return; }
     let picked;
@@ -335,8 +344,14 @@
       applyRestore(history, settings);
       awaitingChoice = false;
       $("restoreDialog").close(); $("backupRestoreMenu")?.close();
-      report(`Restored ${kind === "history" ? "case history" : "settings"} from ${label}.${root ? " Your previous version was kept as a safety copy." : ""}`);
-      if (root) { scheduleBackup(); await refreshSummary(root); }
+      const done = `Restored ${kind === "history" ? "case history" : "settings"} from ${label}.${root ? " Your previous version was kept as a safety copy." : ""}`;
+      report(done);
+      if (root) { backedUpSettings = null; scheduleBackup(); await refreshSummary(root); }
+      // Some preferences (theme, panel layout, AI prompts, toolbox position) are read once at page load: reload so every restored setting shows.
+      if (kind === "settings") {
+        try { sessionStorage.setItem(noticeKey, done); } catch {}
+        setTimeout(() => { try { window.location.reload(); } catch {} }, 700);
+      }
     } catch (error) { $("restoreStatus").textContent = `Could not restore. Nothing was changed. ${friendlyError(error)}`; }
   }
   async function restoreSnapshot(item, when) {
@@ -463,6 +478,7 @@
   window.addEventListener("pagehide", () => { if (backupTimer) { clearTimeout(backupTimer); backupTimer = null; void runBackup().catch(() => {}); } });
   renderBackupState();
   restoreBackupFolder();
+  try { const notice = sessionStorage.getItem(noticeKey); if (notice) { sessionStorage.removeItem(noticeKey); report(`${notice} The page was reloaded so every setting shows.`); } } catch {}
   const actionDockPreferenceKey = "dell-support.case-notes.action-dock-floating";
   const actionDockToggle = $("toggleActionDock");
   let actionDockFloating = true;

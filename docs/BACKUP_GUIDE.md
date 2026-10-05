@@ -37,6 +37,16 @@ Nothing changes until you confirm, and your current data is saved as a safety co
 
 **Restore from a file…** (bottom of the Restore window) accepts a file you downloaded or copied from another computer. Case-history and settings files are told apart automatically.
 
+## What settings backups include
+
+Everything you can customize, so a restore brings your whole setup back:
+
+- **Toolbox:** your shortcut links (up to four), the order of its buttons and their colors, the launcher icon, its size, icon size, and the circle and animation options.
+- **Custom case fields** and their order, your own **AI prompts**, and personal or edited **note templates**.
+- **Preferences:** light/dark theme, floating action panel, collapsed sections and Recent Cases panel, pinned site resources, and the backup retention choice.
+
+Not included: the temporary dragged position of the toolbox, and the browser's folder permission. After a settings restore the page reloads once so every restored setting takes effect. Settings changes (for example a new toolbox color) are picked up and backed up within about a minute, even if you have not edited a note.
+
 ## Deleting backups and starting fresh
 
 In **Backup & Restore**, open **Delete backups or start fresh**:
