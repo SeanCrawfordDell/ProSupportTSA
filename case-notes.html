@@ -24,8 +24,9 @@
   <script src="js/case-rubric-core.js?v=20261005-devin-setup" defer></script>
   <script src="js/case-example-core.js?v=20261005-devin-setup" defer></script>
   <script src="js/case-rubric.js?v=20261005-devin-setup" defer></script>
-  <script src="js/case-backup-core.js?v=20261005-devin-setup" defer></script>
-  <script src="js/case-settings-core.js?v=20261005-devin-setup" defer></script>
+
+  <script src="js/case-sync-core.js?v=20261005-backup-revamp-3" defer></script>
+  <script src="js/case-settings-core.js?v=20261005-backup-revamp-3" defer></script>
   <script src="js/devin-prompt-core.js?v=20261005-devin-setup" defer></script>
   <script src="js/devin-connection-core.js?v=20261005-devin-setup" defer></script>
   <script src="js/devin-integration.js?v=20261005-devin-setup" defer></script>
@@ -35,7 +36,7 @@
 <script src="js/log-helper-core.js?v=20261005-devin-setup" defer></script>
 <script src="js/log-helper.js?v=20261005-devin-setup" defer></script>
 <script src="js/case-notes-popout.js?v=20261005-devin-setup" defer></script>
-<script src="js/case-notes.js?v=20261005-devin-setup" defer></script>
+<script src="js/case-notes.js?v=20261005-backup-revamp-4" defer></script>
 <script src="js/guided-tour.js?v=20261005-devin-setup" defer></script>
 <script src="js/case-notes-demo.js?v=20261005-devin-setup" defer></script>
 <script src="js/case-toolbox-icons.js?v=20261005-devin-setup" defer></script>
@@ -55,8 +56,6 @@
     <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div></section>
     <p class="notice" id="lockNotice" role="status">Opening case history…</p>
     <p class="notice page-status" id="pageStatus" role="status" tabindex="-1" hidden></p>
-    <div class="notice recovery-actions" id="recoveryActions" hidden><button class="button primary" id="recoverFromBackup" type="button" disabled aria-haspopup="dialog">Restore History and/or Site Settings from Backup</button></div>
-    <div class="notice backup-warning" id="backupWarningBanner" role="status" hidden><span id="backupWarningMessage"></span><span class="backup-warning-actions"><button class="button primary" id="configureBackups" type="button">Configure Backups</button><button class="button secondary" id="dismissBackupWarning" type="button">Remind me in a week</button></span></div>
     <p class="notice" id="notesWindowStatus" role="status"></p><button class="button secondary" id="compactNotesFallback" type="button" hidden>Use compact view here</button>
     <div class="case-work-area" id="caseWorkArea">
     <button class="button secondary" id="toggleHistory" type="button" aria-controls="caseHistory" aria-expanded="true">Hide Recent Cases</button>
@@ -190,61 +189,20 @@
   <p id="caseRecoveryStatus" role="status"></p>
   <button class="button secondary" id="closeCaseRecovery" type="button">Close</button>
 </dialog>
-<dialog id="backupRestoreMenu" class="toolkit-dialog backup-dialog" aria-labelledby="backupRestoreTitle">
-<h2 id="backupRestoreTitle">Backup &amp; Restore</h2>
-<p class="dropdown-label">Case history</p>
-<div class="history-backup"><button class="dropdown-item" id="backupHistory" type="button" disabled>Backup Case History</button><button class="dropdown-item" id="restoreHistory" type="button" disabled aria-haspopup="dialog">Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" class="dropdown-status" role="status"></p></div>
-<p class="dropdown-label">Site configuration</p>
-<div class="backup-location"><button class="dropdown-item" id="downloadSettings" type="button">Backup Site Configuration</button><input id="settingsFile" type="file" accept=".json,application/json" hidden><button class="dropdown-item" id="restoreSettings" type="button" aria-haspopup="dialog">Restore Settings</button></div>
-<p class="dropdown-label">Backup folder</p>
-<p id="backupSummary" class="dropdown-status" role="status"></p>
-<button class="dropdown-item" id="chooseBackupFolder" type="button">Set Backup Folder</button>
-<label class="dropdown-field" for="backupRetention"><span>Keep snapshots</span><select id="backupRetention"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="never">Forever (no cleanup)</option></select></label>
-<button class="dropdown-item" id="cleanupBackups" type="button">Clean Up Old Snapshots</button>
-<p id="backupFolderStatus" class="dropdown-status" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration, note snapshots, and an <strong>images</strong> subfolder for screenshots.</p>
-<p class="dropdown-help">Notes autosave in this browser. With folder access approved, <strong>case-history.json</strong> is refreshed every minute while this page is open and changes are present, a dated snapshot is kept once per hour, and older automatic snapshots are removed by the retention setting. Manual backups and safety copies are always kept. Clearing browser data removes local history.</p>
-<button class="button secondary" id="closeBackupRestore" type="button">Close</button>
-</dialog>
-<dialog id="backupSnoozeDialog" class="toolkit-dialog backup-snooze-dialog" aria-labelledby="backupSnoozeTitle" aria-describedby="backupSnoozeHelp">
-  <h2 id="backupSnoozeTitle">Continue without backups?</h2>
-  <p id="backupSnoozeHelp" class="backup-snooze-warning"><strong>If you reset your browser or delete browser data, all of this app's settings and notes history will be lost.</strong> Case Notes only saves to this browser until a backup folder is set up.</p>
-  <div class="backup-snooze-actions"><button class="button primary" id="snoozeConfigureBackups" type="button">Configure Backups</button><button class="button secondary" id="confirmBackupSnooze" type="button">I understand, remind me in a week</button><button class="button secondary" id="cancelBackupSnooze" type="button">Cancel</button></div>
-</dialog>
-<dialog id="recoveryRestoreDialog" class="toolkit-dialog" aria-labelledby="recoveryRestoreTitle" aria-describedby="recoveryRestoreHelp">
-  <h2 id="recoveryRestoreTitle">Restore from Backup</h2>
-  <p id="recoveryRestoreHelp">Choose the backup you want to restore. Case-history backups are named <strong>case-history.json</strong> or <strong>case-history-YYYY-MM-DD_HHMMSS.json</strong>. Site-settings backups are named <strong>customer-config.json</strong> or <strong>customer-config-YYYY-MM-DD_HHMMSS.json</strong>. Manual and safety backups include <strong>-manual</strong> or <strong>-before-reason</strong> before the date.</p>
-  <div class="backup-location">
-    <button class="button primary" id="recoverHistoryFromBackup" type="button">Choose case-history backup</button>
-    <button class="button secondary" id="recoverSettingsFromBackup" type="button">Choose site-settings backup</button>
-  </div>
-  <p id="recoveryRestoreStatus" class="history-help" role="status"></p>
-  <button class="button secondary" id="cancelRecoveryRestore" type="button">Cancel</button>
-</dialog>
-<dialog id="restoreHistoryDialog" class="toolkit-dialog" aria-labelledby="restoreHistoryTitle" aria-describedby="restoreHistoryHelp">
-  <h2 id="restoreHistoryTitle">Restore History</h2>
-  <p id="restoreHistoryHelp">Choose where to restore case history from. You will review a confirmation before anything is replaced. Settings are restored separately.</p>
-  <div class="backup-location">
-    <button class="button" id="restoreHistoryFromFolder" type="button" aria-describedby="restoreHistoryFolderHint">From backup folder</button>
-    <button class="button secondary" id="restoreHistoryFromFile" type="button">Choose a file</button>
-  </div>
-  <p id="restoreHistoryFolderHint" class="history-help"></p>
-  <button class="button secondary" id="cancelRestoreHistory" type="button">Cancel</button>
-</dialog>
-<dialog id="backupBrowserDialog" class="toolkit-dialog" aria-labelledby="backupBrowserTitle" aria-describedby="backupBrowserStatus">
-  <h2 id="backupBrowserTitle">Snapshots in ProSupportToolsBackup</h2>
-  <p id="backupBrowserStatus" class="history-help" role="status"></p>
-  <div id="backupBrowserList" class="backup-browser-list" role="list"></div>
-  <button class="button secondary" id="closeBackupBrowser" type="button">Cancel</button>
-</dialog>
-<dialog id="restoreSettingsDialog" class="toolkit-dialog" aria-labelledby="restoreSettingsTitle" aria-describedby="restoreSettingsHelp">
-  <h2 id="restoreSettingsTitle">Restore Settings</h2>
-  <p id="restoreSettingsHelp">Choose where to restore your settings from. You will review a confirmation before settings are replaced. Case notes are kept.</p>
-  <div class="backup-location">
-    <button class="button" id="restoreSettingsFromFolder" type="button" aria-describedby="restoreSettingsFolderHint">From backup folder</button>
-    <button class="button secondary" id="restoreSettingsFromFile" type="button">Choose a file</button>
-  </div>
-  <p id="restoreSettingsFolderHint" class="history-help"></p>
-  <button class="button secondary" id="cancelRestoreSettings" type="button">Cancel</button>
+<dialog id="syncSettingsMenu" class="toolkit-dialog" aria-labelledby="syncSettingsTitle">
+<h2 id="syncSettingsTitle">Sync Settings</h2>
+<p class="dropdown-label">OneDrive sync</p>
+<p id="syncFolderStatus" class="dropdown-status" role="status">Choose a OneDrive-synced folder to automatically save case-history.json and customer-config.json. The OneDrive desktop client will sync these files to the cloud.</p>
+<p id="syncFolderPath" class="dropdown-status" role="status"></p>
+<button class="dropdown-item" id="chooseSyncFolder" type="button">Set Sync Folder</button>
+<div class="sync-restore-actions" aria-label="Restore from sync folder">
+  <p class="dropdown-label">Restore from this folder</p>
+  <button class="dropdown-item" id="restoreSyncHistory" type="button" disabled>Restore Case History</button>
+  <button class="dropdown-item" id="restoreSyncSettings" type="button" disabled>Restore Site Settings</button>
+  <button class="dropdown-item" id="restoreSyncBoth" type="button" disabled>Restore Both</button>
+</div>
+<p class="dropdown-help">Notes autosave in this browser. With a sync folder configured, case history and settings are written to <strong>case-history.json</strong> and <strong>customer-config.json</strong> on every save. On another machine, select the same folder and restore the files you need. The browser does not expose the full local OS path for security reasons, so the location shown is the folder name available to the browser.</p>
+<button class="button secondary" id="closeSyncSettings" type="button">Close</button>
 </dialog>
 <dialog id="templateManager" class="toolkit-dialog" aria-labelledby="templateManagerTitle">
   <div class="toolkit-dialog-heading"><h2 id="templateManagerTitle">Manage templates</h2><button class="button secondary" id="closeTemplateManager" type="button">Close</button></div>

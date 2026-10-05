@@ -1,15 +1,13 @@
 "use strict";
 const CaseSettings = (() => {
   const templateCore = typeof module !== "undefined" ? require("./case-toolkit-core.js") : CaseToolkitCore;
-  const backupCore = typeof module !== "undefined" ? require("./case-backup-core.js") : CaseBackup;
   const keys = {
     aiTasks: "dell-support.custom-ai-tasks", theme: "theme", templates: "dell-support.case-templates.v1",
     floating: "dell-support.case-notes.action-dock-floating",
     historyCollapsed: "dell-support.case-history-collapsed",
-    sections: "dell-support.case-notes-sections", pins: "dell-support.pinned-resources.v1",
-    backupRetention: "dell-support.backup-retention-days"
+    sections: "dell-support.case-notes-sections", pins: "dell-support.pinned-resources.v1"
   };
-  const rawKeys = ["theme", "floating", "historyCollapsed", "backupRetention"];
+  const rawKeys = ["theme", "floating", "historyCollapsed"];
   const object = value => value && typeof value === "object" && !Array.isArray(value);
   function validate(config, fields) {
     const bad = () => { throw Error("Invalid settings backup. No settings were changed."); };
@@ -49,7 +47,6 @@ const CaseSettings = (() => {
         if (name === "templates") templateCore.validateTemplates(value);
         if (name === "theme" && ![null,"dark","light"].includes(value)) bad();
         if (["floating","historyCollapsed"].includes(name) && ![null,"true","false"].includes(value)) bad();
-        if (name === "backupRetention" && value !== null && !Object.hasOwn(backupCore.RETENTION_OPTIONS, value)) bad();
         if (name === "sections" && (!object(value) || Object.keys(value).some(id => !["caseDetails","notes","actionPlan"].includes(id)) || Object.values(value).some(v => typeof v !== "boolean"))) bad();
         if (name === "pins" && (!Array.isArray(value) || value.some(id => typeof id !== "string"))) bad();
         if (name === "aiTasks") {

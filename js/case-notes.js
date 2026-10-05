@@ -7,10 +7,9 @@
   let savedState = null;
   let summaryCaseId = null;
   let notesPopout, devinIntegration;
-  let backupBusy = false, lastBackupSignature = "", lastSettingsSignature = "", lastBackupAt = null, lastDatedBackupAt = null;
-  const backupTimeKey = "dell-support.last-backup-at", datedBackupKey = "dell-support.last-dated-backup-at", settingsSignatureKey = "dell-support.last-settings-signature";
-  const retentionKey = "dell-support.backup-retention-days", cleanupEnabledKey = "dell-support.backup-cleanup-enabled", warningSnoozeKey = "dell-support.backup-warning-snoozed-until";
-  try { lastBackupAt = localStorage.getItem(backupTimeKey); lastDatedBackupAt = localStorage.getItem(datedBackupKey); lastSettingsSignature = localStorage.getItem(settingsSignatureKey) || ""; } catch {}
+  let syncFolderHandle = null;
+  let syncFolderParentName = null;
+  let syncBusy = false;
   // Keep the case actions available at the top of the workspace while scrolling.
   const actionDock = document.getElementById("copyActions");
   const caseWorkArea = $("caseWorkArea");
@@ -19,18 +18,13 @@
     newNote: "Start a new case with its first dated note and begin time tracking.",
     loadExampleNote: "Load a sample case note you can safely explore.",
     openTraining: "Tutorial Demo and Load Example.",
-    openSettingsMenu: "Settings: customize case fields and manage backups.",
-    openBackupRestore: "Back up, restore, and clean up case history and site configuration.",
+    openSettingsMenu: "Settings: customize case fields and configure sync.",
+    openSyncSettings: "Configure OneDrive sync for case history and settings.",
     openToolsMenu: "Tools hub and support tool catalogs.",
     tutorialDemo: "See a guided tour of Case Notes and the toolbox.",
     customizeFields: "Choose which case fields appear and their order.",
     toggleHistory: "Show or hide the list of saved case notes.",
-    backupHistory: "Save a backup of all case history and customer configuration.",
-    chooseBackupFolder: "Choose a OneDrive-synced Documents folder for ProSupportToolsBackup.",
-    restoreSettings: "Restore saved settings from your backup folder or a chosen file.",
-    downloadSettings: "Save site configuration (fields, templates, toolbox, and preferences) to your configured backup folder, or download it if no folder is connected.",
-    restoreHistory: "Restore case notes from a snapshot in your backup folder or from a file.",
-    cleanupBackups: "Remove older automatic snapshots according to the retention setting. Manual backups and safety copies are kept.",
+    chooseSyncFolder: "Choose a OneDrive-synced folder to save case-history.json and customer-config.json.",
     stopTimer: "Stop time tracking for the current case.",
     emailNote: "Download the case notes as an email draft with screenshots.",
     escalateNote: "Open a pre-filled escalation request using these case details.",
@@ -55,75 +49,63 @@
     });
   }
   addButtonTooltips();
-  const backupFolderButton = $("chooseBackupFolder");
-  const restoreSettingsButton = $("restoreSettings");
-  const backupFolderStatus = $("backupFolderStatus");
-  const backupFolderDbName = "dell-support.case-notes.backup-folder";
-  let backupFolderHandle = null;
-  const supportsBackupFolder = () => typeof window.showDirectoryPicker === "function" && typeof indexedDB !== "undefined";
-  function setBackupFolderStatus(message) {
-    if (backupFolderStatus) backupFolderStatus.textContent = message;
-    void refreshBackupFolderButton();
+  const syncFolderButton = $("chooseSyncFolder");
+  const syncFolderStatus = $("syncFolderStatus");
+  const syncFolderPath = $("syncFolderPath");
+  const restoreSyncButtons = [$("restoreSyncHistory"), $("restoreSyncSettings"), $("restoreSyncBoth")];
+  const supportsSync = () => typeof window.showDirectoryPicker === "function" && typeof indexedDB !== "undefined";
+  const syncFolderLabel = () => syncFolderParentName && syncFolderParentName !== syncFolderHandle?.name
+    ? `${syncFolderParentName}/${syncFolderHandle.name}`
+    : syncFolderHandle?.name || "";
+  function refreshSyncFolderPath() {
+    if (syncFolderPath) syncFolderPath.textContent = syncFolderHandle
+      ? `Selected sync folder: ${syncFolderLabel()} (the browser cannot expose the full device path)`
+      : "No sync folder selected.";
+    restoreSyncButtons.forEach(button => { if (button) button.disabled = !syncFolderHandle || syncBusy; });
   }
-  async function refreshBackupFolderButton() {
-    if (!backupFolderButton) return;
+  function setSyncFolderStatus(message) {
+    if (syncFolderStatus) syncFolderStatus.textContent = message;
+    refreshSyncFolderPath();
+    void refreshSyncFolderButton();
+  }
+  async function refreshSyncFolderButton() {
+    if (!syncFolderButton) return;
     let connected = false;
-    try { connected = !!backupFolderHandle && await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted"; } catch {}
-    backupFolderButton.textContent = !backupFolderHandle ? "Set Backup Folder" : connected ? "Change Backup Folder" : "Reconnect Backup Folder";
-    backupFolderButton.title = connected ? "Choose a different backup location." : backupFolderHandle ? "Approve access to your saved backup folder." : "Choose a OneDrive-synced Documents folder for ProSupportToolsBackup.";
+    try { connected = !!syncFolderHandle && await syncFolderHandle.queryPermission({mode:"readwrite"}) === "granted"; } catch {}
+    syncFolderButton.textContent = !syncFolderHandle ? "Set Sync Folder" : connected ? "Change Sync Folder" : "Reconnect Sync Folder";
+    syncFolderButton.title = connected ? "Choose a different sync location." : syncFolderHandle ? "Approve access to your saved sync folder." : "Choose a OneDrive-synced folder to save case-history.json and customer-config.json.";
   }
-  function backupFolderStore(mode, callback) {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(backupFolderDbName, 1);
-      request.onupgradeneeded = () => request.result.createObjectStore("folders");
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const transaction = request.result.transaction("folders", mode);
-        const store = transaction.objectStore("folders");
-        const result = callback(store);
-        transaction.oncomplete = () => { request.result.close(); resolve(result?.result); };
-        transaction.onabort = transaction.onerror = () => { request.result.close(); reject(transaction.error); };
-      };
-    });
-  }
-  async function restoreBackupFolder() {
-    if (!supportsBackupFolder()) return;
+  async function restoreSyncFolder() {
+    if (!supportsSync()) return;
     try {
-      backupFolderHandle = await backupFolderStore("readonly", store => store.get("pros-support-tools"));
-      if (backupFolderHandle) {
-        const permission = await backupFolderHandle.queryPermission({mode:"readwrite"});
-        setBackupFolderStatus(permission === "granted" ? "Automatic backups enabled while Case Notes is open. " + backupTimeLabel() : "Backup folder needs permission. Select Reconnect Backup Folder to resume. " + backupTimeLabel());
+      const restored = await CaseSync.restoreFolder();
+      syncFolderHandle = restored.handle;
+      syncFolderParentName = restored.parentName;
+      if (syncFolderHandle) {
+        const permission = await syncFolderHandle.queryPermission({mode:"readwrite"});
+        const folderLabel = syncFolderParentName ? ` (${syncFolderParentName}/${syncFolderHandle.name})` : syncFolderHandle.name ? ` (${syncFolderHandle.name})` : "";
+        setSyncFolderStatus(permission === "granted" ? `Live sync enabled while Case Notes is open.${folderLabel}` : `Sync folder needs permission${folderLabel}. Select Reconnect Sync Folder to resume.`);
       }
-    } catch { backupFolderHandle = null; }
+    } catch { syncFolderHandle = null; }
   }
-  async function storeBackupFolder(handle) {
-    await backupFolderStore("readwrite", store => store.put(handle, "pros-support-tools"));
-  }
-  async function ensureBackupFolderPermission() {
-    if (!backupFolderHandle) return false;
-    const options = { mode: "readwrite" };
-    if (await backupFolderHandle.queryPermission(options) === "granted") return true;
-    return (await backupFolderHandle.requestPermission(options)) === "granted";
-  }
-  async function chooseBackupFolder() {
-    if (!supportsBackupFolder()) {
-      setBackupFolderStatus("This browser cannot store directly in a selected folder. Use Chrome or Edge, or download a backup manually.");
+  async function chooseSyncFolder() {
+    if (!supportsSync()) {
+      setSyncFolderStatus("This browser cannot store directly in a selected folder. Use Chrome or Edge.");
       return false;
     }
     try {
-      const selectedFolder = await window.showDirectoryPicker({ id: "pro-support-tools-backups", mode: "readwrite" });
-      backupFolderHandle = selectedFolder.name === "ProSupportToolsBackup" ? selectedFolder : await selectedFolder.getDirectoryHandle("ProSupportToolsBackup", { create:true });
-      await storeBackupFolder(backupFolderHandle);
-      lastBackupSignature = ""; lastSettingsSignature = ""; lastDatedBackupAt = null;
-      setBackupFolderStatus("Backup folder ready. The latest snapshot is refreshed every minute while Case Notes is open and changes are present. Use Backup Case History to save now.");
-      hideBackupWarning(); void refreshBackupSummary();
+      const selectedFolder = await window.showDirectoryPicker({ id: "pro-support-tools-sync", mode: "readwrite" });
+      syncFolderHandle = selectedFolder;
+      syncFolderParentName = selectedFolder.name;
+      await CaseSync.storeFolder(syncFolderHandle, syncFolderParentName);
+      const folderLabel = syncFolderParentName ? ` (${syncFolderParentName}/${syncFolderHandle.name})` : syncFolderHandle.name ? ` (${syncFolderHandle.name})` : "";
+      setSyncFolderStatus(`Sync folder ready${folderLabel}. Files are written on every save.`);
       return true;
     } catch (error) {
-      if (error?.name !== "AbortError") setBackupFolderStatus("Backup folder was not set. You can still download a backup manually.");
+      if (error?.name !== "AbortError") setSyncFolderStatus("Sync folder was not set.");
       return false;
     }
   }
-  function backupTimeLabel() { return lastBackupAt ? "Last successful backup: " + new Date(lastBackupAt).toLocaleString() + "." : "No successful folder backup yet."; }
   function settingsSnapshot() {
     const storedJson = (storageKey, fallback) => {
       try { return JSON.parse(localStorage.getItem(storageKey) || JSON.stringify(fallback)); } catch { return fallback; }
@@ -135,405 +117,101 @@
         shortcuts:storedJson("dell-support.toolbox-links.v1", []),
         appearance:storedJson("dell-support.toolbox-appearance.v1", { order:[], colors:{} })
       },
-      preferences:capturePreferences()
+      preferences:CaseSettings.capture(localStorage)
     }, null, 2);
   }
-  let skippedPreferences = [];
-  function capturePreferences() { const preferences = CaseSettings.capture(localStorage); skippedPreferences = preferences.skipped; return preferences; }
-  const skippedNotice = () => skippedPreferences.length ? ` Damaged saved setting${skippedPreferences.length > 1 ? "s" : ""} left out of the backup: ${skippedPreferences.join(", ")}. Re-save ${skippedPreferences.length > 1 ? "them" : "it"} in Settings.` : "";
-  const settingsSignatureOf = config => { const parsed = JSON.parse(config); delete parsed.exportedAt; return JSON.stringify(parsed); };
-  const retentionSetting = () => { try { return localStorage.getItem(retentionKey) ?? CaseBackup.DEFAULT_RETENTION; } catch { return CaseBackup.DEFAULT_RETENTION; } };
-  const cleanupEnabled = () => { try { return localStorage.getItem(cleanupEnabledKey) === "true"; } catch { return false; } };
-  function retentionLabel() { const days = CaseBackup.retentionDays(retentionSetting()); return days === null ? "Keeping every snapshot." : `Keeping ${days} days of snapshots.`; }
-  // Folder writes run one at a time so a manual or safety backup never races the automatic one.
-  let backupQueue = Promise.resolve();
-  function queueBackup(task) { const run = backupQueue.then(task, task); backupQueue = run.catch(() => {}); return run; }
-  async function writeFile(folder, name, content) {
-    const writer = await (await folder.getFileHandle(name, { create:true })).createWritable();
-    try { await writer.write(content); await writer.close(); }
-    catch (error) { try { await writer.abort(); } catch {} throw error; }
-  }
-  async function readFolderFile(folder, name) { return (await folder.getFileHandle(name)).getFile(); }
-  const imageName = path => path.slice(CaseBackup.IMAGES_DIR.length + 1);
-  // Screenshots are content-addressed, so a file that already exists never needs rewriting.
-  async function writeImageFiles(files) {
-    if (!files.size) return;
-    const dir = await backupFolderHandle.getDirectoryHandle(CaseBackup.IMAGES_DIR, { create:true });
-    for (const [path, dataUrl] of files) {
-      try { await dir.getFileHandle(imageName(path)); continue; } catch (error) { if (error?.name !== "NotFoundError") throw error; }
-      await writeFile(dir, imageName(path), CaseBackup.dataUrlToBytes(dataUrl));
-    }
-  }
-  async function loadImageFromFolder(path) {
-    let file;
-    try { file = await readFolderFile(await backupFolderHandle.getDirectoryHandle(CaseBackup.IMAGES_DIR), imageName(path)); }
-    catch (error) { if (error?.name === "NotFoundError") return null; throw error; }
-    return CaseBackup.bytesToDataUrl(new Uint8Array(await file.arrayBuffer()), path);
-  }
-  async function listFolderFiles(folder) {
-    const files = [];
-    if (!folder || typeof folder.entries !== "function") return files;
-    for await (const [name, handle] of folder.entries()) {
-      if (handle?.kind !== "file") continue;
-      let size = 0, modified = 0;
-      try { const file = await handle.getFile(); size = file.size || 0; modified = file.lastModified || 0; } catch {}
-      files.push({ name, size, modified });
-    }
-    return files;
-  }
-  async function listImageFiles() {
-    try { return await listFolderFiles(await backupFolderHandle.getDirectoryHandle(CaseBackup.IMAGES_DIR)); } catch { return []; }
-  }
-  // Writes screenshots, the latest history file, a dated snapshot when due, and settings. kind: auto | manual | safety.
-  // Automatic runs keep one dated snapshot per hour; manual and safety runs always add one.
-  function writeHistoryBackup({ kind, reason = null, automatic = false, text = null }) {
-    if (!backupFolderHandle) return Promise.resolve(false);
-    if (automatic && backupBusy) return Promise.resolve(false);
-    return queueBackup(async () => {
-      backupBusy = true;
-      try {
-        if (automatic) {
-          if (await backupFolderHandle.queryPermission({mode:"readwrite"}) !== "granted") {
-            setBackupFolderStatus("Automatic backup paused: select Reconnect Backup Folder to approve access. " + backupTimeLabel());
-            return false;
-          }
-        } else if (!await ensureBackupFolderPermission()) return false;
-        const now = Date.now();
-        const { state: external, files } = await CaseBackup.externalizeImages(JSON.parse(text || CaseNotes.backup(state, now)));
-        const history = JSON.stringify(external, null, 2);
-        await writeImageFiles(files);
-        const datedDue = kind !== "auto" || !lastDatedBackupAt || now - new Date(lastDatedBackupAt).getTime() >= CaseBackup.HOUR;
-        if (datedDue) await writeFile(backupFolderHandle, CaseBackup.fileName("history", kind, now, reason), history);
-        // Record the hourly snapshot as soon as it exists, so a later failure cannot cause one every minute.
-        if (kind === "auto" && datedDue) { lastDatedBackupAt = new Date(now).toISOString(); try { localStorage.setItem(datedBackupKey, lastDatedBackupAt); } catch {} }
-        await writeFile(backupFolderHandle, CaseBackup.LATEST_HISTORY, history);
-        lastBackupAt = new Date(now).toISOString();
-        try { localStorage.setItem(backupTimeKey, lastBackupAt); } catch {}
-        // Case history is safe at this point; a settings failure is reported on its own.
-        let settingsSaved = true;
-        try {
-          const config = settingsSnapshot(), signature = settingsSignatureOf(config);
-          if (signature !== lastSettingsSignature) {
-            await writeFile(backupFolderHandle, CaseBackup.fileName("settings", "auto", now), config);
-            lastSettingsSignature = signature; try { localStorage.setItem(settingsSignatureKey, signature); } catch {}
-          }
-          await writeFile(backupFolderHandle, CaseBackup.LATEST_SETTINGS, config);
-        } catch { settingsSaved = false; }
-        setBackupFolderStatus((kind === "safety" ? `Safety copy saved before ${reason.replace(/-/g, " ")}. ` : "Automatic backups enabled. ") + (settingsSaved ? "" : "Case history was saved, but site configuration could not be written; it will be retried. ") + backupTimeLabel() + skippedNotice());
-        if (kind === "auto" && datedDue) scheduleCleanup();
-        return true;
-      } finally { backupBusy = false; }
-    });
-  }
-  async function automaticBackup() {
-    if (!writable || loadFailed || copying || backupBusy || !backupFolderHandle) return;
-    // Back up even when the browser save fails: the folder copy may then be the only copy of recent edits.
-    save();
-    try {
-      const signature = JSON.stringify([state, settingsSignatureOf(settingsSnapshot())]);
-      if (signature === lastBackupSignature) return;
-      if (await writeHistoryBackup({ kind:"auto", automatic:true })) lastBackupSignature = signature;
-    } catch { setBackupFolderStatus("Automatic backup failed. Check folder access and available disk space. " + backupTimeLabel()); }
-  }
-  // Snapshot the current history before an action that cannot be undone. Skipped silently without a folder.
-  async function safetySnapshot(reason) {
-    if (!backupFolderHandle || loadFailed) return false;
-    const text = CaseNotes.backup(state, Date.now());
-    try { return await writeHistoryBackup({ kind:"safety", reason, text }); } catch { return false; }
-  }
-  // Before an action that cannot be undone: true when it is safe to continue. Without a folder there is nothing to try.
-  async function confirmSafetySnapshot(reason) {
-    if (!backupFolderHandle || loadFailed) return true;
-    if (await safetySnapshot(reason)) return true;
-    return confirm("The safety copy could not be saved to the backup folder. Check folder access and disk space. Continue anyway without a safety copy?");
-  }
-  async function cleanupPlan() {
-    const files = await listFolderFiles(backupFolderHandle);
-    return { files, ...CaseBackup.retentionPlan(files, { now: Date.now(), days: CaseBackup.retentionDays(retentionSetting()) }) };
-  }
-  // Delete screenshot files no remaining snapshot references. Any unreadable snapshot aborts the sweep.
-  async function removeUnreferencedImages(keptNames) {
-    const images = await listImageFiles();
-    if (!images.length) return 0;
-    const refs = new Set();
-    for (const name of keptNames) {
-      const info = CaseBackup.parseFileName(name);
-      if (!info || info.type !== "history" || info.legacy) continue;
-      try { for (const ref of CaseBackup.imageReferences(JSON.parse(await (await readFolderFile(backupFolderHandle, name)).text()))) refs.add(ref); }
-      catch { return 0; }
-    }
-    const dir = await backupFolderHandle.getDirectoryHandle(CaseBackup.IMAGES_DIR);
-    let removed = 0;
-    for (const image of images) {
-      const path = CaseBackup.IMAGES_DIR + "/" + image.name;
-      if (!CaseBackup.isImagePath(path) || refs.has(path)) continue;
-      await dir.removeEntry(image.name); removed++;
-    }
-    return removed;
-  }
-  function cleanupBackups({ automatic = false } = {}) {
-    if (!backupFolderHandle) return Promise.resolve(null);
-    return queueBackup(async () => {
-      backupBusy = true;
-      try {
-        if (automatic ? await backupFolderHandle.queryPermission({mode:"readwrite"}) !== "granted" : !await ensureBackupFolderPermission()) return null;
-        const plan = await cleanupPlan();
-        for (const file of plan.remove) await backupFolderHandle.removeEntry(file.name);
-        const images = plan.remove.length ? await removeUnreferencedImages(plan.keep) : 0;
-        return { ...plan, images };
-      } finally { backupBusy = false; }
-    });
-  }
-  // Runs after each hourly snapshot. Until the user enables cleanup once, it only reports what could be removed.
-  function scheduleCleanup() {
-    if (CaseBackup.retentionDays(retentionSetting()) === null) return;
-    if (!cleanupEnabled()) {
-      void queueBackup(cleanupPlan).then(plan => {
-        if (plan.remove.length) setBackupFolderStatus(`${plan.remove.length} older snapshot${plan.remove.length === 1 ? "" : "s"} (${CaseBackup.formatBytes(plan.removedBytes)}) can be removed. Open Backup & Restore and choose Clean Up Old Snapshots to turn on automatic cleanup. ` + backupTimeLabel());
-      }).catch(() => {});
+  async function syncFiles() {
+    if (!syncFolderHandle || syncBusy) return;
+    if (!await CaseSync.ensurePermission(syncFolderHandle)) {
+      setSyncFolderStatus("Sync folder needs permission. Select Reconnect Sync Folder to resume.");
       return;
     }
-    void cleanupBackups({ automatic:true }).then(result => {
-      if (result?.remove.length) setBackupFolderStatus(`Cleanup removed ${result.remove.length} older snapshot${result.remove.length === 1 ? "" : "s"} (${CaseBackup.formatBytes(result.removedBytes)}). ${retentionLabel()} ` + backupTimeLabel());
-      void refreshBackupSummary();
-    }).catch(() => {});
-  }
-  async function refreshBackupSummary() {
-    const summary = $("backupSummary");
-    if (!summary) return;
-    if (!backupFolderHandle) { summary.textContent = (supportsBackupFolder() ? "No backup folder connected. Backups download to this device. " : "This browser cannot connect a backup folder. Backups download to this device. ") + dataLossWarning; return; }
+    syncBusy = true;
+    refreshSyncFolderPath();
     try {
-      if (await backupFolderHandle.queryPermission({mode:"readwrite"}) !== "granted") { summary.textContent = "Backup folder needs permission. " + backupTimeLabel(); return; }
-      const files = await listFolderFiles(backupFolderHandle), images = await listImageFiles();
-      const totals = CaseBackup.summarize(files);
-      const bytes = totals.bytes + images.reduce((sum, file) => sum + file.size, 0);
-      summary.textContent = `${totals.snapshots} snapshot${totals.snapshots === 1 ? "" : "s"} · ${CaseBackup.formatBytes(bytes)} · ${retentionLabel()}`;
-    } catch { summary.textContent = "Backup folder could not be read. " + backupTimeLabel(); }
+      const historyJson = JSON.stringify(state, null, 2);
+      await CaseSync.writeHistory(syncFolderHandle, historyJson);
+      const settingsJson = settingsSnapshot();
+      await CaseSync.writeSettings(syncFolderHandle, settingsJson);
+      setSyncFolderStatus(`Synced (${syncFolderLabel()}) · ${new Date().toLocaleTimeString()}`);
+    } catch (error) {
+      setSyncFolderStatus("Sync failed. Check folder access and try again.");
+    } finally {
+      syncBusy = false;
+      refreshSyncFolderPath();
+    }
   }
-  const retentionSelect = $("backupRetention");
-  if (retentionSelect) {
-    retentionSelect.value = retentionSetting();
-    retentionSelect.addEventListener("change", () => {
-      if (!Object.hasOwn(CaseBackup.RETENTION_OPTIONS, retentionSelect.value)) return;
-      try { localStorage.setItem(retentionKey, retentionSelect.value); localStorage.setItem(cleanupEnabledKey, "true"); } catch {}
-      setBackupFolderStatus(retentionLabel() + (CaseBackup.retentionDays(retentionSelect.value) === null ? "" : " Automatic cleanup runs after each hourly snapshot."));
-      void refreshBackupSummary();
-    });
-  }
-  $("cleanupBackups")?.addEventListener("click", async () => {
-    if (!backupFolderHandle) { setBackupFolderStatus("Set a backup folder before cleaning up snapshots."); return; }
-    try {
-      if (!await ensureBackupFolderPermission()) { setBackupFolderStatus("Folder access was not approved. Nothing was removed."); return; }
-      const days = CaseBackup.retentionDays(retentionSetting());
-      if (days === null) { setBackupFolderStatus("Retention is set to keep every snapshot. Choose a retention period to enable cleanup."); return; }
-      const plan = await queueBackup(cleanupPlan);
-      if (!plan.remove.length) { try { localStorage.setItem(cleanupEnabledKey, "true"); } catch {} setBackupFolderStatus("Nothing to clean up. " + retentionLabel() + " Automatic cleanup runs after each hourly snapshot."); await refreshBackupSummary(); return; }
-      const tiers = `every snapshot from the last 24 hours, one per day for ${Math.min(days, 30)} days${days > 30 ? `, then one per week for ${days} days` : ""}`;
-      if (!confirm(`Remove ${plan.remove.length} older automatic snapshot${plan.remove.length === 1 ? "" : "s"} (${CaseBackup.formatBytes(plan.removedBytes)})? Kept: ${tiers}, plus all manual backups and safety copies. OneDrive keeps removed files in its recycle bin. Automatic cleanup then runs after each hourly snapshot.`)) return;
-      try { localStorage.setItem(cleanupEnabledKey, "true"); } catch {}
-      const result = await cleanupBackups();
-      if (!result) { setBackupFolderStatus("Folder access was not approved. Nothing was removed."); return; }
-      setBackupFolderStatus(`Removed ${result.remove.length} snapshot${result.remove.length === 1 ? "" : "s"} and ${result.images} unused screenshot file${result.images === 1 ? "" : "s"}. ${retentionLabel()}`);
-      await refreshBackupSummary();
-    } catch { setBackupFolderStatus("Cleanup did not finish. Check folder access and try again. Nothing else was changed."); }
-  });
-  const reportSettings = message => { report(message, "backupFolderStatus"); void refreshBackupFolderButton(); };
-  async function restoreSettings(importedConfig = null) {
-    const recoveryOnly = loadFailed && recovering;
-    if ((!writable && !recoveryOnly) || copying || (!recoveryOnly && !save())) return;
-    if (!backupFolderHandle && !importedConfig) {
-      reportSettings("Set the backup folder first, then restore customer-config.json from ProSupportToolsBackup.");
+  async function restoreFromSync(kind) {
+    if (!syncFolderHandle || syncBusy || !writable || copying) return;
+    if (!await CaseSync.ensurePermission(syncFolderHandle)) {
+      setSyncFolderStatus("Sync folder needs permission. Reconnect the folder before restoring.");
       return;
     }
+    syncBusy = true;
+    refreshSyncFolderPath();
     try {
-      let config = importedConfig;
-      if (!config) {
-        if (!await ensureBackupFolderPermission()) throw Error("Folder access was not approved.");
-        const file = await (await backupFolderHandle.getFileHandle("customer-config.json")).getFile();
-        config = JSON.parse(await file.text());
+      const historyText = kind === "settings" ? null : await CaseSync.readFile(syncFolderHandle, CaseSync.HISTORY_FILE);
+      const settingsText = kind === "history" ? null : await CaseSync.readFile(syncFolderHandle, CaseSync.SETTINGS_FILE);
+      let restoredHistory = null, restoredSettings = null;
+      if (historyText !== null) restoredHistory = CaseNotes.parse(historyText);
+      if (settingsText !== null) {
+        restoredSettings = CaseSettings.validate(JSON.parse(settingsText), CaseNotes.fields);
+        for (const id of Object.keys(restoredSettings.fieldConfig.customFields)) {
+          if (document.getElementById(id) && !Object.hasOwn(state.fieldConfig.customFields, id)) throw Error(`A custom field ID conflicts with a page control: ${id}`);
+        }
       }
-      const settings = CaseSettings.validate(config, CaseNotes.fields);
-      for (const id of Object.keys(settings.fieldConfig.customFields)) {
-        if (document.getElementById(id) && !Object.hasOwn(state.fieldConfig.customFields,id)) throw Error("A custom field ID conflicts with a page control: " + id);
+      const labels = { history: "case history", settings: "site settings", both: "case history and site settings" };
+      if (!confirm(`Restore ${labels[kind]} from ${CaseSync.HISTORY_FILE} and/or ${CaseSync.SETTINGS_FILE}? Current local data will be replaced.`)) return;
+      const values = restoredSettings?.values || {};
+      const nextState = restoredHistory
+        ? CaseNotes.parse(JSON.stringify(restoredSettings ? { ...restoredHistory, fieldConfig: restoredSettings.fieldConfig } : restoredHistory))
+        : null;
+      if (nextState) localStorage.setItem(key, JSON.stringify(nextState));
+      if (restoredSettings) CaseSettings.commit(localStorage, values);
+      if (nextState) { state = nextState; savedState = JSON.parse(JSON.stringify(state)); }
+      if (restoredSettings && !nextState) {
+        state = CaseNotes.parse(JSON.stringify({ ...state, fieldConfig: restoredSettings.fieldConfig }));
+        localStorage.setItem(key, JSON.stringify(state));
+        savedState = JSON.parse(JSON.stringify(state));
       }
-      const prompt = recoveryOnly
-        ? "Restore the saved toolbox, AI prompts, and interface preferences? Unreadable case history will not be changed. Custom case fields can be restored after case history is recovered."
-        : "Restore the saved fields, toolbox, AI prompts, and interface preferences? Current settings will be replaced; case notes are kept.";
-      if ((!writable && !recoveryOnly) || copying || !confirm(prompt)) return;
-      let candidate = null, values = settings.values;
-      if (!recoveryOnly) {
-        candidate = CaseNotes.parse(JSON.stringify({...state,fieldConfig:settings.fieldConfig}));
-        values = {...values,[key]:JSON.stringify(candidate)};
-      }
-      CaseSettings.commit(localStorage,values);
-      if (candidate) { state = candidate; savedState = JSON.parse(JSON.stringify(state)); dirty = false; }
+      dirty = false;
       window.dispatchEvent(new Event("prosSupportToolboxRestore"));
       window.dispatchEvent(new Event("supportSettingsRestored"));
-      actionDockFloating = localStorage.getItem(actionDockPreferenceKey) !== "false"; updateActionDockMode();
-      historyCollapsed = localStorage.getItem(sidebarKey) === "true"; setHistoryCollapsed(historyCollapsed);
-      sectionState = JSON.parse(localStorage.getItem(sectionsKey) || "{}");
-      sectionIds.forEach(id => setSectionCollapsed(id,!!sectionState[id]));
-      aiTasks.loadAiTasks(); if (!recoveryOnly) render();
-      if (retentionSelect) retentionSelect.value = retentionSetting();
-      reportSettings(recoveryOnly ? "Site settings restored successfully. Unreadable case history was not changed; restore case history to recover custom case fields." : "Settings restored successfully. Case notes were kept.");
+      render();
+      setSyncFolderStatus(`Restored ${labels[kind]} from ${syncFolderLabel()}.`);
     } catch (error) {
-      reportSettings(error?.message || "Could not restore settings. Confirm customer-config.json exists in ProSupportToolsBackup.");
+      setSyncFolderStatus(error?.message || `Could not restore ${kind} from the sync folder. No local data was changed.`);
+    } finally {
+      syncBusy = false;
+      refreshSyncFolderPath();
     }
   }
-  // Backup & Restore lives under the Settings gear and opens as a dialog that stays open while its actions report status.
-  function setBackupMenu(open, focusFirst = false) {
-    const menu = $("backupRestoreMenu");
-    if (!menu) return;
-    if (open) {
-      if (!menu.open) menu.showModal();
-      void refreshBackupFolderButton(); void refreshBackupSummary();
-      if (focusFirst) [...menu.querySelectorAll("button")].find(item => !item.disabled)?.focus();
-    } else if (menu.open) menu.close();
-  }
-  $("openBackupRestore")?.addEventListener("click", async () => {
-    window.SiteTopbar?.closeMenus();
-    setBackupMenu(true, true);
-    await refreshBackupFolderButton();
-  });
-  $("closeBackupRestore")?.addEventListener("click", () => setBackupMenu(false));
-  backupFolderButton?.addEventListener("click", async () => {
+  syncFolderButton?.addEventListener("click", async () => {
     try {
-      if (!backupFolderHandle || await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted") {
-        await chooseBackupFolder();
-      } else if (await ensureBackupFolderPermission()) {
-        setBackupFolderStatus("Folder connected. " + backupTimeLabel());
-        await automaticBackup();
+      if (!syncFolderHandle || await syncFolderHandle.queryPermission({mode:"readwrite"}) === "granted") {
+        await chooseSyncFolder();
+      } else if (await CaseSync.ensurePermission(syncFolderHandle)) {
+        setSyncFolderStatus("Folder connected.");
+        await syncFiles();
       } else {
-        setBackupFolderStatus("Folder access was not approved. " + backupTimeLabel());
+        setSyncFolderStatus("Folder access was not approved.");
       }
     } catch {
-      setBackupFolderStatus("Could not reconnect. Choose your backup folder again.");
-      await chooseBackupFolder();
+      setSyncFolderStatus("Could not reconnect. Choose your sync folder again.");
+      await chooseSyncFolder();
     }
-    await refreshBackupFolderButton();
+    await refreshSyncFolderButton();
   });
-  restoreSettingsButton?.addEventListener("click", () => {
-    if (!writable || copying) return;
-    setBackupMenu(false);
-    $("restoreSettingsFromFolder").disabled = !backupFolderHandle;
-    $("restoreSettingsFolderHint").textContent = backupFolderHandle
-      ? "From backup folder reads the latest customer-config.json. Choose a file to use an older backup or a file from another computer."
-      : "No backup folder connected. Use Set Backup Folder first, or choose a settings backup file now.";
-    $("restoreSettingsDialog").showModal();
+  $("restoreSyncHistory")?.addEventListener("click", () => void restoreFromSync("history"));
+  $("restoreSyncSettings")?.addEventListener("click", () => void restoreFromSync("settings"));
+  $("restoreSyncBoth")?.addEventListener("click", () => void restoreFromSync("both"));
+  $("closeSyncSettings")?.addEventListener("click", () => $("syncSettingsMenu")?.close());
+  $("openSyncSettings")?.addEventListener("click", () => {
+    window.SiteTopbar?.closeMenus();
+    $("syncSettingsMenu")?.showModal();
+    void refreshSyncFolderButton();
   });
-  $("cancelRestoreSettings")?.addEventListener("click", () => $("restoreSettingsDialog").close());
-  $("restoreSettingsFromFolder")?.addEventListener("click", () => {
-    if (!writable || copying || !backupFolderHandle) return;
-    $("restoreSettingsDialog").close();
-    return restoreSettings();
-  });
-  $("restoreSettingsFromFile")?.addEventListener("click", () => {
-    if (!writable || copying) return;
-    $("restoreSettingsDialog").close();
-    $("settingsFile").click();
-  });
-  $("downloadSettings")?.addEventListener("click", async () => {
-    if (backupBusy) {
-      setBackupFolderStatus("A backup is already in progress. Try Backup Site Configuration again when it finishes.");
-      return;
-    }
-    // Queued with the other folder writes so an automatic backup cannot run at the same time.
-    await queueBackup(async () => {
-      const folder = backupFolderHandle;
-      backupBusy = true;
-      try {
-        if (folder && !await ensureBackupFolderPermission()) {
-          setBackupFolderStatus("Settings were not exported: folder access was not approved. Reconnect Backup Folder and try again.");
-          return;
-        }
-        const config = settingsSnapshot();
-        if (!folder) {
-          downloadFile(config,"customer-config.json","application/json");
-          setBackupFolderStatus("No backup folder connected. Settings download started. Use Set Backup Folder to save future exports directly there.");
-          return;
-        }
-        const datedName = CaseBackup.fileName("settings", "manual", Date.now());
-        for (const name of [datedName, CaseBackup.LATEST_SETTINGS]) await writeFile(folder, name, config);
-        lastSettingsSignature = settingsSignatureOf(config); try { localStorage.setItem(settingsSignatureKey, lastSettingsSignature); } catch {}
-        setBackupFolderStatus("Settings saved to ProSupportToolsBackup/customer-config.json, with a dated settings copy. Case-note backups were not changed.");
-      } catch {
-        setBackupFolderStatus(folder
-          ? "Settings backup did not finish. Check backup folder access and available disk space, then try again."
-          : "Settings backup failed. Check browser storage and download access.");
-      } finally { backupBusy = false; }
-    });
-  });
-  $("settingsFile")?.addEventListener("change", async () => {
-    const file = $("settingsFile").files[0]; $("settingsFile").value = "";
-    if (!file) return;
-    if (file.size > maxSettingsBytes) { reportSettings("That file is too large to be a customer-config.json settings backup."); return; }
-    try { await restoreSettings(JSON.parse(await file.text())); }
-    catch { reportSettings("Choose a valid customer-config.json settings backup."); }
-  });
-  const warningBanner = $("backupWarningBanner");
-  const dataLossWarning = "If you reset your browser or delete browser data, all of this app's settings and notes history will be lost.";
-  function hideBackupWarning() { if (warningBanner) warningBanner.hidden = true; }
-  // When a saved folder only needs re-approval, ask on the user's next click instead of making them find Reconnect.
-  let permissionClickArmed = false;
-  function armPermissionOnFirstClick() {
-    if (permissionClickArmed) return;
-    permissionClickArmed = true;
-    document.addEventListener?.("click", async event => {
-      if (!permissionClickArmed || !backupFolderHandle) return;
-      if (event?.target && $("backupRestoreMenu")?.contains?.(event.target)) return;
-      permissionClickArmed = false;
-      try {
-        if (await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted") return;
-        if (await backupFolderHandle.requestPermission({mode:"readwrite"}) === "granted") {
-          hideBackupWarning();
-          setBackupFolderStatus("Backup folder reconnected. " + backupTimeLabel());
-          await automaticBackup();
-        }
-      } catch {}
-      await refreshBackupFolderButton();
-    });
-  }
-  async function warnIfBackupsUnavailable() {
-    let connected = false;
-    try { connected = !!backupFolderHandle && await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted"; } catch {}
-    if (connected) { hideBackupWarning(); return; }
-    if (backupFolderHandle) armPermissionOnFirstClick();
-    let snoozedUntil = 0;
-    try { snoozedUntil = Number(localStorage.getItem(warningSnoozeKey)) || 0; } catch {}
-    if (snoozedUntil > Date.now()) return;
-    $("backupWarningMessage").textContent = backupFolderHandle
-      ? "Automatic backups are paused because your saved backup folder needs permission. Your next click on this page asks the browser for access, or open Configure Backups and select Reconnect Backup Folder. Until then, if you reset your browser or delete browser data, changes since your last backup will be lost."
-      : supportsBackupFolder()
-        ? "Automatic backups are not configured. Choose a backup folder to protect your case notes and site settings. " + dataLossWarning
-        : "Automatic backups are not configured. This browser cannot save directly to a backup folder. Use Chrome or Edge for folder backups, or open Configure Backups to download manual backups. " + dataLossWarning;
-    if (warningBanner) warningBanner.hidden = false;
-  }
-  // Snoozing needs a second, explicit step so the data-loss risk is acknowledged.
-  const snoozeDialog = $("backupSnoozeDialog");
-  function openBackupSettings() {
-    hideBackupWarning();
-    window.scrollTo?.(0, 0);
-    setBackupMenu(true, true);
-  }
-  $("dismissBackupWarning")?.addEventListener("click", () => {
-    if (!snoozeDialog) return;
-    if (!snoozeDialog.open) snoozeDialog.showModal();
-    $("confirmBackupSnooze")?.focus();
-  });
-  $("confirmBackupSnooze")?.addEventListener("click", () => {
-    snoozeDialog?.close();
-    hideBackupWarning();
-    try { localStorage.setItem(warningSnoozeKey, String(Date.now() + 7 * CaseBackup.DAY)); } catch {}
-  });
-  $("snoozeConfigureBackups")?.addEventListener("click", () => {
-    snoozeDialog?.close();
-    openBackupSettings();
-  });
-  $("cancelBackupSnooze")?.addEventListener("click", () => snoozeDialog?.close());
-  $("configureBackups")?.addEventListener("click", openBackupSettings);
-  // Check once per page visit, after the saved folder has been loaded.
-  restoreBackupFolder().then(warnIfBackupsUnavailable);
-  setInterval(automaticBackup,60000);
+  restoreSyncFolder();
   const actionDockPreferenceKey = "dell-support.case-notes.action-dock-floating";
   const actionDockToggle = $("toggleActionDock");
   let actionDockFloating = true;
@@ -764,8 +442,9 @@
       catch (error) { state.revisions = JSON.parse(previousVersions); throw error; }
       savedState = JSON.parse(text);
       dirty = false;
-      if (text.length > storageWarningChars) status(`Saved · Browser storage is ${Math.round(text.length / 50000)}% full. Delete cases from Trash or remove screenshots you no longer need, and keep backups current.`, false, true);
+      if (text.length > storageWarningChars) status(`Saved · Browser storage is ${Math.round(text.length / 50000)}% full. Delete cases from Trash or remove screenshots you no longer need.`, false, true);
       else status("Saved · " + new Date().toLocaleTimeString());
+      void syncFiles();
       return true;
     } catch {
       status("Save failed. Changes remain in this tab. Free browser storage and retry before leaving.", true);
@@ -777,27 +456,10 @@
     catch {
       loadFailed = true;
       $("lockNotice").hidden = false;
-      $("lockNotice").textContent = "Case history could not be read. Editing is disabled to protect stored notes. Reload to try again. If it still fails, restore your latest case-history backup, then optionally restore site settings.";
-      $("recoveryActions").hidden = false;
+      $("lockNotice").textContent = "Case history could not be read. Editing is disabled to protect stored notes. Reload to try again.";
     }
   }
-  $("recoverFromBackup")?.addEventListener("click", () => {
-    if (!canRestore()) return;
-    $("recoverSettingsFromBackup").disabled = false;
-    $("recoveryRestoreStatus").textContent = loadFailed ? "Either backup can be restored first. Site-settings recovery leaves unreadable case history untouched; restore history separately to recover cases and custom fields." : "Choose either backup type. Restoring one does not require restoring the other.";
-    $("recoveryRestoreDialog").showModal();
-  });
-  $("cancelRecoveryRestore")?.addEventListener("click", () => $("recoveryRestoreDialog").close());
-  $("recoverHistoryFromBackup")?.addEventListener("click", () => {
-    if (!canRestore()) return;
-    $("recoveryRestoreDialog").close();
-    $("restoreFile").click();
-  });
-  $("recoverSettingsFromBackup")?.addEventListener("click", () => {
-    if (!canRestore()) return;
-    $("recoveryRestoreDialog").close();
-    $("settingsFile").click();
-  });
+
   function history() {
     const query = $("search").value.trim().toLowerCase();
     const filter = $("followupFilter").value || "all";
@@ -839,8 +501,6 @@
       remove.addEventListener("click", async () => {
         if (!writable || copying) return;
         if (!confirm(collection === "trash" ? `Permanently delete ${caseName} and its versions? This cannot be undone.` : `Move ${caseName} to Trash? You can restore it later.`)) return;
-        if (!save()) return;
-        if (collection === "trash" && !await confirmSafetySnapshot("delete")) return;
         if (!writable || copying || !save()) return;
         const permanent = collection === "trash";
         if (!commitCaseChange(candidate => {
@@ -890,10 +550,7 @@
     $("caseRecovery").showModal();
   }
   function controls() {
-    ["restoreSettings","restoreSettingsFromFile","restoreSettingsFromFolder"].forEach(id => { if ($(id)) $(id).disabled = !writable || copying || (id === "restoreSettingsFromFolder" && !backupFolderHandle); });
     ["caseVersions","printCase"].forEach(id => { if ($(id)) $(id).disabled = !selected() || copying; });
-    $("backupHistory").disabled = loadFailed || copying;
-    ["restoreHistory","restoreHistoryFromFile","restoreHistoryFromFolder"].forEach(id => { if ($(id)) $(id).disabled = !writable || copying || (id === "restoreHistoryFromFolder" && !backupFolderHandle); });
     $("fields").disabled = !writable || copying;
     $("newNote").disabled = $("startNote").disabled = $("loadExampleNote").disabled = $("customizeFields").disabled = !writable || copying;
     $("emailNote").disabled = $("copyNote").disabled = $("escalateNote").disabled = $("copyDevin").disabled = !writable || copying;
@@ -1039,144 +696,6 @@
     await Promise.all([...printArea.querySelectorAll("img")].map(img => img.decode?.().catch(() => {})));
     window.print();
     document.body.classList.remove("printing-case"); printArea.hidden = true;
-  });
-  $("backupHistory").addEventListener("click", async () => {
-    if (loadFailed || copying) return;
-    try {
-      if (backupFolderHandle && await writeHistoryBackup({ kind:"manual" })) {
-        $("backupStatus").textContent = `Backup saved to ProSupportToolsBackup: ${state.cases.length} cases, screenshots, and customer configuration. Manual backups are never cleaned up automatically.`;
-        void refreshBackupSummary();
-        return;
-      }
-      downloadFile(CaseNotes.backup(state, Date.now()), CaseBackup.fileName("history", "manual", Date.now()), "application/json");
-      $("backupStatus").textContent = `Backup download started: ${state.cases.length} cases, including unsaved edits. Set a backup folder to also save customer configuration in ProSupportToolsBackup.`;
-    } catch {
-      $("backupStatus").textContent = "Backup could not be created. Your history has not changed. Please try again.";
-    }
-  });
-  $("restoreHistory").addEventListener("click", () => {
-    if (!writable || copying) return;
-    setBackupMenu(false);
-    $("restoreHistoryFromFolder").disabled = !backupFolderHandle;
-    $("restoreHistoryFolderHint").textContent = backupFolderHandle
-      ? "From backup folder lists the snapshots in ProSupportToolsBackup, newest first. Choose a file to use a downloaded backup or one from another computer."
-      : "No backup folder connected. Use Set Backup Folder first, or choose a history backup file now.";
-    $("restoreHistoryDialog").showModal();
-  });
-  $("cancelRestoreHistory")?.addEventListener("click", () => $("restoreHistoryDialog").close());
-  $("restoreHistoryFromFile")?.addEventListener("click", () => {
-    if (!writable || copying) return;
-    $("restoreHistoryDialog").close();
-    $("restoreFile").click();
-  });
-  $("restoreHistoryFromFolder")?.addEventListener("click", async () => {
-    if (!writable || copying || !backupFolderHandle) return;
-    $("restoreHistoryDialog").close();
-    await openBackupBrowser();
-  });
-  $("closeBackupBrowser")?.addEventListener("click", () => $("backupBrowserDialog").close());
-  const snapshotKinds = { latest:"Latest", auto:"Hourly", manual:"Manual", safety:"Safety copy" };
-  async function openBackupBrowser() {
-    const list = $("backupBrowserList"), browserStatus = $("backupBrowserStatus");
-    list.replaceChildren(); browserStatus.textContent = "Reading backup folder…";
-    $("backupBrowserDialog").showModal();
-    try {
-      if (!await ensureBackupFolderPermission()) throw Error("Folder access was not approved.");
-      const snapshots = (await listFolderFiles(backupFolderHandle))
-        .map(file => ({ ...file, info: CaseBackup.parseFileName(file.name) }))
-        .filter(file => file.info?.type === "history")
-        .sort((a, b) => (b.info.time ?? Infinity) - (a.info.time ?? Infinity) || b.modified - a.modified);
-      if (!snapshots.length) { browserStatus.textContent = "No history snapshots were found in ProSupportToolsBackup."; return; }
-      for (const file of snapshots) {
-        const button = document.createElement("button");
-        button.type = "button"; button.className = "backup-entry"; button.dataset.name = file.name;
-        const when = file.info.time ?? file.modified;
-        const kind = snapshotKinds[file.info.kind] + (file.info.reason ? " before " + file.info.reason.replace(/-/g, " ") : "");
-        button.textContent = `${when ? new Date(when).toLocaleString() : "Unknown time"} · ${kind} · ${CaseBackup.formatBytes(file.size)}`;
-        button.addEventListener("click", () => restoreFromFolderFile(file.name));
-        list.append(button);
-      }
-      browserStatus.textContent = `${snapshots.length} snapshot${snapshots.length === 1 ? "" : "s"}. Select one to review before restoring. A safety copy of your current history is saved first.`;
-    } catch (error) { browserStatus.textContent = error?.message || "The backup folder could not be read."; }
-  }
-  async function restoreFromFolderFile(name) {
-    $("backupBrowserDialog").close();
-    try {
-      const file = await readFolderFile(backupFolderHandle, name);
-      if (file.size > maxImportBytes) throw Error("That snapshot is too large to restore.");
-      await restoreHistoryText(await file.text());
-    }
-    catch (error) { report((error?.message || "The snapshot could not be read.") + " Choose another snapshot or a file. Current history was not changed."); }
-  }
-  // Backups with screenshots inline can be large, but anything past these limits cannot be a real export and would stall the tab.
-  const maxImportBytes = 200 * 1024 * 1024, maxSettingsBytes = 5 * 1024 * 1024;
-  // Shared by file uploads and folder snapshots. Screenshot references are resolved from the folder's images directory.
-  // While stored history is unreadable this tab holds the editor lock but cannot edit; it may only restore.
-  let recovering = false;
-  const canRestore = () => (writable || recovering) && !copying;
-  async function restoreHistoryText(raw) {
-    if (!canRestore()) return;
-    let restored;
-    try {
-      if (raw.trim() === "null") throw Error("Not a backup");
-      let data = JSON.parse(raw);
-      if (data && typeof data === "object" && !Array.isArray(data) && !Array.isArray(data.cases) && data.fieldConfig && (data.toolbox || data.preferences)) {
-        report("That file is a site-settings backup, not case history. Choose Restore History and/or Site Settings from Backup, then Choose site-settings backup. Current history was not changed.");
-        return;
-      }
-      if (CaseBackup.hasExternalImages(data)) {
-        if (!backupFolderHandle) {
-          report("This backup keeps screenshots in the backup folder's images subfolder. Connect that backup folder, then use Restore History and choose From backup folder. Current history was not changed.");
-          return;
-        }
-        if (!await ensureBackupFolderPermission()) throw Error("Folder access was not approved.");
-        data = await CaseBackup.inlineImages(data, loadImageFromFolder);
-      }
-      restored = CaseNotes.parse(JSON.stringify(data));
-      // A custom field renders as an input with its ID, so it must not take the ID of a page control.
-      for (const id of Object.keys(restored.fieldConfig.customFields)) {
-        if (!Object.hasOwn(state.fieldConfig.customFields,id) && document.getElementById(id)) throw Error("A custom field ID in this backup conflicts with a page control: " + id + ".");
-      }
-      // Backups freeze elapsed time; never count time spent in an archive.
-      restored.cases.forEach(note => { note.started = null; });
-    } catch (error) {
-      report(/Screenshot file missing|Folder access|conflicts with a page control/.test(error?.message || "")
-        ? error.message + " Current history was not changed."
-        : "Invalid or unsupported backup. Choose a Case Notes JSON backup with at most 100 cases. Current history was not changed.");
-      return;
-    }
-    const safety = backupFolderHandle ? "A safety copy of your current history is saved to the backup folder first." : "Download a backup first if you want to keep them.";
-    if (!confirm(`Restore ${restored.cases.length} recent, ${restored.archive.length} archived and ${restored.trash.length} deleted cases, plus their versions? This replaces your current history, archive and Trash, including unsaved edits. ${safety} Restored timers will be stopped.`)) return;
-    if (!await confirmSafetySnapshot("restore")) { report("Restore cancelled. Current history was not changed."); return; }
-    if (!canRestore()) return;
-    try {
-      // Commit to storage before replacing in-memory notes, so failure is non-destructive.
-      localStorage.setItem(key, JSON.stringify(restored));
-    } catch {
-      report("Restore could not be saved. Check available browser storage and try again. Current history was not changed.");
-      return;
-    }
-    state = restored; savedState = JSON.parse(JSON.stringify(state)); dirty = false;
-    if (recovering) {
-      recovering = false; loadFailed = false; writable = true; $("lockNotice").hidden = true; $("recoveryActions").hidden = true;
-      $("recoverSettingsFromBackup").disabled = false;
-      $("recoveryRestoreStatus").textContent = "Case history was restored. You can now restore customer-config.json site settings, or close this dialog.";
-      $("recoveryRestoreDialog").showModal();
-    }
-    $("search").value = "";
-    status("Saved"); render();
-    $("copyStatus").textContent = "";
-    report(`Restored ${state.cases.length} cases. Timers are stopped; editing a case resumes tracking.`);
-  }
-  $("restoreFile").addEventListener("change", async () => {
-    const file = $("restoreFile").files[0];
-    $("restoreFile").value = "";
-    if (!file || !canRestore()) return;
-    if (file.size > maxImportBytes) { report("That file is too large to be a Case Notes backup. Current history was not changed."); return; }
-    let raw;
-    try { raw = await file.text(); } catch { report("The selected file could not be read. Current history was not changed."); return; }
-    if (!canRestore()) return;
-    await restoreHistoryText(raw);
   });
   $("stopTimer").addEventListener("click", () => {
     const note = selected();
@@ -1375,8 +894,8 @@
     const removed = Object.keys(state.fieldConfig.customFields).filter(id => !Object.hasOwn(draft.customFields, id));
     if (removed.length) {
       const names = removed.map(id => `"${state.fieldConfig.customFields[id]}"`).join(", ");
-      if (!confirm(`Remove ${names} and their values from recent cases, Archive, Trash, and saved versions? ${backupFolderHandle ? "A safety copy is saved to the backup folder first." : "Existing backup files are not changed."}`)) return;
-      if (!save() || !await confirmSafetySnapshot("field-removal") || !writable || copying || fieldDraft !== draft) return;
+      if (!confirm(`Remove ${names} and their values from recent cases, Archive, Trash, and saved versions?`)) return;
+      if (!save() || !writable || copying || fieldDraft !== draft) return;
     }
     try {
       if (!save()) throw Error("Could not save your current notes. Retry saving before changing fields.");
@@ -1397,8 +916,8 @@
   });
   $("resetFields").addEventListener("click", async () => {
     if (!writable || copying) return;
-    if (confirm(`Reset field order and remove custom fields and their values from recent cases, Archive, Trash, and saved versions? This cannot be undone. ${backupFolderHandle ? "A safety copy is saved to the backup folder first." : "Existing backup files are not changed."}`)) {
-      if (!save() || !await confirmSafetySnapshot("field-reset") || !writable || copying) return;
+    if (confirm(`Reset field order and remove custom fields and their values from recent cases, Archive, Trash, and saved versions? This cannot be undone.`)) {
+      if (!save() || !writable || copying) return;
       CaseNotes.resetCustomFields(state);
       dirty = true;
       if (!save()) return;
@@ -1604,15 +1123,14 @@
       $("lockNotice").textContent = "Read-only while another tab is editing Case Notes. Close that tab to edit here.";
     }
     try {
-      await navigator.locks.request("dell-support.case-notes.editor", async () => {
-        load();
-        if (loadFailed) {
-          // Hold the lock so no other tab writes over the unreadable data, and allow only a restore.
-          recovering = true; $("recoverFromBackup").disabled = false;
-          await new Promise(resolve => { release = resolve; });
-          recovering = false;
+      await navigator.locks.request("dell-support.case-notes.editor", { ifAvailable: true }, async lock => {
+        if (lock === null) {
+          $("lockNotice").hidden = false;
+          $("lockNotice").textContent = "Read-only while another tab is editing Case Notes. Close that tab to edit here.";
           return;
         }
+        load();
+        if (loadFailed) return;
         if(notesPopout?.caseId) {
           if(!state.cases.some(note=>note.id===notesPopout.caseId)) {
             state.selected=null;notesPopout.unavailable();render();
