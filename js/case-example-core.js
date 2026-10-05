@@ -67,11 +67,7 @@ const CaseExample = (() => {
   const workflow = {
     recentChange: "Windows Update installed Broadcom NetXtreme-E driver 226.0.145.0 (previously 225.0.4.0) on HV-NODE-02 two days before the first drop. No firmware, switch, or VM configuration changes.",
     severity: "Service degraded",
-    results: {
-      events: "Event ID 27 on NIC port 2 within 2 seconds of every drop on HV-NODE-02; none on HV-NODE-01 or HV-NODE-03.",
-      logs: "LogCollector bundle on the SR file share. Driver 226.0.145.0 is installed on HV-NODE-02 only.",
-      tsr: "iDRAC TSR: NIC firmware 22.31.6 on all nodes; no hardware faults in the Lifecycle Controller log."
-    },
+    results: {},
     fix: "Rolled the Broadcom NetXtreme-E driver on HV-NODE-02 back from 226.0.145.0 to 225.0.4.0, the version validated with firmware 22.31.6, and deferred driver updates from Windows Update.",
     verification: "Continuous ping from three VMs to the gateway for 60 minutes during live migration of 4 VMs: 0 packets lost and no Event ID 27. No user-reported drops in the 11 hours since the change.",
     confirmed: true,
