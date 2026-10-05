@@ -5,6 +5,13 @@ window.CaseToolkit = (() => {
   const readTemplates=()=>window.localStorage ? core.loadTemplates(window.localStorage) : {};
   function refreshTemplates() {
     const select=$("caseIssueType"),id=api?.current()?.toolkit?.issueType || "general";
+    const osSelect=$("os");
+
+    // If Systems Management is selected, don't override the issue type dropdown
+    if(osSelect.value==="Systems Management") {
+      return;
+    }
+
     try {
       const catalog=core.templateCatalog(readTemplates());
       select.replaceChildren(...Object.entries(catalog).map(([key,item])=>{const option=document.createElement("option");option.value=key;option.textContent=item.name;return option;}));
@@ -15,7 +22,7 @@ window.CaseToolkit = (() => {
     } catch { $("applyTemplate").disabled=true;$("templateStatus").textContent="Template settings could not be read. Restore a valid settings backup before applying templates."; }
   }
   const notify=text=>$("toolkitStatus").textContent=text;
-  const bindings={caseIssueType:"issueType",followupOwner:"owner",followupStatus:"status",caseImpact:"impact",caseQuestions:"questions",customerDraft:"customerDraft",summaryDraft:"summaryDraft"};
+  const bindings={caseIssueType:"issueType",followupOwner:"owner",followupStatus:"status",caseImpact:"impact",caseQuestions:"questions",customerDraft:"customerDraft",summaryDraft:"summaryDraft",productApp:"productApp"};
   function localDate(iso) {
     if(!iso)return "";
     const date=new Date(iso), pad=n=>String(n).padStart(2,"0");

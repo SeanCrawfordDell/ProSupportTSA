@@ -13,11 +13,12 @@ const CaseToolkitCore = (() => {
     hyperv: { name:"Hyper-V / virtual machines", prompts:["Affected VM and Hyper-V host", "VM state and exact error", "Host versus guest symptoms", "Incident time and workload", "Recent VM, host, or switch changes", "Hyper-V events and configuration evidence"] },
     cluster: { name:"Failover clustering", prompts:["Cluster and affected nodes", "Failed role or resource", "Failover time and time zone", "Quorum and node-state observations", "Recent cluster or storage changes", "Cluster logs and System event location"] },
     updates: { name:"Windows Update / installation failures", prompts:["Failed KB, role, or installation", "OS build and exact error code", "Failure time and installation stage", "Update source and reboot state", "Recent servicing changes", "Windows Update, CBS, DISM, or setup log location"] },
-    smb: { name:"File shares / SMB / permissions", prompts:["Affected client, server, and share", "Exact access error and incident time", "User scope and expected permissions", "Read versus write behavior", "Recent share or security changes", "SMB logs and permission evidence"] }
+    smb: { name:"File shares / SMB / permissions", prompts:["Affected client, server, and share", "Exact access error and incident time", "User scope and expected permissions", "Read versus write behavior", "Recent share or security changes", "SMB logs and permission evidence"] },
+    "fix ME OMSA": { name:"fix ME OMSA", prompts:["OMSA version and build", "Affected system or component", "Exact error message and incident time", "Recent OMSA or system changes", "OMSA logs and diagnostic location", "Troubleshooting actions and results"] }
   };
   const statuses = ["Open", "In progress", "Waiting on customer", "Completed"];
   const templateStorageKey = "dell-support.case-templates.v1";
-  const validTemplateId = id => typeof id === "string" && (Object.hasOwn(templates,id) || /^custom-[a-zA-Z0-9-]{1,80}$/.test(id));
+  const validTemplateId = id => typeof id === "string" && (Object.hasOwn(templates,id) || id === "fix ME OMSA" || /^custom-[a-zA-Z0-9-]{1,80}$/.test(id));
   const defaultNext = "Action: [Add next action]\nOwner: [Assign owner]\nFollow-up: [Agree date and time]";
   function validateTemplates(value) {
     if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 100) throw Error("Invalid template settings");
@@ -34,14 +35,14 @@ const CaseToolkitCore = (() => {
   }
   function loadTemplates(storage) { return validateTemplates(JSON.parse(storage.getItem(templateStorageKey) || "{}")); }
   function saveTemplates(storage,overrides) { const validated=validateTemplates(overrides);storage.setItem(templateStorageKey,JSON.stringify(validated));return validated; }
-  function defaults() { return { issueType:"general", impact:"", questions:"", owner:"", due:"", status:"Open", checks:{}, timeline:[], timelineAction:"", timelineResult:"", customerDraft:"", summaryDraft:"" }; }
+  function defaults() { return { issueType:"general", impact:"", questions:"", owner:"", due:"", status:"Open", checks:{}, timeline:[], timelineAction:"", timelineResult:"", customerDraft:"", summaryDraft:"", productApp:"" }; }
   function ensure(note) {
     if (!note.toolkit) note.toolkit = defaults();
     return note.toolkit;
   }
   function validate(note) {
     const data = ensure(note);
-    if (!data || typeof data !== "object" || !validTemplateId(data.issueType) || !statuses.includes(data.status) || !["impact","questions","owner","due","customerDraft","summaryDraft","timelineAction","timelineResult"].every(k=>typeof data[k]==="string") || (data.due && !Number.isFinite(Date.parse(data.due))) || !data.checks || typeof data.checks!=="object" || Array.isArray(data.checks) || !Object.values(data.checks).every(v=>typeof v==="boolean") || !Array.isArray(data.timeline) || !data.timeline.every(e=>e && typeof e.id==="string" && Number.isFinite(e.at) && e.at>=0 && typeof e.action==="string" && typeof e.result==="string")) throw Error("Invalid case toolkit data");
+    if (!data || typeof data !== "object" || !validTemplateId(data.issueType) || !statuses.includes(data.status) || !["impact","questions","owner","due","customerDraft","summaryDraft","timelineAction","timelineResult","productApp"].every(k=>typeof data[k]==="string") || (data.due && !Number.isFinite(Date.parse(data.due))) || !data.checks || typeof data.checks!=="object" || Array.isArray(data.checks) || !Object.values(data.checks).every(v=>typeof v==="boolean") || !Array.isArray(data.timeline) || !data.timeline.every(e=>e && typeof e.id==="string" && Number.isFinite(e.at) && e.at>=0 && typeof e.action==="string" && typeof e.result==="string")) throw Error("Invalid case toolkit data");
     Workflow?.validate(note);
     return data;
   }
@@ -70,7 +71,8 @@ const CaseToolkitCore = (() => {
     "VCF": ["vcf", "Identify the affected VCF component; collect ESXi/vCenter bundles when those components are involved", "Broadcom ESXi / vCenter collection", "https://knowledge.broadcom.com/external/article/326299"],
     "Azure Stack Hub": ["ash", "Collect the requested Azure Stack Hub diagnostic logs with support guidance", "Microsoft Azure Stack Hub collection", "https://learn.microsoft.com/en-us/azure-stack/operator/azure-stack-get-azurestacklog"],
     "No OS": ["noos", "No OS in scope: export the iDRAC SupportAssist collection (TSR) and Lifecycle Controller log", "Export a SupportAssist collection via iDRAC", "https://www.dell.com/support/kbdoc/en-us/000126308/export-a-supportassist-collection-via-idrac9"],
-    "Azure Local": ["azlocal", "Collect Azure Local diagnostic logs for the affected nodes and incident window", "Microsoft Azure Local collection", "https://learn.microsoft.com/en-us/azure/azure-local/manage/collect-logs"]
+    "Azure Local": ["azlocal", "Collect Azure Local diagnostic logs for the affected nodes and incident window", "Microsoft Azure Local collection", "https://learn.microsoft.com/en-us/azure/azure-local/manage/collect-logs"],
+    "Systems Management": ["sysmgmt", "Collect OMSA logs and iDRAC SupportAssist collection for the affected system", "OMSA log collection guide", "https://www.dell.com/support/kbdoc/en-us/000126308/export-a-supportassist-collection-via-idrac9"]
   };
   function checklist(note) {
     const data=ensure(note);

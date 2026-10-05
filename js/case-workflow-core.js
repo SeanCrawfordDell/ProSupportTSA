@@ -27,6 +27,9 @@ const CaseWorkflowCore = (() => {
     } else if(os==="Windows Server") {
       if(issue==="performance" && /hyper-v|hyperv|virtual machine/.test(text))ids.push("perf");
       ids.push("events","logs");
+    } else if(os==="Systems Management") {
+      // Systems Management specific recommendations could be added here
+      ids.push("tsr");
     }
     if(/poweredge|idrac/.test(text))ids.push("tsr");
     return [...new Set(ids)].slice(0,3).map(id=>({id,name:tools[id][1],why:tools[id][2],url:catalog+tools[id][0]}));

@@ -55,7 +55,7 @@
     <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div></section>
     <p class="notice" id="lockNotice" role="status">Opening case history…</p>
     <p class="notice page-status" id="pageStatus" role="status" tabindex="-1" hidden></p>
-    <div class="notice recovery-actions" id="recoveryActions" hidden><button class="button secondary" id="downloadStoredData" type="button">Download stored data</button><button class="button primary" id="recoverFromFile" type="button" disabled>Restore History from file</button></div>
+    <div class="notice recovery-actions" id="recoveryActions" hidden><button class="button primary" id="recoverFromBackup" type="button" disabled aria-haspopup="dialog">Restore History and/or Site Settings from Backup</button></div>
     <div class="notice backup-warning" id="backupWarningBanner" role="status" hidden><span id="backupWarningMessage"></span><span class="backup-warning-actions"><button class="button primary" id="configureBackups" type="button">Configure Backups</button><button class="button secondary" id="dismissBackupWarning" type="button">Remind me in a week</button></span></div>
     <p class="notice" id="notesWindowStatus" role="status"></p><button class="button secondary" id="compactNotesFallback" type="button" hidden>Use compact view here</button>
     <div class="case-work-area" id="caseWorkArea">
@@ -97,6 +97,7 @@
                 <div class="field-grid">
                   <label class="field">OS/Solution<select id="os"><option value="">Select OS/Solution</option><option value="Azure Local">Azure Local</option><option value="Azure Stack Hub">Azure Stack Hub</option><option value="Debian">Debian</option><option value="ESX">ESX</option><option value="Nutanix">Nutanix</option><option value="OpenShift">OpenShift</option><option value="Redhat">Redhat</option><option value="Systems Management">Systems Management</option><option value="Ubuntu">Ubuntu</option><option value="VCF">VCF</option><option value="Windows Server">Windows Server</option><option value="No OS">No OS</option></select></label>
                   <label class="field">Issue type<select id="caseIssueType"><option value="general">General investigation</option><option value="boot">Boot failure</option><option value="crash">Crash / unexpected restart</option><option value="network">Network connectivity</option><option value="performance">Performance degradation</option></select></label>
+                  <label class="field" id="productAppLabel" hidden>Product/Application<select id="productApp"><option value="">Select product/application</option><option value="OMSA WOOT">OMSA WOOT</option></select></label>
                   <label class="field">Service Impact<select data-workflow-field="severity"><option>Unspecified</option><option>Service unavailable</option><option>Service degraded</option><option>Deployment</option><option>How-to / planning</option></select></label>
                   <label class="field wide">Recent change<textarea data-workflow-field="recentChange" class="auto-grow" rows="1" maxlength="2000" placeholder="What changed before the issue began?"></textarea></label>
                 </div>
@@ -208,6 +209,16 @@
   <h2 id="backupSnoozeTitle">Continue without backups?</h2>
   <p id="backupSnoozeHelp" class="backup-snooze-warning"><strong>If you reset your browser or delete browser data, all of this app's settings and notes history will be lost.</strong> Case Notes only saves to this browser until a backup folder is set up.</p>
   <div class="backup-snooze-actions"><button class="button primary" id="snoozeConfigureBackups" type="button">Configure Backups</button><button class="button secondary" id="confirmBackupSnooze" type="button">I understand, remind me in a week</button><button class="button secondary" id="cancelBackupSnooze" type="button">Cancel</button></div>
+</dialog>
+<dialog id="recoveryRestoreDialog" class="toolkit-dialog" aria-labelledby="recoveryRestoreTitle" aria-describedby="recoveryRestoreHelp">
+  <h2 id="recoveryRestoreTitle">Restore from Backup</h2>
+  <p id="recoveryRestoreHelp">Choose the backup you want to restore. Case-history backups are named <strong>case-history.json</strong> or <strong>case-history-YYYY-MM-DD_HHMMSS.json</strong>. Site-settings backups are named <strong>customer-config.json</strong> or <strong>customer-config-YYYY-MM-DD_HHMMSS.json</strong>. Manual and safety backups include <strong>-manual</strong> or <strong>-before-reason</strong> before the date.</p>
+  <div class="backup-location">
+    <button class="button primary" id="recoverHistoryFromBackup" type="button">Choose case-history backup</button>
+    <button class="button secondary" id="recoverSettingsFromBackup" type="button">Choose site-settings backup</button>
+  </div>
+  <p id="recoveryRestoreStatus" class="history-help" role="status"></p>
+  <button class="button secondary" id="cancelRecoveryRestore" type="button">Cancel</button>
 </dialog>
 <dialog id="restoreHistoryDialog" class="toolkit-dialog" aria-labelledby="restoreHistoryTitle" aria-describedby="restoreHistoryHelp">
   <h2 id="restoreHistoryTitle">Restore History</h2>

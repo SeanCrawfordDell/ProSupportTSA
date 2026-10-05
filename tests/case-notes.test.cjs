@@ -53,6 +53,20 @@ test('automatic folder backups write notes and settings and skip unchanged data'
   assert.match(h.get('backupFolderStatus').textContent,/Last successful backup/);
   files.clear();await backup();assert.equal(files.size,0);
 });
+test('history and site-settings backups restore the data that was backed up', async () => {
+  const folder=fakeFolder();const h=harness({folder});await new Promise(setImmediate);
+  h.click('newNote');h.edit('notes','Backed up notes');
+  h.get('backupRetention').value='90';h.get('backupRetention').listeners.change();
+  await h.click('backupHistory');
+  const history=folder.files.get('case-history.json'),settings=folder.files.get('customer-config.json');
+  assert.ok(history);assert.ok(settings);
+  h.edit('notes','Changed after backup');h.get('backupRetention').value='7';h.get('backupRetention').listeners.change();
+  h.get('restoreFile').files=[{size:history.length,text:async()=>history}];await h.get('restoreFile').listeners.change();
+  assert.equal(C.parse(h.stored()).cases[0].notes,'Backed up notes');
+  h.get('settingsFile').files=[{size:settings.length,text:async()=>settings}];await h.get('settingsFile').listeners.change();
+  assert.equal(h.ctx.localStorage.getItem('dell-support.backup-retention-days'),'90');
+  assert.match(h.get('backupFolderStatus').textContent,/Settings restored successfully/);
+});
 test('automatic folder backups pause without prompting when permission is missing', async () => {
   let writes=0,requests=0;
   const folder={queryPermission:async()=> 'prompt',requestPermission:async()=>{requests++;return 'granted';},async getFileHandle(){writes++;throw Error('unexpected write');}};
@@ -127,7 +141,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
     }
   }
   get('fields').querySelector=sel=>sel==='.field-grid'?fieldGrid:null;
-  const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../js/devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
+  const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../js/devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f},dispatchEvent(event){events[event.type]?.(event);}},Event,localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
   ctx.CaseSettings = require('../js/case-settings-core.js');
   ctx.CaseToolkitCore = require('../js/case-toolkit-core.js');
   ctx.CaseBackup = require('../js/case-backup-core.js');
@@ -820,17 +834,28 @@ test('Load Example never archives a real case when Recent cases is full',()=>{
   h.click('loadExampleNote');
   assert.equal(h.stored(),before);assert.match(h.get('pageStatus').textContent,/Recent cases is full/);
 });
-test('unreadable stored history can be downloaded and replaced from a backup file',async()=>{
+test('unreadable stored history is replaced from a named backup before optional site settings',async()=>{
   const h=harness({initial:'{"version":3,"cases":"broken"}'});await new Promise(setImmediate);
-  assert.equal(h.get('recoveryActions').hidden,false);assert.equal(h.get('recoverFromFile').disabled,false);
-  assert.match(h.get('lockNotice').textContent,/download the stored data/);
-  const downloads=[];h.ctx.URL={createObjectURL(blob){downloads.push(blob);return 'blob:x';},revokeObjectURL(){}};h.ctx.Blob=Blob;h.ctx.setTimeout=()=>{};
-  h.ctx.document.body={append(link){link.remove=()=>{};}};
-  h.click('downloadStoredData');assert.equal(await downloads[0].text(),'{"version":3,"cases":"broken"}');
-  h.click('recoverFromFile');assert.equal(h.get('restoreFile').clickCount,1);
-  const backup=C.empty();C.create(backup,'saved',1000).notes='Recovered';
+  assert.equal(h.get('recoveryActions').hidden,false);assert.equal(h.get('recoverFromBackup').disabled,false);
+  assert.doesNotMatch(h.get('lockNotice').textContent,/download the stored data/i);
+  h.click('recoverFromBackup');assert.equal(h.get('recoveryRestoreDialog').open,true);
+  assert.equal(h.get('recoverSettingsFromBackup').disabled,false);assert.match(h.get('recoveryRestoreStatus').textContent,/Either backup/);
+  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+  assert.ok(!html.includes('downloadStoredData'));assert.match(html,/case-history-YYYY-MM-DD_HHMMSS\.json/);assert.match(html,/customer-config-YYYY-MM-DD_HHMMSS\.json/);
+  h.click('recoverSettingsFromBackup');assert.equal(h.get('settingsFile').clickCount,1);
+  const settings={fieldConfig:C.empty().fieldConfig,toolbox:{shortcuts:[],appearance:{order:[],colors:{}}},preferences:{backupRetention:'90'}};
+  h.get('settingsFile').files=[{size:100,text:async()=>JSON.stringify(settings)}];await h.get('settingsFile').listeners.change();
+  assert.equal(h.stored(),'{"version":3,"cases":"broken"}');assert.equal(h.ctx.localStorage.getItem('dell-support.backup-retention-days'),'90');
+  assert.match(h.get('backupFolderStatus').textContent,/Unreadable case history was not changed/);
+  h.click('recoverFromBackup');h.click('recoverHistoryFromBackup');assert.equal(h.get('restoreFile').clickCount,1);
+  h.get('restoreFile').files=[{size:100,text:async()=>JSON.stringify(settings)}];await h.get('restoreFile').listeners.change();
+  assert.match(h.get('pageStatus').textContent,/site-settings backup, not case history/);assert.equal(h.stored(),'{"version":3,"cases":"broken"}');
+  h.click('recoverFromBackup');h.click('recoverHistoryFromBackup');
+  const backup=C.empty();C.create(backup,'saved',1000).notes='Recovered';delete backup.cases[0].productApp;
   h.get('restoreFile').files=[{size:100,text:async()=>JSON.stringify(backup)}];await h.get('restoreFile').listeners.change();
   assert.equal(C.parse(h.stored()).cases[0].notes,'Recovered');
   assert.equal(h.get('recoveryActions').hidden,true);assert.equal(h.get('lockNotice').hidden,true);
+  assert.equal(h.get('recoveryRestoreDialog').open,true);assert.equal(h.get('recoverSettingsFromBackup').disabled,false);
+  h.click('recoverSettingsFromBackup');assert.equal(h.get('settingsFile').clickCount,2);
   h.edit('notes','Editing again');assert.equal(C.parse(h.stored()).cases[0].started!==undefined,true);
 });

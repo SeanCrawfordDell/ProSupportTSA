@@ -339,7 +339,8 @@
   });
   const reportSettings = message => { report(message, "backupFolderStatus"); void refreshBackupFolderButton(); };
   async function restoreSettings(importedConfig = null) {
-    if (!writable || copying || !save()) return;
+    const recoveryOnly = loadFailed && recovering;
+    if ((!writable && !recoveryOnly) || copying || (!recoveryOnly && !save())) return;
     if (!backupFolderHandle && !importedConfig) {
       reportSettings("Set the backup folder first, then restore customer-config.json from ProSupportToolsBackup.");
       return;
@@ -355,19 +356,26 @@
       for (const id of Object.keys(settings.fieldConfig.customFields)) {
         if (document.getElementById(id) && !Object.hasOwn(state.fieldConfig.customFields,id)) throw Error("A custom field ID conflicts with a page control: " + id);
       }
-      if (!writable || copying || !confirm("Restore the saved fields, toolbox, AI prompts, and interface preferences? Current settings will be replaced; case notes are kept.")) return;
-      const candidate = CaseNotes.parse(JSON.stringify({...state,fieldConfig:settings.fieldConfig}));
-      CaseSettings.commit(localStorage,{...settings.values,[key]:JSON.stringify(candidate)});
-      state = candidate; savedState = JSON.parse(JSON.stringify(state)); dirty = false;
+      const prompt = recoveryOnly
+        ? "Restore the saved toolbox, AI prompts, and interface preferences? Unreadable case history will not be changed. Custom case fields can be restored after case history is recovered."
+        : "Restore the saved fields, toolbox, AI prompts, and interface preferences? Current settings will be replaced; case notes are kept.";
+      if ((!writable && !recoveryOnly) || copying || !confirm(prompt)) return;
+      let candidate = null, values = settings.values;
+      if (!recoveryOnly) {
+        candidate = CaseNotes.parse(JSON.stringify({...state,fieldConfig:settings.fieldConfig}));
+        values = {...values,[key]:JSON.stringify(candidate)};
+      }
+      CaseSettings.commit(localStorage,values);
+      if (candidate) { state = candidate; savedState = JSON.parse(JSON.stringify(state)); dirty = false; }
       window.dispatchEvent(new Event("prosSupportToolboxRestore"));
       window.dispatchEvent(new Event("supportSettingsRestored"));
       actionDockFloating = localStorage.getItem(actionDockPreferenceKey) !== "false"; updateActionDockMode();
       historyCollapsed = localStorage.getItem(sidebarKey) === "true"; setHistoryCollapsed(historyCollapsed);
       sectionState = JSON.parse(localStorage.getItem(sectionsKey) || "{}");
       sectionIds.forEach(id => setSectionCollapsed(id,!!sectionState[id]));
-      aiTasks.loadAiTasks(); render();
+      aiTasks.loadAiTasks(); if (!recoveryOnly) render();
       if (retentionSelect) retentionSelect.value = retentionSetting();
-      reportSettings("Settings restored successfully. Case notes were kept.");
+      reportSettings(recoveryOnly ? "Site settings restored successfully. Unreadable case history was not changed; restore case history to recover custom case fields." : "Settings restored successfully. Case notes were kept.");
     } catch (error) {
       reportSettings(error?.message || "Could not restore settings. Confirm customer-config.json exists in ProSupportToolsBackup.");
     }
@@ -769,18 +777,27 @@
     catch {
       loadFailed = true;
       $("lockNotice").hidden = false;
-      $("lockNotice").textContent = "Case history could not be read. Editing is disabled to protect stored notes. Reload to try again. If it still fails, download the stored data to keep a copy, then restore your latest backup file.";
+      $("lockNotice").textContent = "Case history could not be read. Editing is disabled to protect stored notes. Reload to try again. If it still fails, restore your latest case-history backup, then optionally restore site settings.";
       $("recoveryActions").hidden = false;
     }
   }
-  $("downloadStoredData")?.addEventListener("click", () => {
-    let raw = null;
-    try { raw = localStorage.getItem(key); } catch {}
-    if (raw === null) { report("Browser storage could not be read, so there is nothing to download. Check that site data is allowed for this page."); return; }
-    downloadFile(raw, "case-notes-stored-data-" + new Date().toISOString().slice(0, 10) + ".json", "application/json");
-    report("Stored data download started. Keep this file: it holds your notes exactly as the browser stored them.");
+  $("recoverFromBackup")?.addEventListener("click", () => {
+    if (!canRestore()) return;
+    $("recoverSettingsFromBackup").disabled = false;
+    $("recoveryRestoreStatus").textContent = loadFailed ? "Either backup can be restored first. Site-settings recovery leaves unreadable case history untouched; restore history separately to recover cases and custom fields." : "Choose either backup type. Restoring one does not require restoring the other.";
+    $("recoveryRestoreDialog").showModal();
   });
-  $("recoverFromFile")?.addEventListener("click", () => { if (canRestore()) $("restoreFile").click(); });
+  $("cancelRecoveryRestore")?.addEventListener("click", () => $("recoveryRestoreDialog").close());
+  $("recoverHistoryFromBackup")?.addEventListener("click", () => {
+    if (!canRestore()) return;
+    $("recoveryRestoreDialog").close();
+    $("restoreFile").click();
+  });
+  $("recoverSettingsFromBackup")?.addEventListener("click", () => {
+    if (!canRestore()) return;
+    $("recoveryRestoreDialog").close();
+    $("settingsFile").click();
+  });
   function history() {
     const query = $("search").value.trim().toLowerCase();
     const filter = $("followupFilter").value || "all";
@@ -1103,6 +1120,10 @@
     try {
       if (raw.trim() === "null") throw Error("Not a backup");
       let data = JSON.parse(raw);
+      if (data && typeof data === "object" && !Array.isArray(data) && !Array.isArray(data.cases) && data.fieldConfig && (data.toolbox || data.preferences)) {
+        report("That file is a site-settings backup, not case history. Choose Restore History and/or Site Settings from Backup, then Choose site-settings backup. Current history was not changed.");
+        return;
+      }
       if (CaseBackup.hasExternalImages(data)) {
         if (!backupFolderHandle) {
           report("This backup keeps screenshots in the backup folder's images subfolder. Connect that backup folder, then use Restore History and choose From backup folder. Current history was not changed.");
@@ -1136,7 +1157,12 @@
       return;
     }
     state = restored; savedState = JSON.parse(JSON.stringify(state)); dirty = false;
-    if (recovering) { recovering = false; loadFailed = false; writable = true; $("lockNotice").hidden = true; $("recoveryActions").hidden = true; }
+    if (recovering) {
+      recovering = false; loadFailed = false; writable = true; $("lockNotice").hidden = true; $("recoveryActions").hidden = true;
+      $("recoverSettingsFromBackup").disabled = false;
+      $("recoveryRestoreStatus").textContent = "Case history was restored. You can now restore customer-config.json site settings, or close this dialog.";
+      $("recoveryRestoreDialog").showModal();
+    }
     $("search").value = "";
     status("Saved"); render();
     $("copyStatus").textContent = "";
@@ -1582,7 +1608,7 @@
         load();
         if (loadFailed) {
           // Hold the lock so no other tab writes over the unreadable data, and allow only a restore.
-          recovering = true; $("recoverFromFile").disabled = false;
+          recovering = true; $("recoverFromBackup").disabled = false;
           await new Promise(resolve => { release = resolve; });
           recovering = false;
           return;
