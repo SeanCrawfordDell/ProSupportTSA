@@ -81,6 +81,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
   const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../js/devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f},dispatchEvent(event){events[event.type]?.(event);}},Event,localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,optionsOrCallback,maybeCallback){const callback=typeof optionsOrCallback==='function'?optionsOrCallback:maybeCallback;if(locked)return new Promise(()=>{});return callback({});}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
   ctx.CaseSettings = require('../js/case-settings-core.js');
   ctx.CaseToolkitCore = require('../js/case-toolkit-core.js');
+  ctx.CaseBackup = require('../js/case-backup-core.js');
   ctx.CaseSync = require('../js/case-sync-core.js');
   ctx.CaseExample = require('../js/case-example-core.js');
   ctx.localStorage = {

@@ -367,6 +367,34 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .backup-entry { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--ink); font:500 13px Inter,"Segoe UI",Arial,sans-serif; text-align:left; cursor:pointer; }
 .backup-entry:hover, .backup-entry:focus-visible { border-color:var(--blue); background:var(--secondary-hover); color:var(--blue); }
 .backup-entry:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
-.backup-dialog { width:min(460px, calc(100vw - 32px)); padding:18px 12px 16px; }
+.backup-dialog { padding:18px 12px 16px; }
 .backup-dialog h2 { margin:0 10px 6px; font-size:18px; }
 .backup-dialog #closeBackupRestore { margin:12px 10px 0; }
+
+/* Backup & Restore: status card, actions, restore list, danger zone */
+.backup-dialog { width:min(560px, calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; }
+.backup-card { margin:10px 10px 12px; padding:12px 14px; border:1px solid var(--line); border-left:5px solid var(--muted); border-radius:8px; }
+.backup-card[data-state="ok"] { border-left-color:#15803d; }
+.backup-card[data-state="paused"], .backup-card[data-state="none"] { border-left-color:#d97706; }
+.backup-card[data-state="error"] { border-left-color:#b91c1c; }
+.backup-headline { margin:0 0 4px; font:700 16px Inter,"Segoe UI",Arial,sans-serif; color:var(--ink); }
+.backup-detail { margin:0; font-size:13px; line-height:1.5; color:var(--muted); overflow-wrap:anywhere; }
+.backup-actions { display:flex; flex-wrap:wrap; gap:8px; margin:8px 10px; }
+.backup-dialog .dropdown-status { margin:6px 10px; }
+.backup-dialog .dropdown-help { margin:6px 10px; font-size:13px; line-height:1.5; color:var(--muted); }
+.backup-more { margin:10px 10px 0; padding-top:8px; border-top:1px solid var(--line); }
+.backup-more summary { cursor:pointer; font:600 13px Inter,"Segoe UI",Arial,sans-serif; color:var(--ink); padding:4px 0; }
+.backup-more summary:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
+.backup-more .backup-actions, .backup-more .dropdown-help { margin-left:0; margin-right:0; }
+.backup-danger summary { color:#b91c1c; }
+.backup-tabs { display:flex; gap:6px; margin:10px 10px 4px; }
+.backup-tabs [aria-selected="true"] { background:var(--blue); border-color:var(--blue); color:#fff; }
+.restore-dialog .backup-browser-list { margin:8px 10px 12px; }
+.backup-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; }
+.backup-row-main { display:grid; flex:1 1 200px; gap:2px; min-width:0; }
+.backup-row-main strong { font:700 14px Inter,"Segoe UI",Arial,sans-serif; color:var(--ink); }
+.backup-row-main span { font-size:12px; color:var(--muted); overflow-wrap:anywhere; }
+.backup-confirm-message { margin:6px 10px 12px; line-height:1.55; }
+.backup-type-confirm input { max-width:45%; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--panel-bg); color:var(--ink); font:inherit; }
+.backup-dialog #closeBackupRestore { margin:12px 10px 0; }
+@media (max-width:520px) { .backup-actions .button, .backup-row .button { flex:1 1 100%; } }

@@ -11,7 +11,7 @@
 | `companion/` | Windows helper for the optional Devin CLI integration. |
 | `scripts/` | Developer scripts: `nocache_server.py` (local no-cache server on 127.0.0.1:4187). |
 | `tests/` | Node regression tests (`node --test tests/*.test.cjs`). |
-| `docs/` | `DEV-NOTES.md`, `CASE_NOTES_GUIDE.md`, preview images and design notes. |
+| `docs/` | `DEV-NOTES.md`, `CASE_NOTES_GUIDE.md`, `BACKUP_GUIDE.md` (user guide for Backup & Restore), preview images and design notes. |
 
 ## Develop
 

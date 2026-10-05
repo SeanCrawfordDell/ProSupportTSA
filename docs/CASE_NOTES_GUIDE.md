@@ -20,30 +20,11 @@ Existing notes migrate intact into one entry using the original case creation da
 
 ## Saving and backups
 
-Notes autosave in this browser every ten seconds. Open the gear-icon **Settings** menu in the top bar and choose **Backup & Restore** for history backups, settings backups, restore options, and cleanup. The dialog header shows how many snapshots the folder holds, their total size, and the retention setting. Choose **Set Backup Folder** to select an approved location, preferably a work OneDrive-synced Documents folder. The app creates `ProSupportToolsBackup` there (or uses that folder if selected directly). The same folder button becomes **Reconnect Backup Folder** when permission is needed, or **Change Backup Folder** when connected.
+Notes autosave in this browser every ten seconds. For a second copy, open the gear-icon **Settings** menu and choose **Backup & Restore**, then **Choose Backup Folder** (a work OneDrive folder is ideal). Case Notes then backs up automatically a few seconds after each change, keeps an hourly snapshot, and cleans up old snapshots on a schedule you choose (7, 30, 90 days, or never). **Restore…** lists every backup in plain language, each with **Restore** and **Delete**; **Delete All Backups** and **Start Fresh** are under *Delete backups or start fresh*. Manual backups and safety copies made before risky actions are never removed automatically.
 
-Once access is approved, changed notes and settings are backed up approximately every minute while Case Notes is open. Browser background throttling can delay this; it is not a background service. **Backup Case History** saves immediately. The status shows the last successful folder backup. When a saved folder only needs re-approval after the browser restarts, your next click anywhere on the page asks the browser for access; **Reconnect Backup Folder** does the same. Browsers without folder access can download history and settings instead.
+Full instructions, the folder layout, retention rules and troubleshooting are in **[BACKUP_GUIDE.md](BACKUP_GUIDE.md)**.
 
-When backups are not configured, an inline banner at the top of the page offers **Configure Backups** and warns that resetting your browser or deleting browser data will erase all of the app's settings and notes history. **Remind me in a week** repeats that warning and asks you to confirm before hiding the banner for seven days.
-
-### What the backup folder contains
-
-- `case-history.json` is the latest complete history. It is refreshed on every automatic backup and is what **Restore History → From backup folder** lists first.
-- `case-history-YYYY-MM-DD_HHMMSS.json` are hourly snapshots in your local time. During active work, at most one is written per hour.
-- `case-history-manual-…json` are created by **Backup Case History**. They are never removed by cleanup.
-- `case-history-before-restore-…`, `…before-field-removal-…`, `…before-field-reset-…`, and `…before-delete-…` are safety copies written automatically just before an action that cannot be undone. They are never removed by cleanup.
-- `customer-config.json` is the latest settings file; `customer-config-…json` dated copies are written only when settings actually change, or by **Backup Site Configuration**.
-- `images/` holds every screenshot once, named by its content hash. Snapshots reference these files instead of embedding the image, which keeps hourly snapshots small. Screenshots are removed from `images/` only when no remaining snapshot references them.
-
-Because snapshots in the folder reference `images/`, restore them with **From backup folder** or keep the whole `ProSupportToolsBackup` folder together when copying to another computer. Downloaded backups (no folder connected) still embed screenshots and are self-contained.
-
-### Cleanup and retention
-
-**Keep snapshots** in the Backup folder section chooses 7, 30, or 90 days, or **Forever**. Automatic snapshots are thinned to every snapshot from the last 24 hours, one per day for up to 30 days, then one per week to the retention limit. Manual backups, safety copies, the latest files, and anything the app did not create are always kept, and the newest automatic snapshot is never removed. Snapshots written by earlier versions of the app (UTC file names) are included in cleanup.
-
-Automatic cleanup is off until you run **Clean Up Old Snapshots** once or change the retention setting. Until then, the status reports how much could be removed after each hourly snapshot. **Clean Up Old Snapshots** shows how many files and how much space would be removed before anything happens. After that, cleanup runs on its own after each hourly snapshot. OneDrive keeps removed files in its recycle bin, which gives an extra safety net.
-
-Folder backups contain customer information and are not encrypted by this app: use an approved protected location and follow your organization's retention policy. OneDrive synchronizes the folder independently; the app cannot confirm cloud upload completion.
+Folder backups contain customer information and are not encrypted by this app: use an approved protected location and follow your organization's retention policy.
 
 ## Recovery and retention
 
@@ -62,13 +43,7 @@ Search includes case fields, note content, next steps, custom fields, and suppor
 
 ## Restoring settings and notes
 
-**Backup Site Configuration** saves `customer-config.json` and a dated `customer-config-manual-…json` copy directly to your configured `ProSupportToolsBackup` folder. Without a connected folder, it downloads the settings file instead. If folder access is denied or a write fails, the status explains the failure so you can reconnect and retry; it does not silently download elsewhere. Settings backups do not change your case-note backup files or the last successful full-backup time.
-
-Settings include field configuration, toolbox URLs/order/colors/launcher icon/size/icon size/circle/animation, custom AI prompts, personal and edited built-in troubleshooting templates, theme, floating-panel preference, collapsed sections/history, pinned site resources, and the backup retention choice. They do not include browser folder permissions or the temporary dragged position of the toolbox.
-
-**Restore Settings** offers two sources: **From backup folder** reads `customer-config.json` from the connected folder, and **Choose a file** accepts a downloaded or dated settings file. Imports are validated before applying; a confirmation explains that existing preferences will change. Older field/toolbox-only settings backups are supported.
-
-**Restore History** offers two sources. **From backup folder** lists every snapshot in `ProSupportToolsBackup`, newest first, with its time, type (latest, hourly, manual, or safety copy), and size; select one to restore it. **Choose a file** accepts a downloaded backup or a file from another computer. Either way you confirm before the complete current history is replaced, including Archive, Trash, and versions. When a backup folder is connected, a `case-history-before-restore-…` safety copy of your current history is written first. Settings are restored separately. Previously created individual-case JSON exports remain importable, replacing only a matching case ID after confirmation.
+Use **Backup & Restore → Restore…** and choose the **Case history** or **Settings** tab. Pick a backup, confirm, and the current data is saved as a safety copy first. **Restore from a file…** accepts a downloaded backup or a file from another computer; imports are validated before anything changes. Settings include field configuration, toolbox URLs/order/colors/launcher icon, custom AI prompts, personal and edited templates, theme, floating-panel preference, collapsed sections/history, pinned site resources, and the backup retention choice. They do not include browser folder permissions. Case-history restores replace the complete history, including Archive, Trash, and versions. Previously created individual-case JSON exports remain importable, replacing only a matching case ID after confirmation. See [BACKUP_GUIDE.md](BACKUP_GUIDE.md).
 
 ## Custom fields
 
@@ -84,7 +59,7 @@ Use **Manage templates** beside the issue dropdown to create a template or edit 
 
 Built-in templates can be renamed and edited; **Reset to default** restores their original name and content. Personal templates can be deleted after confirmation. Neither editing nor deleting a template changes existing case notes. If a case references a template that is no longer available, choose another template or restore settings before applying it.
 
-Selecting a template does not insert text. **Apply template** appends its notes and next steps, preserving existing notes and screenshots. Template customizations are personal to this browser and included in **Backup Settings**, full folder backups, and **Restore Settings**. Older settings files without template data leave current customizations unchanged.
+Selecting a template does not insert text. **Apply template** appends its notes and next steps, preserving existing notes and screenshots. Template customizations are personal to this browser and included in settings backups and **Restore…** on the Settings tab. Older settings files without template data leave current customizations unchanged.
 
 ## Sharing and printing
 

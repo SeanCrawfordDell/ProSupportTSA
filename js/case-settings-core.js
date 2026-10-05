@@ -5,9 +5,11 @@ const CaseSettings = (() => {
     aiTasks: "dell-support.custom-ai-tasks", theme: "theme", templates: "dell-support.case-templates.v1",
     floating: "dell-support.case-notes.action-dock-floating",
     historyCollapsed: "dell-support.case-history-collapsed",
-    sections: "dell-support.case-notes-sections", pins: "dell-support.pinned-resources.v1"
+    sections: "dell-support.case-notes-sections", pins: "dell-support.pinned-resources.v1",
+    retention: "dell-support.backup-retention-days"
   };
-  const rawKeys = ["theme", "floating", "historyCollapsed"];
+  const rawKeys = ["theme", "floating", "historyCollapsed", "retention"];
+  const toolboxKeys = ["dell-support.toolbox-links.v1", "dell-support.toolbox-appearance.v1"];
   const object = value => value && typeof value === "object" && !Array.isArray(value);
   function validate(config, fields) {
     const bad = () => { throw Error("Invalid settings backup. No settings were changed."); };
@@ -48,6 +50,7 @@ const CaseSettings = (() => {
         if (name === "theme" && ![null,"dark","light"].includes(value)) bad();
         if (["floating","historyCollapsed"].includes(name) && ![null,"true","false"].includes(value)) bad();
         if (name === "sections" && (!object(value) || Object.keys(value).some(id => !["caseDetails","notes","actionPlan"].includes(id)) || Object.values(value).some(v => typeof v !== "boolean"))) bad();
+        if (name === "retention" && ![null,"7","30","90","never"].includes(value)) bad();
         if (name === "pins" && (!Array.isArray(value) || value.some(id => typeof id !== "string"))) bad();
         if (name === "aiTasks") {
           if (!object(value)) bad();
@@ -89,6 +92,8 @@ const CaseSettings = (() => {
       throw Error(rollbackFailed ? "Settings could not be saved completely. Some preferences may have changed; keep this page open and retry." : "Settings could not be saved. Previous settings were kept.");
     }
   }
-  return { capture, validate, commit };
+  // Every storage key the app uses for preferences, mapped to null: committing it returns the app to a fresh install.
+  const clearValues = () => Object.fromEntries([...Object.values(keys), ...toolboxKeys].map(key => [key, null]));
+  return { capture, validate, commit, clearValues };
 })();
 if (typeof module !== "undefined") module.exports = CaseSettings;
