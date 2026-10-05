@@ -390,7 +390,7 @@ try {
     if (draft.fields && draft.fields.collectionPlan === undefined) draft.fields.collectionPlan = "";
     if (draft.fields && draft.fields.timezone === undefined) draft.fields.timezone = "";
     if (draft.fields && draft.fields.reproducible === undefined) draft.fields.reproducible = draft.fields.reproduction?.trim?.() ? "Yes" : "";
-    if (draft.version !== 1 || !draft.fields || !fieldIds.every(id => typeof draft.fields[id] === "string") || !Array.isArray(draft.actions) || !draft.actions.every(row => row && typeof row.action === "string" && typeof row.result === "string") || !draft.checks || typeof draft.checks !== "object" || !Object.values(draft.checks).every(v => typeof v === "boolean") || !Object.hasOwn(CaseToolkitCore.templates,draft.issueType)) throw Error("Invalid draft");
+    if (draft.version !== 1 || !draft.fields || !fieldIds.every(id => typeof draft.fields[id] === "string") || !Array.isArray(draft.actions) || !draft.actions.every(row => row && typeof row.action === "string" && typeof row.result === "string") || !draft.checks || typeof draft.checks !== "object" || !Object.values(draft.checks).every(v => typeof v === "boolean") || !Object.hasOwn(CaseToolkitCore.issueTypes,draft.issueType)) throw Error("Invalid draft");
     populate(draft.fields); actions = draft.actions; checks = draft.checks; issueType = draft.issueType; byId("draftStatus").textContent = "Saved draft restored";
   }
 } catch { byId("draftStatus").textContent = "Saved draft could not be read. Changes may not persist in this browser."; }
@@ -404,7 +404,7 @@ try {
     if (!imported || !["problem","os","country","troubleshooting","sourceNote"].every(id => typeof imported[id] === "string")) throw Error("Invalid note");
     if (hasWork() && !confirm("Start a new escalation from Case Notes and replace the saved escalation draft?")) return;
     populate(imported); actions = []; checks = imported.checks && typeof imported.checks === "object" ? Object.fromEntries(Object.entries(imported.checks).filter(([,v]) => typeof v === "boolean")) : {};
-    issueType = Object.hasOwn(CaseToolkitCore.templates,imported.issueType) ? imported.issueType : "general";
+    issueType = Object.hasOwn(CaseToolkitCore.issueTypes,imported.issueType) ? imported.issueType : "general";
     // Note: custom fields are already included in imported.sourceNote via CaseNotes.copyText(),
     // so no additional appending is needed here.
     renderActions();

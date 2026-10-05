@@ -27,11 +27,6 @@ main { max-width:1800px; }
 .case-utilities { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:16px; }
 .case-issue-picker { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; flex:1 1 540px; max-width:640px; min-width:0; }
 .case-issue-picker .field { flex:1 1 200px; min-width:0; max-width:340px; margin:0; gap:4px; }
-.case-issue-picker #manageTemplates { flex:none; margin:0; }
-#templateManager .field { margin:12px 0; }
-.case-issue-picker #applyTemplate { flex:none; margin:0; }
-.case-issue-picker #templateStatus { flex-basis:100%; margin:0; font-size:12px; }
-.case-issue-picker #templateStatus:empty { display:none; }
 .case-row-actions { display:flex; flex-wrap:wrap; gap:8px; grid-column:1 / -1; margin-top:8px; }
 .case-row-actions button { font-size:12px; padding:6px 10px; min-height:32px; }
 .version-preview { max-height:40vh; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; padding:12px; border:1px solid var(--line); }

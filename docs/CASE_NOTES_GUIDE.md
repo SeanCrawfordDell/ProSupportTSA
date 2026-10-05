@@ -43,7 +43,7 @@ Search includes case fields, note content, next steps, custom fields, and suppor
 
 ## Restoring settings and notes
 
-Use **Backup & Restore → Restore…** and choose the **Case history** or **Settings** tab. Pick a backup, confirm, and the current data is saved as a safety copy first. **Restore from a file…** accepts a downloaded backup or a file from another computer; imports are validated before anything changes. Settings include field configuration, toolbox URLs/order/colors/launcher icon, custom AI prompts, personal and edited templates, theme, floating-panel preference, collapsed sections/history, pinned site resources, and the backup retention choice. They do not include browser folder permissions. Case-history restores replace the complete history, including Archive, Trash, and versions. Previously created individual-case JSON exports remain importable, replacing only a matching case ID after confirmation. See [BACKUP_GUIDE.md](BACKUP_GUIDE.md).
+Use **Backup & Restore → Restore…** and choose the **Case history** or **Settings** tab. Pick a backup, confirm, and the current data is saved as a safety copy first. **Restore from a file…** accepts a downloaded backup or a file from another computer; imports are validated before anything changes. Settings include field configuration, toolbox URLs/order/colors/launcher icon, custom AI prompts, theme, floating-panel preference, collapsed sections/history, pinned site resources, and the backup retention choice. They do not include browser folder permissions. Case-history restores replace the complete history, including Archive, Trash, and versions. Previously created individual-case JSON exports remain importable, replacing only a matching case ID after confirmation. See [BACKUP_GUIDE.md](BACKUP_GUIDE.md).
 
 ## Custom fields
 
@@ -52,14 +52,6 @@ in the top bar and choose **Customize Fields**. The theme icon switches between
 light and dark mode; its tooltip and accessible label identify the next mode.
 
 New field labels support up to 120 characters. Older backups with longer labels remain restorable. Removing a field or resetting custom fields removes its values from recent cases, Archive, Trash, and saved versions after confirmation. When a backup folder is connected, a safety copy of the history is saved first. Previously exported backup files are not changed. Both plain-text and HTML email exports include custom fields.
-
-## Personal troubleshooting templates
-
-Use **Manage templates** beside the issue dropdown to create a template or edit an existing one. Set a name, note text/prompts, and optional next steps. These fields accept plain text and line breaks, not HTML. **Save template** makes it available in the dropdown immediately and after reopening the browser.
-
-Built-in templates can be renamed and edited; **Reset to default** restores their original name and content. Personal templates can be deleted after confirmation. Neither editing nor deleting a template changes existing case notes. If a case references a template that is no longer available, choose another template or restore settings before applying it.
-
-Selecting a template does not insert text. **Apply template** appends its notes and next steps, preserving existing notes and screenshots. Template customizations are personal to this browser and included in settings backups and **Restore…** on the Settings tab. Older settings files without template data leave current customizations unchanged.
 
 ## Sharing and printing
 

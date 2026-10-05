@@ -1,8 +1,8 @@
 "use strict";
 (() => {
   const key="dell-support.case-notes.v1", $=id=>document.getElementById(id);
-  // Every built-in issue type, named as in the Case Notes template picker.
-  const issueName=id=>CaseToolkitCore.templates[id]?.name || "Custom issue";
+  // Every built-in issue type, named as in the Case Notes issue type picker.
+  const issueName=id=>CaseToolkitCore.issueTypes[id]?.name || "Custom issue";
   const text=value=>String(value||"");
   function renderRanks(target, entries, empty) {
     const root=$(target);root.replaceChildren();

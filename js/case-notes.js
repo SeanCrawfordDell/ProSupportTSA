@@ -35,7 +35,6 @@
     toolboxLauncher: "Open the draggable quick-action toolbox."
   };
   const toolkitTooltips = {
-    templates: "Open reusable note templates for the current case.",
     followup: "Track a follow-up owner, due date, and status.",
     customer: "Draft a customer-ready update from the case details.",
     summary: "Build a concise handoff summary for the next owner."
@@ -193,7 +192,7 @@
     if (!backupChosen || !writable || awaitingChoice || backupTimer) return;
     backupTimer = setTimeout(() => { backupTimer = null; runBackup().catch(() => {}); }, Math.max(3000, 30000 - (Date.now() - lastBackupRun)));
   }
-  // Toolbox, theme, templates and other preferences live outside the case history, so a settings change must trigger a backup on its own.
+  // Toolbox, theme and other preferences live outside the case history, so a settings change must trigger a backup on its own.
   const settingsFingerprint = (text = settingsSnapshot()) => { try { const value = JSON.parse(text); delete value.exportedAt; return JSON.stringify(value); } catch { return ""; } };
   let backedUpSettings = null;
   setInterval(() => {
@@ -341,7 +340,7 @@
     }
     const mention = kind === "history"
       ? `This replaces the ${plural(state.cases.length, "case")} in this browser with ${plural(history.cases.length, "case")} from ${label}, including Archive, Trash and versions. Settings are not changed.`
-      : `This replaces your settings (fields, toolbox, templates, preferences) with the ones from ${label}. Your case notes are kept.`;
+      : `This replaces your settings (fields, toolbox, preferences) with the ones from ${label}. Your case notes are kept.`;
     const root = backupChosen ? await getRoot(false).catch(() => null) : null;
     const safety = root ? " A safety copy of what you have now is saved first, so you can undo this from the list." : " No backup folder is connected, so no safety copy can be saved first.";
     const ok = await askChoice({ title: kind === "history" ? "Restore case history?" : "Restore settings?", message: mention + safety, buttons: [{ label: "Restore", value: true, primary: true }, { label: "Cancel", value: false }] });
@@ -400,7 +399,7 @@
   }
   async function startFresh() {
     if (!writable || copying) { backupMessage("Another Case Notes window is editing right now. Close it, then try again."); return; }
-    const ok = await askChoice({ title: "Start completely fresh?", message: `This permanently deletes every backup in ${folderLabel()} AND erases all case notes, settings, templates and preferences in this browser. Nothing is kept: there is no safety copy and it cannot be undone. Consider downloading a copy first.`, typeToConfirm: "DELETE", buttons: [{ label: "Erase everything", value: true, primary: true }, { label: "Cancel", value: false }] });
+    const ok = await askChoice({ title: "Start completely fresh?", message: `This permanently deletes every backup in ${folderLabel()} AND erases all case notes, settings and preferences in this browser. Nothing is kept: there is no safety copy and it cannot be undone. Consider downloading a copy first.`, typeToConfirm: "DELETE", buttons: [{ label: "Erase everything", value: true, primary: true }, { label: "Cancel", value: false }] });
     if (!ok) return;
     try {
       const root = await getRoot(true);

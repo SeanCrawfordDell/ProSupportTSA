@@ -53,12 +53,11 @@ const CaseRubricCore = (() => {
     return { tokens, filler, similarity, duplicate, lines };
   })();
 
-  // Template prompt labels never count as content, with or without a short answer after the colon.
-  const promptLabels = new Set();
-  for (const item of Object.values(Toolkit.templates)) for (const prompt of item.prompts) promptLabels.add(prompt.toLowerCase());
-  for (const line of Toolkit.templateCatalog().general.next.split("\n")) { const match = /^([^:]+):/.exec(line); if (match) promptLabels.add(match[1].trim().toLowerCase()); }
+  // Prompt labels from the former note templates never count as content, with or without a short answer after the colon.
+  const promptLabels = new Set(["action", "owner", "follow-up"]);
+  for (const item of Object.values(Toolkit.issueTypes)) for (const prompt of item.prompts) promptLabels.add(prompt.toLowerCase());
 
-  // Plain text without template scaffolding, so applying a template alone earns no credit.
+  // Plain text without template scaffolding, so notes holding only the old prompts earn no credit.
   function clean(value) {
     const html = (typeof value === "string" ? value : "").replace(/<h[1-6]\b[^>]*>[\s\S]*?<\/h[1-6]>/gi, "\n");
     const plain = Notes.plainText(html).replace(placeholder, "");

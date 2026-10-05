@@ -13,13 +13,15 @@ function setup(){
  window.CaseToolkit.init({current:()=>note,canEdit:()=>editable,mutate:f=>f(note),refreshEditors(){},save(){}});
  return {get,note,ui:window.CaseToolkit,readonly(){editable=false;window.CaseToolkit.setEditable(false);}};
 }
-test('inline issue selection chooses a template without editing notes until applied',()=>{
+test('inline issue selection records the issue type without editing notes',()=>{
  const h=setup();h.get('caseIssueType').value='network';h.get('caseIssueType').handlers.input();
- assert.equal(h.note.toolkit.issueType,'network');assert.equal(h.note.notes,'<p>Existing notes</p>');
- h.get('applyTemplate').handlers.click();assert.ok(h.note.notes.startsWith('<p>Existing notes</p>'));assert.ok(h.note.notes.includes(T.templateHtml('network')));
- assert.ok(h.note.next.startsWith('<p>Existing plan</p>'));
+ assert.equal(h.note.toolkit.issueType,'network');assert.equal(h.note.notes,'<p>Existing notes</p>');assert.equal(h.note.next,'<p>Existing plan</p>');
+ assert.deepEqual(h.get('caseIssueType').children.map(o=>o.value),Object.keys(T.issueTypes));
 });
-test('inline template controls respect read-only state',()=>{
- const h=setup();h.readonly();assert.equal(h.get('caseIssueType').disabled,true);assert.equal(h.get('applyTemplate').disabled,true);
- h.get('applyTemplate').handlers.click();assert.equal(h.note.notes,'<p>Existing notes</p>');
+test('a custom issue type from a removed personal template stays selected',()=>{
+ const h=setup();h.note.toolkit.issueType='custom-old';h.ui.refreshIssueTypes();
+ assert.equal(h.get('caseIssueType').value,'custom-old');assert.match(h.get('caseIssueType').children.at(-1).textContent,/no longer available/);
+});
+test('the issue picker respects read-only state',()=>{
+ const h=setup();h.readonly();assert.equal(h.get('caseIssueType').disabled,true);
 });

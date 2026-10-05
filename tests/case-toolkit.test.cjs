@@ -30,8 +30,8 @@ test('drafts use supplied facts and missing information remains explicit',()=>{
  assert.ok(!C.copyText(note,3000).includes('Troubleshooting timeline:'));assert.ok(!C.escalation(note,3000).sourceNote.includes('Timeout returned'));
  assert.ok(!T.summary(note,C.plainText,'00:01:00').includes('Troubleshooting timeline:'));
 });
-test('templates provide prompts for each case category without claiming completed actions',()=>{
- for(const key of Object.keys(T.templates)){assert.ok(T.templateHtml(key).includes('[Add details]'));assert.ok(T.templates[key].prompts.length>=6);}
+test('every issue type has a name and investigation prompts',()=>{
+ for(const [key,item] of Object.entries(T.issueTypes)){assert.ok(item.name.trim(),key);assert.ok(item.prompts.length>=6,key);}
 });
 
 test('System/Platform saves, restores and appears in case outputs',()=>{

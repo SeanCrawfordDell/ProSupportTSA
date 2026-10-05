@@ -2,7 +2,8 @@
 const CaseToolkitCore = (() => {
   const Workflow = typeof module!=="undefined" ? require("./case-workflow-core.js") : (typeof CaseWorkflowCore!=="undefined" ? CaseWorkflowCore : null);
   // Workflow additions share this case's persistence and export path.
-  const templates = {
+  // Issue types for the Triage picker. Prompts are kept so the rubric can ignore scaffolding in notes written with the former templates.
+  const issueTypes = {
     general: { name:"General investigation", prompts:["Observed behavior", "Business impact and affected users", "Expected behavior", "First occurrence and frequency", "Recent changes", "Troubleshooting actions and results", "Evidence collected"] },
     boot: { name:"Boot / startup failure", prompts:["Last successful boot", "Failure stage and exact on-screen message", "Recent firmware, OS, or hardware changes", "Boot device and storage visibility", "Recovery actions attempted and results", "Available console screenshots and logs"] },
     crash: { name:"Crash / unexpected restart", prompts:["Crash time and time zone", "Stop code, panic, or error text", "Workload active at failure", "Frequency and affected systems", "Recent changes", "Crash dump and event log location", "Actions attempted and results"] },
@@ -17,24 +18,8 @@ const CaseToolkitCore = (() => {
     "fix ME OMSA": { name:"fix ME OMSA", prompts:["OMSA version and build", "Affected system or component", "Exact error message and incident time", "Recent OMSA or system changes", "OMSA logs and diagnostic location", "Troubleshooting actions and results"] }
   };
   const statuses = ["Open", "In progress", "Waiting on customer", "Completed"];
-  const templateStorageKey = "dell-support.case-templates.v1";
-  const validTemplateId = id => typeof id === "string" && (Object.hasOwn(templates,id) || id === "fix ME OMSA" || /^custom-[a-zA-Z0-9-]{1,80}$/.test(id));
-  const defaultNext = "Action: [Add next action]\nOwner: [Assign owner]\nFollow-up: [Agree date and time]";
-  function validateTemplates(value) {
-    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 100) throw Error("Invalid template settings");
-    const result = {};
-    for (const [id,item] of Object.entries(value)) {
-      if (!validTemplateId(id) || !item || typeof item !== "object" || Array.isArray(item) || typeof item.name !== "string" || !item.name.trim() || item.name.length > 100 || typeof item.notes !== "string" || !item.notes.trim() || item.notes.length > 20000 || typeof item.next !== "string" || item.next.length > 20000) throw Error("Invalid template. Enter a name and note text within the size limits.");
-      result[id] = {name:item.name.trim(),notes:item.notes,next:item.next};
-    }
-    return result;
-  }
-  function templateCatalog(overrides = {}) {
-    const result = Object.fromEntries(Object.entries(templates).map(([id,item])=>[id,{name:item.name,notes:item.prompts.map(p=>p+": [Add details]").join("\n"),next:defaultNext}]));
-    return Object.assign(result,validateTemplates(overrides));
-  }
-  function loadTemplates(storage) { return validateTemplates(JSON.parse(storage.getItem(templateStorageKey) || "{}")); }
-  function saveTemplates(storage,overrides) { const validated=validateTemplates(overrides);storage.setItem(templateStorageKey,JSON.stringify(validated));return validated; }
+  // Cases saved while personal templates existed may still carry a custom-* issue type.
+  const validIssueType = id => typeof id === "string" && (Object.hasOwn(issueTypes,id) || /^custom-[a-zA-Z0-9-]{1,80}$/.test(id));
   function defaults() { return { issueType:"general", impact:"", questions:"", owner:"", due:"", status:"Open", checks:{}, timeline:[], timelineAction:"", timelineResult:"", customerDraft:"", summaryDraft:"", productApp:"" }; }
   function ensure(note) {
     if (!note.toolkit) note.toolkit = defaults();
@@ -42,25 +27,11 @@ const CaseToolkitCore = (() => {
   }
   function validate(note) {
     const data = ensure(note);
-    if (!data || typeof data !== "object" || !validTemplateId(data.issueType) || !statuses.includes(data.status) || !["impact","questions","owner","due","customerDraft","summaryDraft","timelineAction","timelineResult","productApp"].every(k=>typeof data[k]==="string") || (data.due && !Number.isFinite(Date.parse(data.due))) || !data.checks || typeof data.checks!=="object" || Array.isArray(data.checks) || !Object.values(data.checks).every(v=>typeof v==="boolean") || !Array.isArray(data.timeline) || !data.timeline.every(e=>e && typeof e.id==="string" && Number.isFinite(e.at) && e.at>=0 && typeof e.action==="string" && typeof e.result==="string")) throw Error("Invalid case toolkit data");
+    if (!data || typeof data !== "object" || !validIssueType(data.issueType) || !statuses.includes(data.status) || !["impact","questions","owner","due","customerDraft","summaryDraft","timelineAction","timelineResult","productApp"].every(k=>typeof data[k]==="string") || (data.due && !Number.isFinite(Date.parse(data.due))) || !data.checks || typeof data.checks!=="object" || Array.isArray(data.checks) || !Object.values(data.checks).every(v=>typeof v==="boolean") || !Array.isArray(data.timeline) || !data.timeline.every(e=>e && typeof e.id==="string" && Number.isFinite(e.at) && e.at>=0 && typeof e.action==="string" && typeof e.result==="string")) throw Error("Invalid case toolkit data");
     Workflow?.validate(note);
     return data;
   }
   const overdue = (note, now) => !!note.toolkit?.due && note.toolkit.status !== "Completed" && Date.parse(note.toolkit.due) < now;
-  const escape = text => text.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  function templateHtml(key, overrides = {}) {
-    if (Object.hasOwn(overrides,key) || !Object.hasOwn(templates,key)) {
-      const item=templateCatalog(overrides)[key];if(!item)throw Error("Template unavailable. Choose another template or restore your settings.");
-      return `<h3>${escape(item.name)}</h3>`+textHtml(item.notes);
-    }
-    const preset=templates[key];
-    return `<h3>${escape(preset.name)}</h3>`+preset.prompts.map(prompt=>`<p><strong>${escape(prompt)}:</strong> [Add details]</p>`).join("");
-  }
-  function textHtml(text) { return text.split(/\r?\n/).map(line=>`<p>${escape(line) || '<br>'}</p>`).join(''); }
-  function templateNextHtml(key,overrides = {}) {
-    const item=templateCatalog(overrides)[key];if(!item)throw Error("Template unavailable. Choose another template or restore your settings.");
-    return item.next.trim() ? '<h3>Next steps</h3>'+textHtml(item.next) : '';
-  }
   const guides = {
     "Windows Server": ["windows", "Export System, Application, and relevant role event logs for the incident window", "Microsoft support tools", "https://github.com/DellProSupportGse/Tools"],
     "Redhat": ["rhel", "Collect an sos report using the Red Hat procedure", "Red Hat sos report guide", "https://access.redhat.com/solutions/3592"],
@@ -110,6 +81,6 @@ const CaseToolkitCore = (() => {
     const data=ensure(note);
     return `HANDOFF SUMMARY\nService Request: ${note.request || "Not provided"}\nService Tag: ${note.tag || "Not provided"}\nSystem/Platform: ${note.platform || "Not provided"}\nOS/Solution: ${note.os || "Not provided"}\n\nIssue:\n${note.issue || "Not recorded"}\n\nBusiness impact:\n${data.impact || "Not recorded"}\n\nInvestigation:\n${concise(plain(note.notes)) || "Not recorded"}\n\nNext steps:\n${plain(note.next) || "Not recorded"}\n\nRemaining questions:\n${data.questions || "Not recorded"}\n\nEvidence location: ${note.logLocation || "Not recorded"}\nOwner: ${data.owner || "Not assigned"}\nStatus: ${data.status}\nFollow-up due: ${data.due ? new Date(data.due).toLocaleString() : "Not scheduled"}\nTime spent: ${elapsed}`;
   }
-  return {templates,templateStorageKey,validateTemplates,templateCatalog,loadTemplates,saveTemplates,templateNextHtml,statuses,defaults,ensure,validate,overdue,templateHtml,checklist,extraText,customerUpdate,summary};
+  return {issueTypes,statuses,defaults,ensure,validate,overdue,checklist,extraText,customerUpdate,summary};
 })();
 if(typeof module!=="undefined")module.exports=CaseToolkitCore;
