@@ -32,7 +32,7 @@ main { max-width:1800px; }
 .case-issue-picker #applyTemplate { flex:none; margin:0; }
 .case-issue-picker #templateStatus { flex-basis:100%; margin:0; font-size:12px; }
 .case-issue-picker #templateStatus:empty { display:none; }
-.case-row-actions { display:flex; flex-wrap:wrap; gap:6px; grid-column:1 / -1; padding-bottom:8px; }
+.case-row-actions { display:flex; flex-wrap:wrap; gap:8px; grid-column:1 / -1; margin-top:8px; }
 .case-row-actions button { font-size:12px; padding:6px 10px; min-height:32px; }
 .version-preview { max-height:40vh; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; padding:12px; border:1px solid var(--line); }
 .editor { min-width:0; padding:12px 16px 16px; }
@@ -53,7 +53,7 @@ main { max-width:1800px; }
   #casePrint p { white-space:pre-wrap; overflow-wrap:anywhere; }
   #casePrint h2 { break-after:avoid; }
 }
-#historyList { max-height:560px; overflow:auto; display:grid; gap:8px; }
+#historyList { max-height:560px; overflow:auto; display:grid; gap:16px; padding-bottom:6px; }
 .case-item { text-align:left; cursor:pointer; border:1px solid var(--line); background:var(--input-bg); color:var(--ink); border-radius:8px; padding:12px; width:100%; }
 .case-item[aria-current="true"] { border-color:var(--blue); background:var(--section-number-bg); }
 .case-item strong,.case-item span,.case-item small { display:block; overflow-wrap:anywhere; }
