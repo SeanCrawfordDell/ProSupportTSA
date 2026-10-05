@@ -358,10 +358,16 @@ const CaseNotes = (() => {
     state.fieldConfig.order = newOrder;
     return state;
   }
+  // Puts the Case Details fields in their new sequence while every other field keeps its slot in the saved order.
+  function mergeFieldOrder(order, gridOrder) {
+    const moved = new Set(gridOrder), queue = [...gridOrder];
+    if (moved.size !== gridOrder.length || !gridOrder.every(id => order.includes(id))) throw Error("Invalid field in order");
+    return order.map(id => moved.has(id) ? queue.shift() : id);
+  }
   function getEffectiveFields(state) {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
+  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, mergeFieldOrder, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;
