@@ -48,31 +48,49 @@ const CaseBackup = (() => {
   const weekKey = time => Math.floor((time + 3 * DAY) / (7 * DAY));
   // Decide which automatic snapshots to keep. Files the app did not create, latest files, manual backups
   // and safety snapshots are always kept. Automatic history: everything from the last 24 hours, one per
-  // day for up to 30 days, then one per week to the retention limit. Automatic settings copies: one per day.
+  // day for up to 30 days, then one per week to the retention limit ("never" keeps all of it).
+  // Automatic settings copies follow their own fixed rule, whatever the retention setting: the newest 5 from
+  // today and the newest 1 from yesterday; everything older is removed.
+  const SETTINGS_PER_DAY = 5;
+  function settingsPlan(list, now) {
+    const sorted = [...list].sort((a, b) => b.time - a.time), kept = [], removed = [];
+    const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+    const today = dayKey(now), before = dayKey(yesterday.getTime());
+    let todayCount = 0, yesterdayCount = 0;
+    for (const file of sorted) {
+      const day = dayKey(file.time);
+      if (day === today && todayCount < SETTINGS_PER_DAY) { todayCount++; kept.push(file); }
+      else if (day === before && yesterdayCount < 1) { yesterdayCount++; kept.push(file); }
+      else if (file.time > now) kept.push(file); // clock skew: never delete a "future" copy
+      else removed.push(file);
+    }
+    return { kept, removed };
+  }
   function retentionPlan(files, { now, days, maxBytes = null }) {
-    const keep = [], remove = [];
-    if (days === null || days === undefined) return { keep: files.map(f => f.name), remove, removedBytes: 0 };
-    const candidates = [];
+    const keep = [], remove = [], candidates = [];
     for (const file of files) {
       const info = parseFileName(file.name);
       if (!info || info.kind !== "auto") { keep.push(file.name); continue; }
       candidates.push({ name: file.name, size: file.size || 0, type: info.type, time: info.time });
     }
-    for (const type of ["history", "settings"]) {
-      const list = candidates.filter(c => c.type === type).sort((a, b) => b.time - a.time);
+    const settings = settingsPlan(candidates.filter(c => c.type === "settings"), now);
+    keep.push(...settings.kept.map(f => f.name)); remove.push(...settings.removed);
+    const list = candidates.filter(c => c.type === "history").sort((a, b) => b.time - a.time);
+    if (days === null || days === undefined) keep.push(...list.map(f => f.name));
+    else {
       const kept = [], seenDays = new Set(), seenWeeks = new Set();
       list.forEach((file, index) => {
         const age = now - file.time;
         let keepIt;
         if (index === 0) keepIt = true;
-        else if (type === "history" && age < DAY) keepIt = true;
+        else if (age < DAY) keepIt = true;
         else if (age < Math.min(days, 30) * DAY) keepIt = !seenDays.has(dayKey(file.time));
         else if (age < days * DAY) keepIt = !seenWeeks.has(weekKey(file.time));
         else keepIt = false;
         if (keepIt) { seenDays.add(dayKey(file.time)); seenWeeks.add(weekKey(file.time)); kept.push(file); }
         else remove.push(file);
       });
-      if (type === "history" && maxBytes) {
+      if (maxBytes) {
         let total = kept.reduce((sum, f) => sum + f.size, 0);
         while (total > maxBytes && kept.length > 1) { const oldest = kept.pop(); total -= oldest.size; remove.push(oldest); }
       }
@@ -157,6 +175,6 @@ const CaseBackup = (() => {
     return `data:${MIME[ext]};base64,${btoa(binary)}`;
   }
   const isImagePath = path => IMAGE_PATH.test(path);
-  return { LATEST_HISTORY, LATEST_SETTINGS, IMAGES_DIR, HOUR, DAY, RETENTION_OPTIONS, DEFAULT_RETENTION, fileName, parseFileName, retentionDays, retentionPlan, summarize, formatBytes, externalizeImages, inlineImages, hasExternalImages, imageReferences, dataUrlToBytes, bytesToDataUrl, isImagePath };
+  return { LATEST_HISTORY, LATEST_SETTINGS, IMAGES_DIR, HOUR, DAY, RETENTION_OPTIONS, DEFAULT_RETENTION, fileName, parseFileName, retentionDays, retentionPlan, SETTINGS_PER_DAY, summarize, formatBytes, externalizeImages, inlineImages, hasExternalImages, imageReferences, dataUrlToBytes, bytesToDataUrl, isImagePath };
 })();
 if (typeof module !== "undefined") module.exports = CaseBackup;

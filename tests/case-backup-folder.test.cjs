@@ -165,3 +165,47 @@ test('settings capture the retention choice, validate it, and can be wiped for a
   Settings.commit(storage, Settings.clearValues());
   assert.equal(store.size, 0, 'every preference key is cleared');
 });
+
+test('settings copies: one accompanies every history snapshot and every settings change', async () => {
+  const root = fakeDir(); const state = stateWith('cfg');
+  const first = await S.backup(root, { state, settingsJson: '{"fieldConfig":1}', now: T0 });
+  assert.ok(first.snapshot && first.settingsSnapshot);
+  const quiet = await S.backup(root, { state, settingsJson: '{"fieldConfig":1}', now: T0 + 5 * 60000 });
+  assert.equal(quiet.settingsSnapshot, null, 'no history snapshot and no change: no new settings copy');
+  const changed = await S.backup(root, { state, settingsJson: '{"fieldConfig":2}', now: T0 + 10 * 60000 });
+  assert.ok(changed.settingsSnapshot, 'a changed setting is copied even without a history snapshot');
+  const hourly = await S.backup(root, { state, settingsJson: '{"fieldConfig":2}', now: T0 + 70 * 60000 });
+  assert.ok(hourly.snapshot && hourly.settingsSnapshot, 'every hourly history snapshot carries a settings copy');
+});
+
+test('automatic settings copies keep the newest 5 from today and 1 from yesterday, regardless of retention', () => {
+  const now = new Date(2026, 9, 5, 15, 0, 0).getTime();
+  const at = (dayOffset, hour) => new Date(2026, 9, 5 + dayOffset, hour, 0, 0).getTime();
+  const files = [];
+  for (let h = 8; h <= 14; h++) files.push({ name: B.fileName('settings', 'auto', at(0, h)), size: 10 }); // 7 today
+  for (const h of [9, 13, 16]) files.push({ name: B.fileName('settings', 'auto', at(-1, h)), size: 10 }); // 3 yesterday
+  files.push({ name: B.fileName('settings', 'auto', at(-2, 12)), size: 10 }, { name: B.fileName('settings', 'auto', at(-30, 12)), size: 10 });
+  const protectedNames = [B.fileName('settings', 'manual', at(-90, 12)), B.fileName('settings', 'safety', at(-90, 12), 'restore'), 'customer-config.json'];
+  protectedNames.forEach(name => files.push({ name, size: 5 }));
+  for (const days of [7, 30, null]) {
+    const plan = B.retentionPlan(files, { now, days });
+    const kept = plan.keep.map(B.parseFileName).filter(i => i && i.kind === 'auto' && i.type === 'settings').map(i => i.time).sort((a, b) => b - a);
+    assert.equal(kept.length, 6, `days=${days}: 5 today + 1 yesterday`);
+    assert.deepEqual(kept.slice(0, 5), [14, 13, 12, 11, 10].map(h => at(0, h)), 'the 5 newest today');
+    assert.equal(kept[5], at(-1, 16), 'the newest from yesterday');
+    for (const name of protectedNames) assert.ok(plan.keep.includes(name), name);
+    assert.equal(plan.remove.length, 2 + 2 + 2, '2 older today, 2 older yesterday, 2 older days');
+  }
+});
+
+test('cleanup deletes the surplus settings copies on disk but never the latest or manual ones', async () => {
+  const root = fakeDir(); const state = stateWith('c');
+  for (let i = 0; i < 8; i++) await S.backup(root, { state, settingsJson: `{"fieldConfig":${i}}`, now: T0 + i * 60000 });
+  await S.backup(root, { state, settingsJson: '{"fieldConfig":99}', now: T0 + 9 * 60000, manual: true });
+  const list = await S.listSnapshots(root);
+  const autoSettings = list.filter(f => f.type === 'settings' && f.kind === 'auto');
+  assert.equal(autoSettings.length, 5);
+  assert.ok(list.some(f => f.type === 'settings' && f.kind === 'manual'));
+  assert.ok(list.some(f => f.name === 'customer-config.json'));
+  assert.equal(JSON.parse(await S.loadSettingsText(root, 'customer-config.json')).fieldConfig, 99);
+});

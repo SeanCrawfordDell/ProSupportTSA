@@ -138,12 +138,13 @@ const CaseSync = (() => {
       const previous = await tryFile(root, SETTINGS_FILE);
       const changed = !previous || settingsFingerprint(await (await previous.getFile()).text()) !== settingsFingerprint(settingsJson);
       await writeSettings(root, settingsJson);
-      if (manual || changed) {
+      // A settings copy accompanies every history snapshot, and is also added whenever a setting changes.
+      if (manual || changed || result.snapshot) {
         result.settingsSnapshot = B.fileName("settings", manual ? "manual" : "auto", now);
         await writeFile(root, result.settingsSnapshot, settingsJson);
       }
     }
-    if (result.snapshot && !manual || result.settingsSnapshot) result.cleaned = await cleanup(root, { retention, now });
+    if (result.snapshot || result.settingsSnapshot) result.cleaned = await cleanup(root, { retention, now });
     return result;
   }
   // Written before anything replaces or removes the user's data, so the action can be undone from the list.

@@ -20,14 +20,14 @@ Until a folder is set up, a banner at the top of the page reminds you that your 
 - Once an hour, while you are working, a dated **automatic snapshot** is saved, so you can go back to how things looked earlier in the day or last week.
 - **Back Up Now** saves immediately and adds a **manual backup**. Manual backups are never deleted automatically. Use it before risky edits or at the end of a case.
 - Before anything is replaced or removed (a restore, removing a custom field, resetting fields) a **safety copy** is saved first. Safety copies are never deleted automatically, so those actions can be undone.
-- Settings (fields, toolbox, templates, preferences) are backed up with the case history. A dated copy of settings is only added when they actually change.
+- Settings (fields, toolbox, templates, preferences) are backed up with the case history: a dated settings copy is saved with every hourly history snapshot and every manual backup, and also whenever a setting changes (within about a minute), even if you have not edited a note.
 
 If the browser closes and reopens, it may need permission again. The card says **Backups are paused**; select **Reconnect Backup Folder** and approve.
 
 ## Restoring
 
 1. **Backup & Restore → Restore…**
-2. Choose **Case history** or **Settings** at the top.
+2. Choose **Case history** or **Settings** at the top. On the Settings tab, a copy marked *same as your current settings* is already active, so its Restore button is disabled.
 3. Pick a backup from the list. It is grouped as *Most recent*, *Manual backups*, *Safety copies* and *Automatic snapshots*, newest first, with a friendly time ("Today, 2:22 PM") and size.
 4. Select **Restore**, read the confirmation (it states how many cases will be replaced), and confirm.
 
@@ -69,6 +69,7 @@ Under **Automatic cleanup** choose how long to keep automatic snapshots: **7 day
 - Cleanup runs by itself after each hourly snapshot. **Clean Up Now** runs it on demand and tells you how many files and how much space it freed.
 - Automatic snapshots from the last 24 hours are all kept; older ones are thinned to one per day for up to 30 days, then one per week up to your limit.
 - The newest automatic snapshot, the latest copy, **manual backups, safety copies**, and any file the app did not create are never removed.
+- **Settings copies follow their own fixed rule, whatever you choose above:** the newest **5 automatic copies from today** and the newest **1 from yesterday** are kept; older automatic settings copies are deleted. Manual settings backups and safety copies are never removed.
 - Screenshots are stored once in the `images` folder and removed only when no remaining backup uses them.
 - Your choice is saved in this browser and included in settings backups.
 
@@ -81,7 +82,7 @@ ProSupportToolsBackup/
   case-history-2026-10-05_141500.json       automatic hourly snapshot
   case-history-manual-2026-10-05_160000.json   manual backup (kept)
   case-history-before-restore-…json         safety copy (kept)
-  customer-config-…json                     dated settings copies
+  customer-config-…json                     dated settings copies (newest 5 today + 1 from yesterday)
   images/                                   screenshots, stored once each
 ```
 

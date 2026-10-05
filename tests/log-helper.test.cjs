@@ -30,9 +30,10 @@ test('helper builds its own dialog and prefills OS and issue type from the page'
  assert.match(h.get('logHelperDialog').innerHTML,/Which logs should I collect\?/);
  h.click('openLogHelper');assert.equal(h.get('logHelperDialog').open,true);
  assert.equal(h.get('helperOS').value,'Windows Server');assert.equal(h.get('helperSymptom').value,'network');
- assert.match(h.get('helperPlanText').value,/Packet Monitor/);
+ assert.match(flat(h.get('helperResults')),/Packet Monitor/);
  h.click('closeLogHelperBottom');assert.equal(h.get('logHelperDialog').open,false);
 });
+const flat=n=>[n.textContent||'',...(n.children||[]).map(flat)].join('\n');
 const windowsCases=[['boot','Boot'],['crash','dump'],['performance','Performance Monitor'],['network','Packet Monitor'],['storage','Get-Disk'],['directory','repadmin'],['hyperv','Get-VM'],['cluster','Get-ClusterLog'],['updates','Get-WindowsUpdateLog'],['smb','Get-SmbShare']];
 test('each Windows issue routes to targeted tools with location and precautions in the exported plan',()=>{
  for(const [symptom,expected] of windowsCases){
@@ -65,7 +66,7 @@ test('helper preselects every triage category and shows its tools in the plan',(
   const h=ui({symptom});h.click('openLogHelper');
   assert.equal(h.get('helperSymptom').children.length,11);
   assert.equal(h.get('helperSymptom').value,symptom);
-  assert.ok(h.get('helperPlanText').value.includes(expected));
+  assert.ok(flat(h.get('helperResults')).includes(expected),symptom+' plan shows '+expected);
  }
  const h=ui({symptom:'custom-example'});h.click('openLogHelper');
  assert.equal(h.get('helperSymptom').value,'general');

@@ -34,7 +34,7 @@ test('sample case scores Strong and is ready to verify and complete',()=>{
   assert.ok(Date.parse(note.toolkit.due)>Date.parse('2026-10-04T15:00:00'),'follow-up is upcoming, not overdue');
   for(const key of ['impact','questions','owner','customerDraft','summaryDraft'])assert.ok(note.toolkit[key].trim(),key);
   assert.ok(note.toolkit.workflow.knowledge.startsWith('KNOWLEDGE CANDIDATE'));
-  assert.ok(Object.keys(note.toolkit.workflow.results).length>=2,'saved findings are present');
+  assert.deepEqual(note.toolkit.workflow.results,{},'sample leaves saved findings empty (removed on purpose in aa0be83)');
 });
 test('sample case works without a screenshot and fills custom fields',()=>{
   const state=Notes.empty();state.fieldConfig.customFields={customerContact:'Customer Contact'};

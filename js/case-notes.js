@@ -194,7 +194,7 @@
     backupTimer = setTimeout(() => { backupTimer = null; runBackup().catch(() => {}); }, Math.max(3000, 30000 - (Date.now() - lastBackupRun)));
   }
   // Toolbox, theme, templates and other preferences live outside the case history, so a settings change must trigger a backup on its own.
-  const settingsFingerprint = () => { try { const value = JSON.parse(settingsSnapshot()); delete value.exportedAt; return JSON.stringify(value); } catch { return ""; } };
+  const settingsFingerprint = (text = settingsSnapshot()) => { try { const value = JSON.parse(text); delete value.exportedAt; return JSON.stringify(value); } catch { return ""; } };
   let backedUpSettings = null;
   setInterval(() => {
     if (!backupChosen || !writable || awaitingChoice || backupTimer) return;
@@ -264,22 +264,29 @@
     try { items = (await CaseSync.listSnapshots(root)).filter(item => item.type === restoreKind); }
     catch (error) { $("restoreStatus").textContent = `Could not read the backup folder. ${friendlyError(error)}`; return; }
     const list = $("restoreList");
+    // Settings copies identical to what is active now would change nothing, so say so instead of offering a no-op restore.
+    const same = new Set();
+    if (restoreKind === "settings") {
+      const current = settingsFingerprint();
+      for (const item of items) { try { if (settingsFingerprint(await CaseSync.loadSettingsText(root, item.name)) === current) same.add(item.name); } catch { /* unreadable copies still list */ } }
+    }
     $("restoreStatus").textContent = items.length ? `${plural(items.length, "backup")} found. Newest first within each group.` : `No ${restoreKind === "history" ? "case history" : "settings"} backups yet. Select Back Up Now in Backup & Restore to create one.`;
     for (const [kind, title] of groupTitles) {
       const group = items.filter(item => item.kind === kind);
       if (!group.length) continue;
       const heading = document.createElement("p"); heading.className = "dropdown-label"; heading.textContent = title; list.append(heading);
-      for (const item of group) list.append(restoreRow(item));
+      for (const item of group) list.append(restoreRow(item, same.has(item.name)));
     }
   }
-  function restoreRow(item) {
+  function restoreRow(item, matchesCurrent = false) {
     const row = document.createElement("div"); row.className = "backup-row"; row.setAttribute("role", "listitem");
     const when = friendlyTime(item.time);
     const text = document.createElement("div"); text.className = "backup-row-main";
     const strong = document.createElement("strong"); strong.textContent = when;
-    const small = document.createElement("span"); small.textContent = `${describeKind(item)} · ${CaseBackup.formatBytes(item.size)}`;
+    const small = document.createElement("span"); small.textContent = `${describeKind(item)} · ${CaseBackup.formatBytes(item.size)}${matchesCurrent ? " · same as your current settings" : ""}`;
     text.append(strong, small);
     const restore = document.createElement("button"); restore.type = "button"; restore.className = "button primary"; restore.textContent = "Restore"; restore.setAttribute("aria-label", `Restore the backup from ${when}`);
+    if (matchesCurrent) { restore.disabled = true; restore.title = "These settings are already active, so restoring would change nothing."; }
     restore.addEventListener("click", () => void restoreSnapshot(item, when));
     const remove = document.createElement("button"); remove.type = "button"; remove.className = "button secondary"; remove.textContent = "Delete"; remove.setAttribute("aria-label", `Delete the backup from ${when}`);
     remove.addEventListener("click", () => void deleteSnapshot(item, when));
