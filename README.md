@@ -1,8 +1,5 @@
 # EscalationQuality
 
-Static support-workflow site published with GitHub Pages at
-https://seancrawforddell.github.io/EscalationQuality/
-
 ## Layout
 
 | Path | Contents |
