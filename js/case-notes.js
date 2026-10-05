@@ -835,6 +835,7 @@
     $("caseEntryTabs")?.querySelectorAll("button").forEach(button=>{button.disabled=copying;});
     notesPopout?.refresh();
     devinIntegration?.refresh();
+    window.CaseFieldLayout?.refresh();
   }
   function tick() {
     const note = selected(); if (!note) return;
@@ -845,6 +846,7 @@
     $("stopTimer").disabled = !writable || copying || note.started === null;
   }
   function render() {
+    window.CaseFieldLayout?.discard();
     const note = selected();
     $("welcome").hidden = !!note; $("noteEditor").hidden = !note;
     if (note) {
@@ -1119,6 +1121,33 @@
       customList.appendChild(item);
     });
   }
+  // Validates and stores a candidate state whose field configuration changed, replacing the current state.
+  function writeFieldConfig(candidate) {
+    const parsed = CaseNotes.parse(JSON.stringify(candidate));
+    localStorage.setItem(key, JSON.stringify(parsed));
+    state = parsed; savedState = JSON.parse(JSON.stringify(state)); dirty = false;
+    scheduleBackup();
+  }
+  // Inline layout editing on Case Details. Done saves the new order the same way Save Configuration does.
+  const effectiveIds = () => new Set(CaseNotes.getEffectiveFields(state).map(field => field.id));
+  window.CaseFieldLayout?.init({
+    grid: $("caseDetailsGrid"), toggle: $("layoutToggle"), cancel: $("layoutCancel"), status: $("layoutStatus"),
+    canEdit: () => !!selected() && writable && !copying,
+    fieldId: child => { const input = child.querySelector?.("[id]"); return input && effectiveIds().has(input.id) ? input.id : null; },
+    label: id => CaseNotes.getEffectiveFields(state).find(field => field.id === id)?.label || id,
+    expand: () => { if ($("caseDetailsSection").classList.contains("collapsed")) $("caseDetailsToggle").click(); },
+    save: gridOrder => {
+      if (!writable || copying) return false;
+      try {
+        if (!save()) return false;
+        const candidate = JSON.parse(JSON.stringify(state));
+        CaseNotes.reorderFields(candidate, CaseNotes.mergeFieldOrder(candidate.fieldConfig.order, gridOrder));
+        writeFieldConfig(candidate);
+        render();
+        return true;
+      } catch { return false; }
+    }
+  });
   // Keep any reordering made in the list when the draft is redrawn.
   function keepDraftOrder() {
     const order = Array.from($("fieldOrderList").children).map(item => item.dataset.fieldId).filter(Boolean);
@@ -1133,6 +1162,7 @@
   $("customizeFields").addEventListener("click", () => {
     if (!writable || copying) return;
     window.SiteTopbar?.closeMenus();
+    window.CaseFieldLayout?.discard();
     fieldDraft = JSON.parse(JSON.stringify(state.fieldConfig));
     renderFieldCustomizer();
     $("fieldCustomizer").showModal();
@@ -1177,9 +1207,7 @@
       removed.forEach(id => CaseNotes.removeCustomField(candidate, id));
       Object.entries(draft.customFields).forEach(([id, label]) => { if (!Object.hasOwn(candidate.fieldConfig.customFields, id)) CaseNotes.addCustomField(candidate, id, label); });
       CaseNotes.reorderFields(candidate, draft.order);
-      const parsed = CaseNotes.parse(JSON.stringify(candidate));
-      localStorage.setItem(key, JSON.stringify(parsed));
-      state = parsed; savedState = JSON.parse(JSON.stringify(state)); dirty = false;
+      writeFieldConfig(candidate);
       fieldDraft = null;
       $("fieldCustomizer").close();
       render();

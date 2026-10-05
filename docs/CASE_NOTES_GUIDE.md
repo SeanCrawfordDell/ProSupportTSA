@@ -53,6 +53,10 @@ light and dark mode; its tooltip and accessible label identify the next mode.
 
 New field labels support up to 120 characters. Older backups with longer labels remain restorable. Removing a field or resetting custom fields removes its values from recent cases, Archive, Trash, and saved versions after confirmation. When a backup folder is connected, a safety copy of the history is saved first. Previously exported backup files are not changed. Both plain-text and HTML email exports include custom fields.
 
+### Rearranging Case Details on the page
+
+Choose **Unlock layout** in the Case Details heading to reorder fields without opening Customize Fields. While the layout is unlocked, fields cannot be edited. Drag a field by any part of its outlined box, or focus its ⋮⋮ grip and use the arrow keys. **Done** saves the order for every case; **Cancel** or Escape puts it back. Switching case, opening Customize Fields, or losing edit access locks the layout and discards unsaved moves. The saved order is the same one Customize Fields edits, so it is included in case-history backups.
+
 ## Sharing and printing
 
 **Print / PDF** opens the browser print dialog. Choose Save as PDF if available.
