@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Step-by-step guides, screenshots, and reference for the Dell Pro-Support Technical Support Assistant: Case Notes, DE Escalation Request, and Support Trends.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
-  <script src="js/theme.js?v=20261006-slash-commands"></script>
+  <script src="js/theme.js?v=20261006-log-helper-pass1"></script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
   <title>ProSupportTSA Wiki</title>
-  <link rel="stylesheet" href="css/wiki.css?v=20261006-slash-commands">
-  <script src="js/wiki.js?v=20261006-slash-commands" defer></script>
+  <link rel="stylesheet" href="css/wiki.css?v=20261006-log-helper-pass1">
+  <script src="js/wiki.js?v=20261006-log-helper-pass1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#wikiMain">Skip to content</a>
@@ -354,7 +354,7 @@
       <tr><td><code>/sup no</code></td><td>No Software Support</td><td>Only one option starts with “no”.</td></tr>
       <tr><td><code>/sup support</code></td><td>Not set: matches three options</td><td>Use <code>/sup oem</code>, <code>/sup prosupport</code>, <code>/sup solution</code> or <code>/sup no</code>.</td></tr>
       <tr><td><code>/sev degraded</code></td><td>Service degraded</td><td>Matches part of one option.</td></tr>
-      <tr><td><code>/it hyper</code></td><td>Hyper-V / virtual machines</td><td>Only one issue type starts with “hyper”.</td></tr>
+      <tr><td><code>/it hyper</code></td><td>Hyper-V / Virtual machines</td><td>Only one issue type starts with “hyper”.</td></tr>
     </tbody>
   </table>
   <div class="callout warning"><span class="callout-title">Set OS/Solution before Issue type</span><p>The Issue type list depends on OS/Solution. Changing OS/Solution can reset Issue type to that OS’s default. Run <code>/os</code> first, then <code>/it</code>. Product/Application is only available while OS/Solution is Systems Management.</p></div>
@@ -399,7 +399,7 @@
 
   <h3>Exercise 5: Order matters</h3>
   <p>Type <code>/it hyper</code>, then <code>/os sys</code>, pressing <kbd>Enter</kbd> after each. Look at Issue type. Now run <code>/os win</code> and then <code>/it hyper</code> again.</p>
-  <details class="faq"><summary>Show the expected result</summary><p>Choosing Systems Management changes the Issue type list, so the Hyper-V issue type is replaced. Once OS/Solution is Windows Server, <code>/it hyper</code> sets Hyper-V / virtual machines and it stays. Always set OS/Solution first.</p></details>
+  <details class="faq"><summary>Show the expected result</summary><p>Choosing Systems Management changes the Issue type list, so the Hyper-V issue type is replaced. Once OS/Solution is Windows Server, <code>/it hyper</code> sets Hyper-V / Virtual machines and it stays. Always set OS/Solution first.</p></details>
 
   <h3>Exercise 6: Capture a whole first call</h3>
   <p>Type this triage, line by line, as if the customer were giving you the details. Press <kbd>Enter</kbd> after each line.</p>
@@ -449,7 +449,7 @@
     <thead><tr><th>Field</th><th>Choices / purpose</th></tr></thead>
     <tbody>
       <tr><td>OS/Solution</td><td>The platform or solution stack (same list as Case Details).</td></tr>
-      <tr><td>Issue type</td><td>General investigation; Boot / startup failure; Crash / unexpected restart; Network / DNS connectivity; Performance / system hangs; Storage / disk / filesystem; Active Directory / authentication / Group Policy; Hyper-V / virtual machines; Failover clustering; Windows Update / installation failures; File shares / SMB / permissions. For <em>Systems Management</em> the only choice is <strong>fix ME OMSA</strong>. Drives the evidence checklist and the log plan.</td></tr>
+      <tr><td>Issue type</td><td>General Investigation; Boot / Startup Failure; Crash / Unexpected Restart; Network / DNS / TCPIP / RDMA; Performance / System Hangs; Storage / Disk / Filesystem; Active Directory / Authentication / Group Policy; Hyper-V / Virtual machines; Failover Clustering; Update / Patch Failures; File shares / SMB / Permissions. For <em>Systems Management</em> the only choice is <strong>fix ME OMSA</strong>. Drives the evidence checklist and the log plan.</td></tr>
       <tr><td>Product/Application</td><td>Appears for Systems Management cases.</td></tr>
       <tr><td>Service Impact</td><td>Unspecified, Service unavailable, Service degraded, Deployment, or How-to / planning. Carried into escalations.</td></tr>
       <tr><td>Recent change</td><td>What changed before the issue began. Carried into escalations as Recent changes.</td></tr>
@@ -468,7 +468,7 @@
   <p>The helper builds a targeted plan from the case’s OS and issue type. Open it from <strong>Open log collection helper</strong> here, the <strong>Log Collection Helper</strong> button in the action bar, or the quick-action toolbox. You can override the OS and issue type inside the helper; overrides affect only that plan.</p>
   <figure class="shot medium"><img src="docs/wiki-images/20a-log-helper-warning.png" alt="The warning that the Log Collection Helper is in development, with Cancel and I understand, continue buttons" loading="lazy"><figcaption>Every time you open it, a warning asks you to double-check the suggestions.</figcaption></figure>
   <div class="callout warning"><span class="callout-title">The helper is in development</span><p>Each time it opens you are asked to double-check every suggestion and verify its validity, including commands, tools, and collection guides. Choose <strong>I understand, continue</strong> to see the plan, or <strong>Cancel</strong> / <kbd>Esc</kbd> to close it. A reminder stays in the helper itself.</p></div>
-  <figure class="shot medium"><img src="docs/wiki-images/20-log-helper.png" alt="The Which logs should I collect dialog with a plan for a Windows Server network issue" loading="lazy"><figcaption>The helper recommends what to collect and explains why.</figcaption></figure>
+  <figure class="shot medium"><img src="docs/wiki-images/20-log-helper.png" alt="The Which logs should I collect dialog with a plan for a Windows Server network issue" loading="lazy"><figcaption>The helper recommends what to collect, where to run it, and the precautions to take.</figcaption></figure>
   <p>Nothing runs automatically. Review permissions, production impact, and approved storage before collecting. Logs and dumps can contain sensitive customer data. Closing the helper returns focus to the button that opened it.</p>
 
   <h2>3 · Verify resolution</h2>
