@@ -3,7 +3,7 @@
   const key = "dell-support.case-notes.v1";
   const $ = id => document.getElementById(id);
   const escapeHtml = value => String(value).replace(/[&<>"']/g,char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
-  let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release, assist = null;
+  let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release, assist = null, caseList = null;
   let savedState = null;
   let summaryCaseId = null;
   let notesPopout, devinIntegration;
@@ -48,444 +48,19 @@
     });
   }
   addButtonTooltips();
-  // ---- Backup & Restore ------------------------------------------------------------------------------
-  // Engine and file handling live in case-sync-core.js; this block is the dialogs and the page wiring.
-  const retentionKey = "dell-support.backup-retention-days", snoozeKey = "dell-support.backup-warning-snoozed-until";
-  const DAY_MS = 86400000, noticeKey = "dell-support.restore-notice";
-  let backupChosen = null, backupRoot = null, backupQueue = Promise.resolve(), backupTimer = null, lastBackupRun = 0;
-  let backupInfo = null, backupProblem = null, needsPermission = false, awaitingChoice = false, restoreKind = "history";
-  const supportsSync = () => typeof window.showDirectoryPicker === "function" && typeof indexedDB !== "undefined";
-  const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-  const retentionSetting = () => { try { const v = localStorage.getItem(retentionKey); return Object.hasOwn(CaseBackup.RETENTION_OPTIONS, v) ? v : CaseBackup.DEFAULT_RETENTION; } catch { return CaseBackup.DEFAULT_RETENTION; } };
-  const retentionLabel = () => { const days = CaseBackup.retentionDays(retentionSetting()); return days === null ? "Keeping every automatic snapshot." : `Automatic snapshots are kept ${days} days.`; };
-  const folderLabel = () => !backupChosen ? "" : backupRoot && backupRoot.name !== backupChosen.name ? `${backupChosen.name}/${backupRoot.name}` : backupChosen.name;
-  const clock = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
-  const dayName = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
-  function friendlyTime(time) {
-    const date = new Date(time), midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-    const days = Math.round((midnight(new Date()) - midnight(date)) / DAY_MS);
-    return `${days === 0 ? "Today" : days === 1 ? "Yesterday" : dayName.format(date)}, ${clock.format(date)}`;
-  }
-  function ago(time) {
-    const minutes = Math.round((Date.now() - time) / 60000);
-    if (minutes < 1) return "just now";
-    if (minutes < 60) return `${plural(minutes, "minute")} ago`;
-    if (minutes < 60 * 12) return `${plural(Math.round(minutes / 60), "hour")} ago`;
-    return friendlyTime(time);
-  }
-  function friendlyError(error) {
-    if (error?.name === "NotAllowedError" || error?.name === "SecurityError") return "The browser blocked access to the backup folder. Select Reconnect Backup Folder.";
-    if (error?.name === "QuotaExceededError" || /disk full|no space/i.test(error?.message || "")) return "The backup folder is full. Free some space, or use Clean Up Now.";
-    if (error?.name === "NotFoundError") return "The backup folder or a file in it could not be found. Choose the folder again.";
-    return error?.message || "Unknown error.";
-  }
-  const queued = task => { const run = backupQueue.then(task, task); backupQueue = run.catch(() => {}); return run; };
-  async function hasPermission() { try { return !!backupChosen && await backupChosen.queryPermission({ mode: "readwrite" }) === "granted"; } catch { return false; } }
-  async function getRoot(interactive = false) {
-    if (!backupChosen) return null;
-    const ok = interactive ? await CaseSync.ensurePermission(backupChosen) : await hasPermission();
-    needsPermission = !ok;
-    if (!ok) return null;
-    backupRoot = await CaseSync.resolveRoot(backupChosen);
-    return backupRoot;
-  }
-  function settingsSnapshot() {
-    const storedJson = (storageKey, fallback) => {
-      try { return JSON.parse(localStorage.getItem(storageKey) || JSON.stringify(fallback)); } catch { return fallback; }
-    };
-    return JSON.stringify({
-      exportedAt: new Date().toISOString(),
-      fieldConfig: state.fieldConfig,
-      toolbox: {
-        shortcuts: storedJson("dell-support.toolbox-links.v1", []),
-        appearance: storedJson("dell-support.toolbox-appearance.v1", { order: [], colors: {} })
-      },
-      preferences: CaseSettings.capture(localStorage)
-    }, null, 2);
-  }
-  // ---- status display
-  const backupSnoozed = () => { try { return Number(localStorage.getItem(snoozeKey)) > Date.now(); } catch { return false; } };
-  function renderBackupState() {
-    const card = $("backupStateCard"), headline = $("backupHeadline"), detail = $("backupDetail");
-    let mode, text, more;
-    if (!supportsSync()) { mode = "unsupported"; text = "Folder backup isn't available in this browser"; more = "Use Chrome or Edge for automatic backups, or download copies below."; }
-    else if (!backupChosen) { mode = "none"; text = "Not backed up yet"; more = "Your notes are saved only in this browser. Choose a folder (a OneDrive folder is ideal) and Case Notes will back up automatically."; }
-    else if (needsPermission) { mode = "paused"; text = "Backups are paused"; more = `Your browser needs permission to use ${folderLabel()} again. Select Reconnect Backup Folder.`; }
-    else if (backupProblem) { mode = "error"; text = "The last backup didn't finish"; more = backupProblem; }
-    else if (awaitingChoice) { mode = "paused"; text = "Backups are waiting for your choice"; more = `${folderLabel()} already contains backups. Restore from them, or select Back Up Now to keep your current notes and replace the latest copy.`; }
-    else { mode = "ok"; text = backupInfo?.lastBackup ? `Backed up ${ago(backupInfo.lastBackup)}` : "Backup folder connected"; more = `${folderLabel()}${backupInfo ? ` · ${plural(backupInfo.snapshots, "snapshot")} · ${CaseBackup.formatBytes(backupInfo.bytes)}` : ""}`; }
-    if (card) card.dataset.state = mode;
-    if (headline) headline.textContent = text;
-    if (detail) detail.textContent = more;
-    const connected = !!backupChosen && !needsPermission;
-    if ($("chooseSyncFolder")) $("chooseSyncFolder").textContent = !backupChosen ? "Choose Backup Folder" : needsPermission ? "Reconnect Backup Folder" : "Change Backup Folder";
-    if ($("chooseSyncFolder")) $("chooseSyncFolder").className = `button ${!backupChosen || needsPermission ? "primary" : "secondary"}`;
-    for (const id of ["backupNow", "openRestore", "cleanupBackups", "deleteAllBackups", "startFresh"]) if ($(id)) $(id).disabled = !backupChosen;
-    if ($("backupNow")) $("backupNow").className = `button ${connected ? "primary" : "secondary"}`;
-    if ($("chooseSyncFolder")) $("chooseSyncFolder").disabled = !supportsSync();
-    if ($("disconnectBackupFolder")) $("disconnectBackupFolder").disabled = !backupChosen;
-    if ($("backupSummary")) $("backupSummary").textContent = backupInfo ? `${plural(backupInfo.snapshots, "snapshot")} · ${CaseBackup.formatBytes(backupInfo.bytes)} in the backup folder. ${retentionLabel()}` : retentionLabel();
-    const banner = $("backupWarningBanner");
-    if (banner) {
-      const show = supportsSync() && (!backupChosen && !backupSnoozed() || needsPermission);
-      banner.hidden = !show;
-      if ($("backupWarningMessage")) $("backupWarningMessage").textContent = needsPermission ? "Automatic backups are paused until you reconnect your backup folder." : "Your notes are saved only in this browser. Set up a backup folder so you can recover them if browser data is cleared.";
-      if ($("configureBackups")) $("configureBackups").textContent = needsPermission ? "Reconnect Backup Folder" : "Set Up Backups";
-      if ($("dismissBackupWarning")) $("dismissBackupWarning").hidden = needsPermission;
-    }
-  }
-  function backupMessage(message) { report(message, "backupFolderStatus"); renderBackupState(); }
-  async function refreshSummary(root) {
-    try { backupInfo = await CaseSync.summary(root); } catch { backupInfo = null; }
-    renderBackupState();
-  }
-  async function restoreBackupFolder() {
-    if (!supportsSync()) { renderBackupState(); return; }
-    try {
-      const restored = await CaseSync.restoreFolder();
-      backupChosen = restored.handle || null;
-      if (backupChosen) { const root = await getRoot(false); if (root) await refreshSummary(root); }
-    } catch { backupChosen = null; }
-    renderBackupState();
-  }
-  // ---- confirmation dialog: buttons are [{label, value, primary}]; Escape resolves null
-  function askChoice({ title, message, buttons, typeToConfirm = null }) {
-    const dialog = $("backupConfirmDialog");
-    return new Promise(resolve => {
-      $("backupConfirmTitle").textContent = title;
-      $("backupConfirmMessage").textContent = message;
-      const input = $("backupConfirmInput"), typeRow = $("backupConfirmTypeLabel"), actions = $("backupConfirmButtons");
-      typeRow.hidden = !typeToConfirm; input.value = "";
-      if (typeToConfirm) $("backupConfirmWord").textContent = typeToConfirm;
-      actions.textContent = "";
-      const guarded = [];
-      let done = false;
-      const finish = value => { if (done) return; done = true; dialog.removeEventListener("close", onClose); if (dialog.open) dialog.close(); resolve(value); };
-      const onClose = () => finish(null);
-      for (const choice of buttons) {
-        const button = document.createElement("button");
-        button.type = "button"; button.className = `button ${choice.primary ? "primary" : "secondary"}`; button.textContent = choice.label;
-        if (typeToConfirm && choice.value) { button.disabled = true; guarded.push(button); }
-        button.addEventListener("click", () => finish(choice.value));
-        actions.append(button);
-      }
-      input.oninput = () => guarded.forEach(button => { button.disabled = input.value.trim().toUpperCase() !== typeToConfirm; });
-      dialog.addEventListener("close", onClose);
-      dialog.showModal();
-      (typeToConfirm ? input : actions.querySelector(".primary") || actions.firstChild)?.focus();
-    });
-  }
-  // ---- backing up
-  function runBackup(manual = false) {
-    return queued(async () => {
-      const root = await getRoot(manual);
-      if (!root) { renderBackupState(); if (manual) throw Error("Reconnect the backup folder first."); return null; }
-      try {
-        const result = await CaseSync.backup(root, { state, settingsJson: settingsSnapshot(), manual, retention: retentionSetting() });
-        lastBackupRun = Date.now(); backupProblem = null; backedUpSettings = settingsFingerprint();
-        await refreshSummary(root);
-        return result;
-      } catch (error) { backupProblem = friendlyError(error); renderBackupState(); throw error; }
-    });
-  }
-  // A change is backed up a few seconds after saving, and at most every 30 seconds; the newest change is never skipped.
-  function scheduleBackup() {
-    if (!backupChosen || !writable || awaitingChoice || backupTimer) return;
-    backupTimer = setTimeout(() => { backupTimer = null; runBackup().catch(() => {}); }, Math.max(3000, 30000 - (Date.now() - lastBackupRun)));
-  }
-  // Toolbox, theme and other preferences live outside the case history, so a settings change must trigger a backup on its own.
-  const settingsFingerprint = (text = settingsSnapshot()) => { try { const value = JSON.parse(text); delete value.exportedAt; return JSON.stringify(value); } catch { return ""; } };
-  let backedUpSettings = null;
-  setInterval(() => {
-    if (!backupChosen || !writable || awaitingChoice || backupTimer) return;
-    const now = settingsFingerprint();
-    if (backedUpSettings === null) { backedUpSettings = now; return; }
-    if (now !== backedUpSettings) { backedUpSettings = now; scheduleBackup(); }
-  }, 12000);
-  async function chooseBackupFolder() {
-    if (!supportsSync()) { backupMessage("This browser can't save to a folder. Use Chrome or Edge, or download a copy instead."); return; }
-    let picked;
-    try { picked = await window.showDirectoryPicker({ id: "pro-support-tools-sync", mode: "readwrite", startIn: "documents" }); }
-    catch (error) { if (error?.name !== "AbortError") backupMessage("The backup folder was not set."); return; }
-    try {
-      backupChosen = picked; needsPermission = false; backupProblem = null;
-      await CaseSync.storeFolder(picked, picked.name);
-      const root = await getRoot(true);
-      if (!root) { backupMessage("Folder access was not approved."); return; }
-      await refreshSummary(root);
-      if (backupInfo?.hasBackups) await existingBackupsChoice();
-      else { await runBackup(); backupMessage(`Backup folder ready: ${folderLabel()}. Your notes were backed up and will stay backed up automatically.`); }
-    } catch (error) { backupProblem = friendlyError(error); backupMessage(`Could not set up the backup folder. ${backupProblem}`); }
-  }
-  // A folder that already holds backups (a new computer, a reinstall) must never be silently overwritten.
-  async function existingBackupsChoice() {
-    awaitingChoice = true; renderBackupState();
-    const when = backupInfo.lastBackup ? ` The newest was saved ${friendlyTime(backupInfo.lastBackup)}.` : "";
-    const empty = !state.cases.length && !state.archive.length;
-    const choice = await askChoice({
-      title: "This folder already has backups",
-      message: `${folderLabel()} contains ${plural(backupInfo.snapshots, "snapshot")}.${when} ${empty ? "Your notes here are empty, so restoring is probably what you want." : "Restoring replaces the notes in this browser; keeping your current notes replaces the folder's latest copy (older snapshots are kept)."}`,
-      buttons: [{ label: "Restore from these backups", value: "restore", primary: empty }, { label: "Keep my current notes and back up here", value: "keep", primary: !empty }, { label: "Decide later", value: null }]
-    });
-    if (choice === "restore") { const menu = $("backupRestoreMenu"); if (menu && !menu.open) menu.showModal(); await openRestore("history"); }
-    else if (choice === "keep") { awaitingChoice = false; await runBackup(true).catch(() => {}); backupMessage("Backups are on. Your current notes were saved to the folder."); }
-    else backupMessage("Backups are paused until you restore or choose Back Up Now.");
-  }
-  async function backUpNow() {
-    if (!backupChosen) return;
-    try {
-      if (awaitingChoice) {
-        const ok = await askChoice({ title: "Replace the folder's latest copy?", message: "The folder already holds backups. Backing up now replaces its latest copy with the notes in this browser. Older snapshots are kept.", buttons: [{ label: "Back up and replace latest", value: true, primary: true }, { label: "Cancel", value: false }] });
-        if (!ok) return;
-        awaitingChoice = false;
-      }
-      await runBackup(true);
-      backupMessage(`Backed up to ${folderLabel()} at ${new Date().toLocaleTimeString()}. A named copy was added to the list.`);
-    } catch (error) { backupMessage(`Backup failed. ${friendlyError(error)}`); }
-  }
-  // ---- restore
-  const KIND_LABEL = { latest: "Latest copy, refreshed after every change", auto: "Automatic snapshot", manual: "Manual backup", safety: "Safety copy" };
-  const REASON_LABEL = { restore: "saved before a restore", "delete-all": "saved before deleting backups", "start-fresh": "saved before starting fresh", "field-removal": "saved before removing a field", "field-reset": "saved before resetting fields" };
-  const describeKind = item => item.kind === "safety" ? `Safety copy, ${REASON_LABEL[item.reason] || "saved automatically before a change"}` : KIND_LABEL[item.kind];
-  const groupTitles = [["latest", "Most recent"], ["manual", "Manual backups"], ["safety", "Safety copies"], ["auto", "Automatic snapshots"]];
-  function setRestoreKind(kind) {
-    restoreKind = kind;
-    for (const [id, name] of [["tabHistory", "history"], ["tabSettings", "settings"]]) { const tab = $(id); if (tab) { tab.setAttribute("aria-selected", String(name === kind)); tab.tabIndex = name === kind ? 0 : -1; } }
-  }
-  async function openRestore(kind = restoreKind) {
-    setRestoreKind(kind);
-    const dialog = $("restoreDialog");
-    if (!dialog.open) dialog.showModal();
-    $("restoreStatus").textContent = "Loading backups…";
-    $("restoreList").textContent = "";
-    const root = await getRoot(true).catch(() => null);
-    if (!root) { $("restoreStatus").textContent = backupChosen ? "Reconnect the backup folder to see your backups." : "No backup folder is set up. Choose a file below, or close this and choose a backup folder."; return; }
-    let items;
-    try { items = (await CaseSync.listSnapshots(root)).filter(item => item.type === restoreKind); }
-    catch (error) { $("restoreStatus").textContent = `Could not read the backup folder. ${friendlyError(error)}`; return; }
-    const list = $("restoreList");
-    // Settings copies identical to what is active now would change nothing, so say so instead of offering a no-op restore.
-    const same = new Set();
-    if (restoreKind === "settings") {
-      const current = settingsFingerprint();
-      for (const item of items) { try { if (settingsFingerprint(await CaseSync.loadSettingsText(root, item.name)) === current) same.add(item.name); } catch { /* unreadable copies still list */ } }
-    }
-    $("restoreStatus").textContent = items.length ? `${plural(items.length, "backup")} found. Newest first within each group.` : `No ${restoreKind === "history" ? "case history" : "settings"} backups yet. Select Back Up Now in Backup & Restore to create one.`;
-    for (const [kind, title] of groupTitles) {
-      const group = items.filter(item => item.kind === kind);
-      if (!group.length) continue;
-      const heading = document.createElement("p"); heading.className = "dropdown-label"; heading.textContent = title; list.append(heading);
-      for (const item of group) list.append(restoreRow(item, same.has(item.name)));
-    }
-  }
-  function restoreRow(item, matchesCurrent = false) {
-    const row = document.createElement("div"); row.className = "backup-row"; row.setAttribute("role", "listitem");
-    const when = friendlyTime(item.time);
-    const text = document.createElement("div"); text.className = "backup-row-main";
-    const strong = document.createElement("strong"); strong.textContent = when;
-    const small = document.createElement("span"); small.textContent = `${describeKind(item)} · ${CaseBackup.formatBytes(item.size)}${matchesCurrent ? " · same as your current settings" : ""}`;
-    text.append(strong, small);
-    const restore = document.createElement("button"); restore.type = "button"; restore.className = "button primary"; restore.textContent = "Restore"; restore.setAttribute("aria-label", `Restore the backup from ${when}`);
-    if (matchesCurrent) { restore.disabled = true; restore.title = "These settings are already active, so restoring would change nothing."; }
-    restore.addEventListener("click", () => void restoreSnapshot(item, when));
-    const remove = document.createElement("button"); remove.type = "button"; remove.className = "button secondary"; remove.textContent = "Delete"; remove.setAttribute("aria-label", `Delete the backup from ${when}`);
-    remove.addEventListener("click", () => void deleteSnapshot(item, when));
-    row.append(text, restore, remove);
-    return row;
-  }
-  async function deleteSnapshot(item, when) {
-    const ok = await askChoice({ title: "Delete this backup?", message: `${describeKind(item)} from ${when} will be permanently deleted from the backup folder. Your current notes are not affected.${item.kind === "latest" ? " The most recent backup is recreated the next time your notes are backed up." : ""}`, buttons: [{ label: "Delete backup", value: true, primary: true }, { label: "Keep it", value: false }] });
-    if (!ok) return;
-    try {
-      const root = await getRoot(true);
-      if (!root) throw Error("Reconnect the backup folder first.");
-      await queued(() => CaseSync.deleteSnapshot(root, item.name));
-      await refreshSummary(root);
-      await openRestore(restoreKind);
-      $("restoreStatus").textContent = `Deleted the backup from ${when}.`;
-    } catch (error) { $("restoreStatus").textContent = `Could not delete it. ${friendlyError(error)}`; }
-  }
-  // Applies already-validated backups to this browser. Parsing happens first so a bad file changes nothing.
-  function applyRestore(restoredHistory, restoredSettings) {
-    const values = restoredSettings?.values || {};
-    const nextState = restoredHistory ? CaseNotes.parse(JSON.stringify(restoredSettings ? { ...restoredHistory, fieldConfig: restoredSettings.fieldConfig } : restoredHistory)) : null;
-    if (nextState) localStorage.setItem(key, JSON.stringify(nextState));
-    if (restoredSettings) CaseSettings.commit(localStorage, values);
-    if (nextState) { state = nextState; savedState = JSON.parse(JSON.stringify(state)); }
-    if (restoredSettings && !nextState) {
-      state = CaseNotes.parse(JSON.stringify({ ...state, fieldConfig: restoredSettings.fieldConfig }));
-      localStorage.setItem(key, JSON.stringify(state));
-      savedState = JSON.parse(JSON.stringify(state));
-    }
-    dirty = false;
-    window.dispatchEvent(new Event("prosSupportToolboxRestore"));
-    window.dispatchEvent(new Event("supportSettingsRestored"));
-    render();
-  }
-  function checkSettings(text) {
-    const restored = CaseSettings.validate(JSON.parse(text), CaseNotes.fields);
-    for (const id of Object.keys(restored.fieldConfig.customFields)) {
-      if (document.getElementById(id) && !Object.hasOwn(state.fieldConfig.customFields, id)) throw Error(`A custom field ID conflicts with a page control: ${id}`);
-    }
-    return restored;
-  }
-  // One path for folder snapshots and chosen files: validate, confirm, save a safety copy, then replace.
-  async function restoreFlow({ kind, text, label }) {
-    if (!writable || copying) { $("restoreStatus").textContent = "Another Case Notes window is editing right now. Close it, then try again."; return; }
-    let history = null, settings = null;
-    try {
-      if (kind === "history") history = CaseNotes.parse(text); else settings = checkSettings(text);
-    } catch (error) {
-      $("restoreStatus").textContent = `That backup can't be restored, so nothing was changed. ${/screenshot/i.test(error?.message || "") ? "It stores screenshots in the backup folder's images folder: restore it from the list instead of choosing the file." : error?.message || ""}`.trim();
-      return;
-    }
-    const mention = kind === "history"
-      ? `This replaces the ${plural(state.cases.length, "case")} in this browser with ${plural(history.cases.length, "case")} from ${label}, including Archive, Trash and versions. Settings are not changed.`
-      : `This replaces your settings (fields, toolbox, preferences) with the ones from ${label}. Your case notes are kept.`;
-    const root = backupChosen ? await getRoot(false).catch(() => null) : null;
-    const safety = root ? " A safety copy of what you have now is saved first, so you can undo this from the list." : " No backup folder is connected, so no safety copy can be saved first.";
-    const ok = await askChoice({ title: kind === "history" ? "Restore case history?" : "Restore settings?", message: mention + safety, buttons: [{ label: "Restore", value: true, primary: true }, { label: "Cancel", value: false }] });
-    if (!ok) return;
-    try {
-      if (root) await queued(() => CaseSync.safetyCopy(root, kind === "history" ? { state, reason: "restore" } : { settingsJson: settingsSnapshot(), reason: "restore" }));
-      applyRestore(history, settings);
-      awaitingChoice = false;
-      $("restoreDialog").close(); $("backupRestoreMenu")?.close();
-      const done = `Restored ${kind === "history" ? "case history" : "settings"} from ${label}.${root ? " Your previous version was kept as a safety copy." : ""}`;
-      report(done);
-      if (root) { backedUpSettings = null; scheduleBackup(); await refreshSummary(root); }
-      // Some preferences (theme, panel layout, AI prompts, toolbox position) are read once at page load: reload so every restored setting shows.
-      if (kind === "settings") {
-        try { sessionStorage.setItem(noticeKey, done); } catch {}
-        setTimeout(() => { try { window.location.reload(); } catch {} }, 700);
-      }
-    } catch (error) { $("restoreStatus").textContent = `Could not restore. Nothing was changed. ${friendlyError(error)}`; }
-  }
-  async function restoreSnapshot(item, when) {
-    try {
-      const root = await getRoot(true);
-      if (!root) throw Error("Reconnect the backup folder first.");
-      const text = item.type === "history" ? await CaseSync.loadHistoryText(root, item.name) : await CaseSync.loadSettingsText(root, item.name);
-      await restoreFlow({ kind: item.type, text, label: `the ${item.kind === "latest" ? "latest copy" : item.kind === "auto" ? "automatic snapshot" : item.kind === "manual" ? "manual backup" : "safety copy"} from ${when}` });
-    } catch (error) { $("restoreStatus").textContent = `That backup can't be restored, so nothing was changed. ${friendlyError(error)}`; }
-  }
-  async function restoreFromChosenFile(file) {
-    if (!file) return;
-    let text;
-    try { text = await file.text(); const value = JSON.parse(text); restoreKind = value && Array.isArray(value.cases) ? "history" : value && value.fieldConfig ? "settings" : null; if (!restoreKind) throw Error("This file isn't a Case Notes backup."); }
-    catch (error) { $("restoreStatus").textContent = `Could not read that file. ${error instanceof SyntaxError ? "It isn't a valid backup." : error.message}`; return; }
-    setRestoreKind(restoreKind);
-    await restoreFlow({ kind: restoreKind, text, label: `the file ${file.name}` });
-  }
-  // ---- cleanup, delete, start fresh
-  async function cleanUpNow() {
-    try {
-      const root = await getRoot(true);
-      if (!root) throw Error("Reconnect the backup folder first.");
-      const result = await queued(() => CaseSync.cleanup(root, { retention: retentionSetting() }));
-      await refreshSummary(root);
-      backupMessage(result.removed ? `Cleanup removed ${plural(result.removed, "old snapshot")}${result.images ? ` and ${plural(result.images, "unused screenshot file")}` : ""}, freeing ${CaseBackup.formatBytes(result.bytes)}. Manual backups and safety copies are always kept.` : `Nothing to clean up. ${retentionLabel()}`);
-    } catch (error) { backupMessage(`Cleanup failed. ${friendlyError(error)}`); }
-  }
-  async function deleteAllBackups() {
-    const ok = await askChoice({ title: "Delete all backups?", message: `Every snapshot, manual backup, safety copy and screenshot file in ${folderLabel()} will be permanently deleted. Your notes in this browser are not affected, and automatic backups start again the next time your notes change. Other files in the folder are never touched.`, typeToConfirm: "DELETE", buttons: [{ label: "Delete all backups", value: true, primary: true }, { label: "Cancel", value: false }] });
-    if (!ok) return;
-    try {
-      const root = await getRoot(true);
-      if (!root) throw Error("Reconnect the backup folder first.");
-      const result = await queued(() => CaseSync.deleteAll(root));
-      await refreshSummary(root);
-      backupMessage(`Deleted ${plural(result.removed, "backup file")}${result.images ? ` and ${plural(result.images, "screenshot file")}` : ""}.`);
-    } catch (error) { backupMessage(`Could not delete the backups. ${friendlyError(error)}`); }
-  }
-  async function startFresh() {
-    if (!writable || copying) { backupMessage("Another Case Notes window is editing right now. Close it, then try again."); return; }
-    const ok = await askChoice({ title: "Start completely fresh?", message: `This permanently deletes every backup in ${folderLabel()} AND erases all case notes, settings and preferences in this browser. Nothing is kept: there is no safety copy and it cannot be undone. Consider downloading a copy first.`, typeToConfirm: "DELETE", buttons: [{ label: "Erase everything", value: true, primary: true }, { label: "Cancel", value: false }] });
-    if (!ok) return;
-    try {
-      const root = await getRoot(true);
-      if (!root) throw Error("Reconnect the backup folder first.");
-      await queued(() => CaseSync.deleteAll(root));
-      CaseSettings.commit(localStorage, CaseSettings.clearValues());
-      state = CaseNotes.empty(); localStorage.setItem(key, JSON.stringify(state)); savedState = JSON.parse(JSON.stringify(state)); dirty = false; awaitingChoice = false;
-      window.dispatchEvent(new Event("prosSupportToolboxRestore")); window.dispatchEvent(new Event("supportSettingsRestored"));
-      render();
-      await refreshSummary(root);
-      $("backupRestoreMenu")?.close();
-      report("Everything was erased and Case Notes is starting fresh. Automatic backups continue in the same folder once you add a case.");
-    } catch (error) { backupMessage(`Could not finish starting fresh. ${friendlyError(error)}`); }
-  }
-  async function disconnectFolder() {
-    const ok = await askChoice({ title: "Stop using this backup folder?", message: "Backups stop. Files already in the folder are not deleted, and you can choose the same folder again later.", buttons: [{ label: "Disconnect", value: true, primary: true }, { label: "Cancel", value: false }] });
-    if (!ok) return;
-    try { await CaseSync.forgetFolder(); } catch {}
-    backupChosen = null; backupRoot = null; backupInfo = null; needsPermission = false; awaitingChoice = false; backupProblem = null;
-    backupMessage("Backup folder disconnected. Your notes are saved only in this browser until you choose a folder.");
-  }
-  // Best effort: a failed safety copy never blocks the action, but a successful one makes it undoable from the restore list.
-  async function safetyBefore(reason) {
-    try {
-      const root = backupChosen ? await getRoot(false) : null;
-      if (root) await queued(() => CaseSync.safetyCopy(root, { state, reason }));
-    } catch { /* the folder may be offline; the action itself proceeds as before */ }
-  }
-  function downloadText(name, text) {
-    const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
-    const link = document.createElement("a"); link.href = url; link.download = name; document.body.append(link); link.click(); link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
-  // ---- wiring
-  $("chooseSyncFolder")?.addEventListener("click", async () => {
-    if (backupChosen && needsPermission) {
-      try {
-        const root = await getRoot(true);
-        if (root) { await refreshSummary(root); if (awaitingChoice) await existingBackupsChoice(); else { await runBackup().catch(() => {}); backupMessage("Folder reconnected. Backups are running again."); } }
-        else backupMessage("Folder access was not approved.");
-        return;
-      } catch { /* fall through and let the person choose the folder again */ }
-    }
-    await chooseBackupFolder();
+  const { askChoice } = window.CaseDialogs;
+  // A restore or field change hands back a new, already stored case history; it becomes the saved state.
+  function replaceState(next) { state = next; savedState = JSON.parse(JSON.stringify(next)); dirty = false; }
+  // Backup & Restore lives in case-backup-ui.js; it reads and replaces the case history through these functions.
+  const { scheduleBackup, safetyBefore } = window.CaseBackupUI.init({
+    key,
+    state: () => state,
+    replaceState,
+    writable: () => writable,
+    copying: () => copying,
+    render: () => render(),
+    report: (message, dialogStatus) => report(message, dialogStatus)
   });
-  $("backupNow")?.addEventListener("click", () => void backUpNow());
-  $("openRestore")?.addEventListener("click", () => void openRestore("history"));
-  $("tabHistory")?.addEventListener("click", () => void openRestore("history"));
-  $("tabSettings")?.addEventListener("click", () => void openRestore("settings"));
-  $("restoreFromFile")?.addEventListener("click", () => $("restoreFile")?.click());
-  $("restoreFile")?.addEventListener("change", async event => { const file = event.target.files?.[0]; event.target.value = ""; await restoreFromChosenFile(file); });
-  $("closeRestore")?.addEventListener("click", () => $("restoreDialog")?.close());
-  $("cleanupBackups")?.addEventListener("click", () => void cleanUpNow());
-  $("deleteAllBackups")?.addEventListener("click", () => void deleteAllBackups());
-  $("startFresh")?.addEventListener("click", () => void startFresh());
-  $("disconnectBackupFolder")?.addEventListener("click", () => void disconnectFolder());
-  $("downloadHistory")?.addEventListener("click", () => downloadText(CaseBackup.fileName("history", "manual", Date.now()), JSON.stringify(state, null, 2)));
-  $("downloadSettings")?.addEventListener("click", () => downloadText(CaseBackup.fileName("settings", "manual", Date.now()), settingsSnapshot()));
-  const retentionSelect = $("backupRetention");
-  if (retentionSelect) {
-    retentionSelect.value = retentionSetting();
-    retentionSelect.addEventListener("change", () => {
-      if (!Object.hasOwn(CaseBackup.RETENTION_OPTIONS, retentionSelect.value)) return;
-      try { localStorage.setItem(retentionKey, retentionSelect.value); } catch {}
-      backupMessage(`${retentionLabel()} Older snapshots are cleaned up automatically after each hourly snapshot.`);
-    });
-  }
-  $("closeBackupRestore")?.addEventListener("click", () => $("backupRestoreMenu")?.close());
-  $("configureBackups")?.addEventListener("click", () => { if (backupChosen && needsPermission) $("chooseSyncFolder")?.click(); else openBackupDialog(); });
-  $("dismissBackupWarning")?.addEventListener("click", () => {
-    try { localStorage.setItem(snoozeKey, String(Date.now() + 7 * DAY_MS)); } catch {}
-    renderBackupState();
-  });
-  function openBackupDialog() {
-    window.SiteTopbar?.closeMenus();
-    if (retentionSelect) retentionSelect.value = retentionSetting();
-    $("backupRestoreMenu")?.showModal();
-    getRoot(false).then(root => root ? refreshSummary(root) : renderBackupState()).catch(renderBackupState);
-    renderBackupState();
-  }
-  $("openBackupRestore")?.addEventListener("click", openBackupDialog);
-  window.addEventListener("pagehide", () => { if (backupTimer) { clearTimeout(backupTimer); backupTimer = null; void runBackup().catch(() => {}); } });
-  renderBackupState();
-  restoreBackupFolder();
-  try { const notice = sessionStorage.getItem(noticeKey); if (notice) { sessionStorage.removeItem(noticeKey); report(`${notice} The page was reloaded so every setting shows.`); } } catch {}
   const actionDockPreferenceKey = "dell-support.case-notes.action-dock-floating";
   const actionDockToggle = $("toggleActionDock");
   let actionDockFloating = true;
@@ -584,23 +159,21 @@
     setHistoryCollapsed(historyCollapsed);
     try { localStorage.setItem(sidebarKey, String(historyCollapsed)); } catch { /* Still works for this visit. */ }
   });
-  // Recent cases as cards (Grid, the default) or compact one-line rows (List).
-  const historyViewKey = "dell-support.case-history-view";
-  let historyView = "grid";
-  try { if (localStorage.getItem(historyViewKey) === "list") historyView = "list"; } catch { /* Use the grid default. */ }
-  function setHistoryView(view, persist) {
-    historyView = view === "list" ? "list" : "grid";
-    $("historyList").classList.toggle("history-compact", historyView === "list");
-    $("historyViewList").setAttribute("aria-pressed", String(historyView === "list"));
-    $("historyViewGrid").setAttribute("aria-pressed", String(historyView === "grid"));
-    if (!persist) return;
-    try { localStorage.setItem(historyViewKey, historyView); } catch { /* Still works for this visit. */ }
-    scheduleBackup();
-    history();
+  // The Recent cases list (view, search, filters, cards) lives in case-history-list.js.
+  caseList = window.CaseHistoryList.init({
+    state: () => state, writable: () => writable, copying: () => copying, save: () => save(),
+    select: id => selectCase(id),
+    commitCaseChange: (change, failure) => commitCaseChange(change, failure), showStoredCase: (note, collection) => showStoredCase(note, collection),
+    status: text => status(text), report: message => report(message), scheduleBackup: () => scheduleBackup(), refreshAssist: () => assist?.refresh()
+  });
+  function history() { caseList?.render(); }
+  // Opens a case from Recent cases (or a notification), saving the current one first.
+  function selectCase(id) {
+    if (copying || (writable && !save())) return;
+    state.selected = id;
+    if (writable) { dirty = true; save(); }
+    render();
   }
-  setHistoryView(historyView, false);
-  $("historyViewList").addEventListener("click", () => setHistoryView("list", true));
-  $("historyViewGrid").addEventListener("click", () => setHistoryView("grid", true));
   // Collapsible form sections (Case Details, Notes, Action Plan / Next Steps).
   const sectionsKey = "dell-support.case-notes-sections";
   const sectionIds = ["caseDetails", "notes", "actionPlan"];
@@ -779,121 +352,6 @@
     }
   }
 
-  // SR number or Service Tag when known; otherwise the start of the issue description and the date, so untitled
-  // cases can still be told apart (especially in the title-only List view).
-  function caseListTitle(note) {
-    if (note.request || note.tag) return note.request || note.tag;
-    const date = new Date(note.created).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    const words = CaseNotes.plainText(note.issue || "").trim().split(/\s+/).filter(Boolean);
-    if (!words.length) return "Untitled case · " + date;
-    const start = words.slice(0, 6).join(" ");
-    return (start.length > 48 ? start.slice(0, 47) : start) + (words.length > 6 || start.length > 48 ? "…" : "") + " · " + date;
-  }
-  // The Filters button shows how many of Show cases, Collection and Sort differ from their defaults.
-  function updateFilterSummary() {
-    const changed = [$("followupFilter")?.value !== "all", $("caseCollection")?.value !== "cases", $("caseSort")?.value !== "created"].filter(Boolean).length;
-    if ($("filterCount")) $("filterCount").textContent = changed ? ` (${changed})` : "";
-  }
-  function history() {
-    const query = $("search").value.trim().toLowerCase();
-    const filter = $("followupFilter").value || "all";
-    const viewCollection = ["archive","trash"].includes($("caseCollection")?.value) ? $("caseCollection").value : "cases";
-    const sort = $("caseSort")?.value || "created";
-    const now = Date.now();
-    // "Search Archive and Trash too" widens a search to every collection; each result remembers where it lives.
-    const everywhere = !!query && !!$("searchEverywhere")?.checked;
-    const where = new Map();
-    for (const name of everywhere ? ["cases","archive","trash"] : [viewCollection]) for (const note of state[name] || []) where.set(note, name);
-    updateFilterSummary();
-    const matches = [...where.keys()].filter(note => {
-      const status = note.toolkit?.status || "Open";
-      return (!query || CaseNotes.searchText(note).toLowerCase().includes(query)) && (filter === "all" || filter === "overdue" && CaseToolkitCore.overdue(note, now) || filter === "soon" && CaseToolkitCore.dueSoon(note, now) || filter === "active" && status !== "Completed" || filter === "completed" && status === "Completed");
-    }).sort((a,b) => Number(!!b.pinned)-Number(!!a.pinned) || (sort === "due" ? (Date.parse(a.toolkit?.due) || Infinity)-(Date.parse(b.toolkit?.due) || Infinity) : b[sort === "updated" ? "updated" : "created"]-a[sort === "updated" ? "updated" : "created"]));
-    $("caseCount").textContent = viewCollection === "cases" ? `${state.cases.length} / 100` : `${state[viewCollection].length} ${viewCollection === "archive" ? "archived" : "in Trash"}`;
-    $("historyList").replaceChildren(...matches.map(note => {
-      const collection = where.get(note);
-      const button = document.createElement("button"); button.className = "case-item";
-      button.setAttribute("aria-current", String(note.id === state.selected));
-      button.disabled = copying;
-      const title = document.createElement("strong"); title.textContent = (note.id === CaseExample.ID ? "Sample · " : "") + caseListTitle(note);
-      if (historyView === "list") button.title = title.textContent;
-      const issue = document.createElement("span"); issue.textContent = query ? CaseNotes.excerpt(note,query) : note.issue || "No issue description yet";
-      const meta = document.createElement("small"); meta.textContent = `${note.tag ? note.tag + " · " : ""}${historyView === "list" ? new Date(note.created).toLocaleDateString() : new Date(note.created).toLocaleString()}`;
-      button.append(title, issue, meta);
-      if (collection !== viewCollection) {
-        const place = document.createElement("small"); place.className = "case-collection-badge";
-        place.textContent = collection === "archive" ? "In Archive" : collection === "trash" ? "In Trash" : "In Recent cases";
-        button.append(place);
-      }
-      // Red when the follow-up is overdue, yellow when it is due within 4 hours.
-      const followup = CaseToolkitCore.followupState(note, now);
-      if (followup) { button.classList.toggle("followup-" + followup, true); button.title = [button.title, followup === "overdue" ? "Follow-up overdue" : "Follow-up due within 4 hours"].filter(Boolean).join(" · "); }
-      if (note.toolkit) {
-        const badge = document.createElement("small");
-        const late = followup === "overdue";
-        badge.className = followup ? "followup-badge " + followup : "followup-badge";
-        badge.textContent = `${late ? "Overdue · " : followup === "soon" ? "Due soon · " : ""}${note.toolkit.status}${note.toolkit.owner ? " · " + note.toolkit.owner : ""}${note.toolkit.due ? " · " + new Date(note.toolkit.due).toLocaleString() : ""}`;
-        button.append(badge);
-      }
-      const row = document.createElement("div"); row.className = "case-row";
-      const remove = document.createElement("button");
-      remove.className = "delete-case"; remove.type = "button";
-      const caseName = note.tag || note.request || "Untitled case";
-      remove.setAttribute("aria-label", "Delete case " + caseName);
-      remove.title = collection === "trash" ? "Permanently delete this case" : "Move case to Trash";
-      remove.disabled = !writable || copying;
-      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      icon.setAttribute("viewBox", "0 0 24 24"); icon.setAttribute("aria-hidden", "true");
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7");
-      icon.append(path); remove.append(icon);
-      remove.addEventListener("click", async () => {
-        if (!writable || copying) return;
-        if (!confirm(collection === "trash" ? `Permanently delete ${caseName} and its versions? This cannot be undone.` : `Move ${caseName} to Trash? You can restore it later.`)) return;
-        if (!writable || copying || !save()) return;
-        const permanent = collection === "trash";
-        if (!commitCaseChange(candidate => {
-          if (permanent) { candidate.trash = candidate.trash.filter(item => item.id !== note.id); delete candidate.revisions[note.id]; }
-          else CaseNotes.move(candidate,note.id,collection,"trash",Date.now());
-        }, "Could not delete the case. Check browser storage and try again. Your case has not been removed.")) return;
-        status("Saved");
-        report(permanent ? `${caseName} was permanently deleted.` : `${caseName} moved to Trash. Choose Trash in the case list to restore it.`);
-        $("copyStatus").textContent = "";
-      });
-      row.append(button, remove);
-      const rowActions = document.createElement("div"); rowActions.className = "case-row-actions";
-      const addAction = (label,action) => {
-        const control = document.createElement("button"); control.type = "button"; control.className = "button secondary";
-        control.textContent = label; control.disabled = !writable || copying; control.setAttribute("aria-label",label + " " + caseName);
-        control.addEventListener("click",action); rowActions.append(control);
-      };
-      if (collection === "cases") {
-        addAction(note.pinned ? "Unpin" : "Pin", () => commitCaseChange(candidate => { candidate.cases.find(item => item.id === note.id).pinned = !note.pinned; }));
-        addAction("Archive", () => commitCaseChange(candidate => CaseNotes.move(candidate,note.id,"cases","archive",Date.now())));
-        if (followup) addAction("Follow-up done", async () => {
-          const choice = await window.CaseToolkit?.finishFollowup(note, change => commitCaseChange(candidate => { change(candidate.cases.find(item => item.id === note.id)); }));
-          if (!choice) return;
-          report(choice === "new" ? `Follow-up recorded for ${caseName}. Set the next follow-up.` : choice === "none" ? `Follow-up recorded for ${caseName}. No further follow-up is scheduled.` : `Follow-up recorded. ${caseName} is marked Completed.`);
-          if (choice !== "new") return;
-          // Open the case's follow-up tracker so the next due date can be set straight away.
-          state.selected = note.id; dirty = true; save(); render();
-          $("actionPlanFollowup")?.click();
-          $("followupDue")?.focus();
-          $("toolkitStatus").textContent = "Follow-up recorded. Set the date and time for the next follow-up.";
-        });
-      } else addAction("Restore", () => commitCaseChange(candidate => CaseNotes.move(candidate,note.id,collection,"cases",Date.now())));
-      row.append(rowActions);
-      button.addEventListener("click", () => {
-        if (collection !== "cases") { showStoredCase(note,collection); return; }
-        if (copying || (writable && !save())) return;
-        state.selected = note.id;
-        if (writable) { dirty = true; save(); }
-        render();
-      }); return row;
-    }));
-    assist?.refresh();
-    if (!matches.length) $("historyList").textContent = query ? (everywhere ? "No matching cases in any collection." : "No matching cases. Tick “Search Archive and Trash too” to look further.") : "No cases yet.";
-  }
   function commitCaseChange(change, failure = "Could not save this change. Your saved notes were kept. Free browser storage or export a backup and retry.") {
     if (!writable || copying || !save()) return false;
     try {
@@ -1025,12 +483,6 @@
     $("copyStatus").textContent = "";
     $("tag").focus();
   }
-  function downloadFile(text,name,type) {
-    const url = URL.createObjectURL(new Blob([text],{type}));
-    const link = document.createElement("a"); link.href = url; link.download = name;
-    document.body.append(link); link.click(); link.remove();
-    setTimeout(() => URL.revokeObjectURL(url),60000);
-  }
   $("closeCaseRecovery")?.addEventListener("click", () => $("caseRecovery").close());
   $("caseVersions")?.addEventListener("click", () => {
     if (!selected() || (writable && !save())) return;
@@ -1102,29 +554,34 @@
       return /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(data) ? { name: "flep-event-27.png", data } : null;
     } catch { return null; }
   }
-  const exampleExists = () => ["cases","archive","trash"].some(collection => (state[collection] || []).some(note => note.id === CaseExample.ID));
-  // Adds the sample case, or resets it when it already exists. Other cases, and any running timer, are unchanged.
+  const exampleExists = () => ["cases","archive","trash"].some(collection => (state[collection] || []).some(note => CaseExample.isSample(note.id)));
+  // Adds the sample cases, or resets them when they already exist, and opens the main one. Other cases, and any
+  // running timer, are unchanged.
   function loadExampleNote({ confirmReset = true } = {}) {
     if (!writable || copying || !save()) return false;
-    if (confirmReset && exampleExists() && !confirm("Reset the sample case? Any changes you made to it will be replaced.")) return false;
-    // Never archive a real case to make room for the sample.
-    if (!state.cases.some(note => note.id === CaseExample.ID) && state.cases.length >= 100) {
-      report("Recent cases is full (100). Archive or delete a case, then load the sample again. Your cases were not changed.");
+    if (confirmReset && exampleExists() && !confirm("Reset the sample cases? Any changes you made to them will be replaced.")) return false;
+    // Never archive a real case to make room for the samples.
+    const own = state.cases.filter(note => !CaseExample.isSample(note.id)).length, needed = CaseExample.IDS.length;
+    if (own + needed > 100) {
+      report(`Recent cases holds up to 100 cases and the samples need ${needed}. Archive or delete ${own + needed - 100} of your cases, then load the samples again. Your cases were not changed.`);
       return false;
     }
     const now = Date.now(), image = exampleScreenshot();
     summaryCaseId = null;
     const loaded = commitCaseChange(candidate => {
-      // The sample's timer stays stopped, so a running case keeps its timer.
-      const running = candidate.cases.find(note => note.started !== null && note.id !== CaseExample.ID);
+      // The samples' timers stay stopped, so a running case keeps its timer.
+      const running = candidate.cases.find(note => note.started !== null && !CaseExample.isSample(note.id));
       const timer = running && { started: running.started, elapsed: running.elapsed, lastSession: running.lastSession };
-      for (const collection of ["cases","archive","trash"]) candidate[collection] = (candidate[collection] || []).filter(note => note.id !== CaseExample.ID);
-      if (candidate.revisions) delete candidate.revisions[CaseExample.ID];
-      CaseNotes.create(candidate, CaseExample.ID, now);
-      Object.assign(candidate.cases.find(note => note.id === CaseExample.ID), CaseExample.build({ now, customFields: candidate.fieldConfig.customFields, image }), { started: null });
+      for (const collection of ["cases","archive","trash"]) candidate[collection] = (candidate[collection] || []).filter(note => !CaseExample.isSample(note.id));
+      for (const id of CaseExample.IDS) delete candidate.revisions?.[id];
+      for (const sample of CaseExample.buildAll({ now, customFields: candidate.fieldConfig.customFields, image }).reverse()) {
+        CaseNotes.create(candidate, sample.id, now);
+        Object.assign(candidate.cases.find(note => note.id === sample.id), sample, { started: null });
+      }
+      candidate.selected = CaseExample.ID;
       if (running) Object.assign(running, timer);
     });
-    if (loaded) $("copyStatus").textContent = "Sample case loaded with three dated notes. Explore or edit it freely; archive or delete it from Recent cases when you are done.";
+    if (loaded) $("copyStatus").textContent = "10 sample cases loaded. Their follow-ups show 2 overdue (red) and 3 due within 4 hours (yellow); the open sample has three dated notes. Explore or edit them freely, and archive or delete them from Recent cases when you are done.";
     return loaded;
   }
   // The tutorial opens the sample case so every control has content, then returns to the case you had open.
@@ -1150,258 +607,17 @@
     loadExampleBtn.addEventListener("click", () => loadExampleNote());
   }
   
-  // Fields a user chose to hide from Case Details. A browser preference (included in settings backups), not case data.
-  const hiddenKey = "dell-support.hidden-fields.v1", hiddenAckKey = "dell-support.hidden-fields-ack";
-  function readHidden() {
-    try { const value = JSON.parse(localStorage.getItem(hiddenKey) || "[]"); return Array.isArray(value) ? value.filter(id => typeof id === "string") : []; }
-    catch { return []; }
-  }
-  function writeHidden(ids) { if (ids.length) localStorage.setItem(hiddenKey, JSON.stringify(ids)); else localStorage.removeItem(hiddenKey); }
-  $("showHiddenFields")?.addEventListener("click", () => $("customizeFields").click());
-  window.addEventListener("storage", event => { if (event.key === hiddenKey) render(); });
-  // Field customization. Changes are made to a draft and only reach case history on Save Configuration.
-  let fieldDraft = null, hiddenDraft = null;
-  const draftState = () => ({ fieldConfig: fieldDraft, cases: [], archive: [], trash: [], revisions: {} });
-  const sameList = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
-  const draftChanged = () => fieldDraft && (JSON.stringify(fieldDraft) !== JSON.stringify(state.fieldConfig) || !sameList(hiddenDraft, readHidden()));
-  async function acknowledgeHiding() {
-    let seen = false;
-    try { seen = localStorage.getItem(hiddenAckKey) === "true"; } catch { /* Ask again. */ }
-    if (seen) return true;
-    const ok = await askChoice({
-      title: "Before you hide a field",
-      message: "These fields are designed around case-notes best practices. By hiding a field, you acknowledge that its information is still needed and that you are choosing to record it a different way. Values already entered are kept, and you can show the field again at any time. This message appears only once.",
-      buttons: [{ label: "Cancel", value: false }, { label: "I understand, hide it", value: true, primary: true }]
-    });
-    if (!ok) return false;
-    try { localStorage.setItem(hiddenAckKey, "true"); } catch { /* Asked again next time. */ }
-    return true;
-  }
-  function renderFieldCustomizer() {
-    const orderList = $("fieldOrderList");
-    orderList.replaceChildren();
-    CaseNotes.getEffectiveFields(draftState()).forEach(({ id, label }) => {
-      const item = document.createElement("div");
-      item.className = "field-order-item";
-      item.draggable = true;
-      item.dataset.fieldId = id;
-      const handle = document.createElement("span"); handle.className = "field-handle"; handle.textContent = "⋮⋮"; handle.setAttribute("aria-hidden", "true");
-      const name = document.createElement("span"); name.className = "field-name"; name.textContent = label;
-      item.append(handle, name);
-      if (CaseNotes.fields[id]) { const builtin = document.createElement("span"); builtin.className = "field-builtin"; builtin.textContent = "✓ Built-in"; item.append(builtin); }
-      if (!CaseNotes.unhideableFields.includes(id)) {
-        const isHidden = hiddenDraft.has(id);
-        item.classList.toggle("field-hidden", isHidden);
-        const visibility = document.createElement("button"); visibility.type = "button"; visibility.className = "button secondary field-visibility";
-        visibility.textContent = isHidden ? "Show" : "Hide"; visibility.dataset.visibilityFor = id;
-        visibility.setAttribute("aria-pressed", String(isHidden)); visibility.setAttribute("aria-label", `${isHidden ? "Show" : "Hide"} ${label}`);
-        visibility.addEventListener("click", async () => {
-          const hiding = !hiddenDraft.has(id);
-          if (hiding && !(await acknowledgeHiding())) { visibility.focus(); return; }
-          if (!hiddenDraft) return;
-          keepDraftOrder();
-          if (hiding) hiddenDraft.add(id); else hiddenDraft.delete(id);
-          renderFieldCustomizer();
-          $("fieldOrderList").querySelector?.(`[data-visibility-for="${id}"]`)?.focus();
-          $("customizerStatus").textContent = `"${label}" will be ${hiding ? "hidden" : "shown"} when you choose Save Configuration.`;
-        });
-        item.append(visibility);
-      }
-      item.addEventListener("dragstart", (e) => {
-        e.dataTransfer.setData("text/plain", id);
-        item.classList.add("dragging");
-      });
-      item.addEventListener("dragend", () => {
-        item.classList.remove("dragging");
-      });
-      for (const direction of [-1,1]) {
-        const move = document.createElement("button"); move.type = "button"; move.className = "button secondary"; move.textContent = direction < 0 ? "↑" : "↓";
-        move.setAttribute("aria-label", `Move ${label} ${direction < 0 ? "up" : "down"}`);
-        move.addEventListener("click", () => {
-          const neighbor = direction < 0 ? item.previousElementSibling : item.nextElementSibling;
-          if (neighbor) { orderList.insertBefore(direction < 0 ? item : neighbor,direction < 0 ? neighbor : item); move.focus(); }
-        }); item.append(move);
-      }
-      item.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        const dragging = orderList.querySelector(".dragging");
-        if (dragging && dragging !== item) {
-          const rect = item.getBoundingClientRect();
-          const midY = rect.top + rect.height / 2;
-          if (e.clientY < midY) {
-            orderList.insertBefore(dragging, item);
-          } else {
-            orderList.insertBefore(dragging, item.nextSibling);
-          }
-        }
-      });
-      orderList.appendChild(item);
-    });
-    const customList = $("customFieldsList");
-    customList.replaceChildren();
-    Object.entries(fieldDraft.customFields).forEach(([id, label]) => {
-      const item = document.createElement("div");
-      item.className = "custom-field-item";
-      const idText = document.createElement("span"); idText.className = "field-id"; idText.textContent = id;
-      const labelText = document.createElement("span"); labelText.className = "field-label"; labelText.textContent = label;
-      const remove = document.createElement("button"); remove.className = "remove-field"; remove.type = "button"; remove.textContent = "Remove";
-      remove.setAttribute("aria-label", "Remove " + label);
-      remove.addEventListener("click", () => {
-        try {
-          keepDraftOrder();
-          CaseNotes.removeCustomField(draftState(), id);
-          renderFieldCustomizer();
-          $("customizerStatus").textContent = `"${label}" will be removed when you choose Save Configuration.`;
-        } catch (e) {
-          $("customizerStatus").textContent = e.message;
-        }
-      });
-      item.append(idText, labelText, remove);
-      customList.appendChild(item);
-    });
-  }
-  // Validates and stores a candidate state whose field configuration changed, replacing the current state.
-  function writeFieldConfig(candidate) {
-    const parsed = CaseNotes.parse(JSON.stringify(candidate));
-    localStorage.setItem(key, JSON.stringify(parsed));
-    state = parsed; savedState = JSON.parse(JSON.stringify(state)); dirty = false;
-    scheduleBackup();
-  }
-  // Inline layout editing on Case Details. Done saves the new order the same way Save Configuration does.
-  const effectiveIds = () => new Set(CaseNotes.getEffectiveFields(state).map(field => field.id));
-  window.CaseFieldLayout?.init({
-    grid: $("caseDetailsGrid"), toggle: $("layoutToggle"), cancel: $("layoutCancel"), status: $("layoutStatus"),
-    canEdit: () => !!selected() && writable && !copying,
-    fieldId: child => { const input = child.querySelector?.("[id]"); return input && effectiveIds().has(input.id) ? input.id : null; },
-    hidden: () => readHidden(),
-    canHide: id => !CaseNotes.unhideableFields.includes(id),
-    acknowledge: () => acknowledgeHiding(),
-    label: id => CaseNotes.getEffectiveFields(state).find(field => field.id === id)?.label || id,
-    expand: () => { if ($("caseDetailsSection").classList.contains("collapsed")) $("caseDetailsToggle").click(); },
-    save: (gridOrder, hiddenIds) => {
-      if (!writable || copying) return false;
-      const previousHidden = readHidden();
-      try {
-        if (!save()) return false;
-        const candidate = JSON.parse(JSON.stringify(state));
-        CaseNotes.reorderFields(candidate, CaseNotes.mergeFieldOrder(candidate.fieldConfig.order, gridOrder));
-        writeHidden(hiddenIds);
-        writeFieldConfig(candidate);
-        render();
-        return true;
-      } catch {
-        try { writeHidden(previousHidden); } catch { /* Storage is unavailable; the page still shows the previous layout. */ }
-        return false;
-      }
-    }
+  // Customize Site Options (fields, hidden fields, Unlock layout, site effects) lives in case-field-customizer.js.
+  const { readHidden } = window.CaseFieldCustomizer.init({
+    key,
+    state: () => state,
+    replaceState,
+    markDirty() { dirty = true; },
+    save: () => save(), render: () => render(), selected: () => selected(),
+    writable: () => writable, copying: () => copying,
+    scheduleBackup: () => scheduleBackup(), safetyBefore: reason => safetyBefore(reason),
+    refreshOptions: () => assist?.refreshOptions()
   });
-  // Keep any reordering made in the list when the draft is redrawn.
-  function keepDraftOrder() {
-    const order = Array.from($("fieldOrderList").children).map(item => item.dataset.fieldId).filter(Boolean);
-    if (order.length) fieldDraft.order = order;
-  }
-  function closeCustomizer() {
-    keepDraftOrder();
-    if (draftChanged() && !confirm("Discard your unsaved field changes?")) return;
-    fieldDraft = null; hiddenDraft = null;
-    $("fieldCustomizer").close();
-  }
-  $("customizeFields").addEventListener("click", () => {
-    if (!writable || copying) return;
-    window.SiteTopbar?.closeMenus();
-    window.CaseFieldLayout?.discard();
-    fieldDraft = JSON.parse(JSON.stringify(state.fieldConfig));
-    hiddenDraft = new Set(readHidden());
-    renderFieldCustomizer();
-    if (window.CopyRumble) $("copyRumbleToggle").checked = window.CopyRumble.enabled();
-    assist?.refreshOptions();
-    $("fieldCustomizer").showModal();
-    $("customizerStatus").textContent = "";
-  });
-  $("closeCustomizer").addEventListener("click", closeCustomizer);
-  $("copyRumbleToggle")?.addEventListener("change", event => {
-    const on = event.target.checked;
-    if (!window.CopyRumble?.setEnabled(on)) { event.target.checked = !on; $("customizerStatus").textContent = "Could not save the site effect setting. Check browser storage access."; return; }
-    scheduleBackup();
-    $("customizerStatus").textContent = on ? "Copy to Lightning will shake the screen and play a sound." : "Copy to Lightning shake and sound turned off.";
-  });
-  $("fieldCustomizer").addEventListener("cancel", event => { event.preventDefault?.(); closeCustomizer(); });
-  $("addCustomField").addEventListener("click", () => {
-    if (!fieldDraft) return;
-    const fieldId = $("newFieldId").value.trim();
-    const fieldLabel = $("newFieldLabel").value.trim();
-    if (!fieldId || !fieldLabel) {
-      $("customizerStatus").textContent = "Enter both field ID and label.";
-      return;
-    }
-    try {
-      if (document.getElementById(fieldId) && !Object.hasOwn(state.fieldConfig.customFields, fieldId)) throw Error("That ID is already used by a page control. Choose another ID.");
-      keepDraftOrder();
-      CaseNotes.addCustomField(draftState(), fieldId, fieldLabel);
-      $("newFieldId").value = "";
-      $("newFieldLabel").value = "";
-      renderFieldCustomizer();
-      $("customizerStatus").textContent = `"${fieldLabel}" will be added when you choose Save Configuration.`;
-    } catch (e) {
-      $("customizerStatus").textContent = e.message;
-    }
-  });
-  $("saveFieldConfig").addEventListener("click", async () => {
-    if (!fieldDraft || !writable || copying) return;
-    keepDraftOrder();
-    const draft = fieldDraft, hiddenIds = [...hiddenDraft];
-    const removed = Object.keys(state.fieldConfig.customFields).filter(id => !Object.hasOwn(draft.customFields, id));
-    if (removed.length) {
-      const names = removed.map(id => `"${state.fieldConfig.customFields[id]}"`).join(", ");
-      if (!confirm(`Remove ${names} and their values from recent cases, Archive, Trash, and saved versions?`)) return;
-      if (!save() || !writable || copying || fieldDraft !== draft) return;
-      await safetyBefore("field-removal");
-    }
-    try {
-      if (!save()) throw Error("Could not save your current notes. Retry saving before changing fields.");
-      const candidate = JSON.parse(JSON.stringify(state));
-      removed.forEach(id => CaseNotes.removeCustomField(candidate, id));
-      Object.entries(draft.customFields).forEach(([id, label]) => { if (!Object.hasOwn(candidate.fieldConfig.customFields, id)) CaseNotes.addCustomField(candidate, id, label); });
-      CaseNotes.reorderFields(candidate, draft.order);
-      writeFieldConfig(candidate);
-      const known = new Set(CaseNotes.getEffectiveFields(state).map(field => field.id));
-      writeHidden(hiddenIds.filter(id => known.has(id)));
-      fieldDraft = null; hiddenDraft = null;
-      $("fieldCustomizer").close();
-      render();
-      $("copyStatus").textContent = "Field configuration saved.";
-    } catch (e) {
-      $("customizerStatus").textContent = e?.message && !/quota|storage/i.test(e.name || "") ? e.message : "Could not save field configuration. Export a backup and check browser storage.";
-    }
-  });
-  $("resetFields").addEventListener("click", async () => {
-    if (!writable || copying) return;
-    if (confirm(`Reset field order, show every hidden field, and remove custom fields and their values from recent cases, Archive, Trash, and saved versions? This cannot be undone.`)) {
-      if (!save() || !writable || copying) return;
-      await safetyBefore("field-reset");
-      CaseNotes.resetCustomFields(state);
-      dirty = true;
-      if (!save()) return;
-      try { writeHidden([]); } catch { /* The order reset still applies. */ }
-      fieldDraft = null; hiddenDraft = null;
-      $("fieldCustomizer").close();
-      render();
-      $("copyStatus").textContent = "Fields reset to default.";
-    }
-  });
-  $("search").addEventListener("input", history);
-  $("caseCollection")?.addEventListener("change", history);
-  $("caseSort")?.addEventListener("change", history);
-  $("searchEverywhere")?.addEventListener("change", history);
-  $("toggleHistoryFilters")?.addEventListener("click", () => {
-    const open = $("historyFilters").hidden;
-    $("historyFilters").hidden = !open;
-    $("toggleHistoryFilters").setAttribute("aria-expanded", String(open));
-    try { localStorage.setItem("dell-support.case-filters-open", String(open)); } catch { /* Still works for this visit. */ }
-  });
-  try { if (localStorage.getItem("dell-support.case-filters-open") === "true") { $("historyFilters").hidden = false; $("toggleHistoryFilters").setAttribute("aria-expanded", "true"); } } catch { /* Closed by default. */ }
-  $("followupFilter").addEventListener("change", history);
-  setInterval(() => { if (!$("historyList").contains(document.activeElement)) history(); }, 60000);
   $("retrySave").addEventListener("click", save);
   $("noteForm").addEventListener("submit", event => event.preventDefault());
   
@@ -1434,7 +650,7 @@
     status("Unsaved changes");
     $("copyStatus").textContent = "";
     if (restarting) save();
-    tick(); history();
+    tick(); caseList.renderSoon();
   }
   $("noteForm").addEventListener("input", onCaseFieldInput);
   // OS/Solution lives in Triage, outside the main case-details form.
@@ -1508,7 +724,7 @@
   });
   
   // AI task picker and the "Add your own" dialog are shared with the Escalation page.
-  const aiTasks = DevinPrompt.mountTaskManager($, { document, confirm: message => confirm(message) });
+  DevinPrompt.mountTaskManager($, { document, confirm: message => confirm(message) });
   setInterval(() => { if (dirty) save(); }, 10000);
   setInterval(tick, 1000);
   function updateFloatingActions() {
@@ -1593,76 +809,30 @@
     try { window.history.replaceState(null, "", window.location.pathname + window.location.search); } catch {}
     $(target)?.click();
   }
-  async function acquire() {
-    load(); render();
-    if (!navigator.locks) {
+  // The editor lock (one editing tab at a time, waiting and Take over) lives in case-notes-lock.js.
+  const editorLock = window.CaseNotesLock.create({
+    prepare() { load(); render(); return !loadFailed; },
+    async hold() {
+      load();
       if (loadFailed) return;
-      $("lockNotice").textContent = "Read-only: this browser cannot protect notes against simultaneous editing. Open this site over HTTPS or localhost in a browser supporting Web Locks.";
-      return;
-    }
-    if (!loadFailed) {
-      $("lockNotice").hidden = false;
-      $("lockNotice").textContent = "Checking whether another tab is editing Case Notes…";
-    }
-    try {
-      await navigator.locks.request(lockName, { ifAvailable: true }, async lock => {
-        if (lock === null) { readOnlyForLock("Read-only while another tab is editing Case Notes. This tab becomes editable when that tab closes, or choose Take over editing here."); waitForLock(); return; }
-        await holdLock();
-      });
-    } catch (error) { lockLost(error); }
-  }
-  // Only one tab edits at a time. A read-only tab waits in line and becomes editable by itself when the other tab
-  // closes, or takes over straight away (the editing tab is asked to save first, then switches to read-only).
-  const lockName = "dell-support.case-notes.editor";
-  let lockWait = null, lockChannel = null;
-  try { lockChannel = new BroadcastChannel("dell-support.case-notes.lock"); lockChannel.onmessage = event => { if (event.data === "save-now" && writable) save(); }; } catch { /* Take over still works; the other tab's last autosave is used. */ }
-  function readOnlyForLock(text) {
-    $("lockNotice").hidden = false; $("lockNotice").textContent = text;
-    if ($("takeOverEditing")) $("takeOverEditing").hidden = false;
-  }
-  async function holdLock() {
-    if ($("takeOverEditing")) $("takeOverEditing").hidden = true;
-    load();
-    if (loadFailed) return;
-    if(notesPopout?.caseId) {
-      if(!state.cases.some(note=>note.id===notesPopout.caseId)) {
-        state.selected=null;notesPopout.unavailable();render();
-        $("lockNotice").textContent="The requested case is unavailable. Return to the full workspace to choose a case.";
-        return;
+      if(notesPopout?.caseId) {
+        if(!state.cases.some(note=>note.id===notesPopout.caseId)) {
+          state.selected=null;notesPopout.unavailable();render();
+          $("lockNotice").textContent="The requested case is unavailable. Return to the full workspace to choose a case.";
+          return;
+        }
+        state.selected=notesPopout.caseId;
       }
-      state.selected=notesPopout.caseId;
-    }
-    writable = true; $("lockNotice").hidden = true; render();
-    // A problem with a #case= or #settings link must not cost this tab its editing lock.
-    try { openCaseFromLink(); openSettingsFromLink(); } catch { /* The workspace opens as usual. */ }
-    await new Promise(resolve => { release = resolve; });
-  }
-  function waitForLock() {
-    if (lockWait || writable) return;
-    const wait = lockWait = new AbortController();
-    navigator.locks.request(lockName, { signal: wait.signal }, () => { lockWait = null; return holdLock(); })
-      // Aborted while still waiting means this tab is taking over instead; any other failure (including the lock
-      // being taken after it was granted) switches the tab to read-only.
-      .catch(error => { if (wait.signal.aborted) return; lockLost(error); });
-  }
-  // The lock was taken by another tab (or could not be requested): stop editing here and wait for it again.
-  function lockLost(error) {
-    const stolen = error?.name === "AbortError";
-    writable = false; release = null; controls(); render();
-    if (!stolen) { $("lockNotice").hidden = false; $("lockNotice").textContent = "Unable to acquire the editor lock. Reload to try again."; return; }
-    readOnlyForLock("Editing moved to another tab or window, so this tab is now read-only. It becomes editable again when that one closes, or choose Take over editing here.");
-    waitForLock();
-  }
-  $("takeOverEditing")?.addEventListener("click", async () => {
-    if (writable) return;
-    $("takeOverEditing").disabled = true;
-    lockChannel?.postMessage("save-now");
-    await new Promise(resolve => setTimeout(resolve, 400));
-    lockWait?.abort(); lockWait = null;
-    try { await navigator.locks.request(lockName, { steal: true }, holdLock); }
-    catch (error) { if (error?.name === "AbortError") lockLost(error); }
-    finally { $("takeOverEditing").disabled = false; }
+      writable = true; $("lockNotice").hidden = true; render();
+      // A problem with a #case= or #settings link must not cost this tab its editing lock.
+      try { openCaseFromLink(); openSettingsFromLink(); } catch { /* The workspace opens as usual. */ }
+      await new Promise(resolve => { release = resolve; });
+    },
+    lost() { writable = false; release = null; controls(); render(); },
+    editing: () => writable,
+    saveNow: () => save()
   });
+  const acquire = () => editorLock.acquire();
   window.addEventListener("pageshow", event => { if (event.persisted) acquire(); });
   window.CaseMarkdown?.init({
     current: selected,
@@ -1693,6 +863,7 @@
   });
   assist = window.CaseNotesAssist?.init({
     cases: () => state.cases,
+    isSample: id => CaseExample.isSample(id),
     allCases: () => ["cases","archive","trash"].flatMap(collection => (state[collection] || []).map(note => ({ note, collection }))),
     selected,
     ask: askChoice,
@@ -1707,8 +878,7 @@
     open(id, collection = "cases") {
       const note = (state[collection] || []).find(item => item.id === id); if (!note) return;
       if (collection !== "cases") { showStoredCase(note, collection); return; }
-      if (copying || (writable && !save())) return;
-      state.selected = id; if (writable) { dirty = true; save(); } render();
+      selectCase(id);
     },
     showFollowups(filter) {
       $("caseCollection").value = "cases"; $("followupFilter").value = filter; $("search").value = "";

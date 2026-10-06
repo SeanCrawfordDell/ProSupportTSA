@@ -1,10 +1,10 @@
 # Case Notes: saving, recovery, and exports
 
-## Sample case and guided tour
+## Sample cases and guided tour
 
-**Training → Load Example** adds a sample case to Recent cases: a PowerEdge R750 Hyper-V host whose virtual machines lose network connectivity after a NIC driver update. It has three dated notes on three different days (initial contact, log review, and verification), every case detail, a completed evidence checklist and verification, a screenshot, a follow-up, customer update and handoff drafts, and a knowledge draft. It scores 100 on the note quality check. Your other cases are not changed. Loading it again asks before resetting the sample; archive or delete it like any other case.
+**Training → Load Example** adds ten sample cases to Recent cases and opens the main one: a PowerEdge R750 Hyper-V host whose virtual machines lose network connectivity after a NIC driver update. It has three dated notes on three different days (initial contact, log review, and verification), every case detail, a completed evidence checklist and verification, a screenshot, a follow-up, customer update and handoff drafts, and a knowledge draft. The other nine are shorter cases across ESXi, Windows Server, Red Hat, Ubuntu and Azure Local, each with one dated note and a follow-up: two are overdue (red), three are due within 4 hours (yellow), and the rest are due on a later day, so the header shows **2 overdue · 3 due within 4 hours**. Follow-up times are set from the moment you load the samples. Every sample scores 100 on the note quality check, is labelled "Sample ·" in Recent cases, is left out of Support Trends, and never sends a desktop notification. Your other cases are not changed; if Recent cases has no room for ten more, nothing is loaded and you are told how many cases to archive. Loading again asks before resetting the samples; archive or delete them like any other case.
 
-**Training → Tutorial Demo** walks through every area of Case Notes using the sample case, adding it first if needed, including the Grid/List case view, follow-up colors and Mark follow-up done, Unlock layout, and Customize Site Options. When the tour ends, the case you had open is selected again.
+**Training → Tutorial Demo** walks through every area of Case Notes using the main sample case, adding the samples first if needed, including the Grid/List case view, follow-up colors and alerts, Mark follow-up done, Unlock layout, and Customize Site Options. When the tour ends, the case you had open is selected again.
 
 ## Dated notes within a case
 

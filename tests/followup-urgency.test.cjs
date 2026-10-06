@@ -29,7 +29,7 @@ test('a recorded follow-up survives backup and restore',()=>{
  const restored=C.parse(C.backup(state,2000)).cases[0];assert.equal(T.lastFollowup(restored).result,'New follow-up needed');
 });
 test('Case Notes colors cards, offers a due-soon filter and a Follow-up done action that asks what is next',()=>{
- const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8'),notes=fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8'),kit=fs.readFileSync(require.resolve('../js/case-toolkit.js'),'utf8'),css=fs.readFileSync(require.resolve('../css/case-notes.css'),'utf8');
+ const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8'),notes=fs.readFileSync(require.resolve('../js/case-history-list.js'),'utf8'),kit=fs.readFileSync(require.resolve('../js/case-toolkit.js'),'utf8'),css=fs.readFileSync(require.resolve('../css/case-notes.css'),'utf8');
  assert.match(html,/<option value="soon">Follow-ups due within 4 hours<\/option>/);
  assert.match(html,/id="followupDone" type="button" disabled>Mark follow-up done</);
  assert.match(notes,/classList\.toggle\("followup-" \+ followup, true\)/);assert.match(notes,/addAction\("Follow-up done"/);
