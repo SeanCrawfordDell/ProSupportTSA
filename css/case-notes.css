@@ -21,6 +21,11 @@ main { max-width:1800px; }
 .field-grip { position:absolute; left:8px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:18px; line-height:1; cursor:grab; }
 .field-grip:focus-visible { outline:2px solid var(--blue); outline-offset:2px; border-radius:4px; }
 .layout-editing > .field.field-dragging { opacity:.35; }
+.layout-editing > .field.field-hidden-preview { border-style:dotted; border-color:var(--muted); opacity:.55; }
+.layout-editing > .field.field-hidden-preview.field-dragging { opacity:.3; }
+.field-show { display:inline-flex; justify-self:start; align-items:center; gap:6px; margin-top:8px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; }
+.field-show input { width:16px; height:16px; margin:0; cursor:pointer; }
+.field-ghost .field-show { display:none; }
 .field-ghost { position:fixed; z-index:1000; margin:0; padding:10px 10px 10px 34px; box-sizing:border-box; pointer-events:none; cursor:grabbing; border:1px solid var(--blue); border-radius:8px; background:var(--panel-bg); box-shadow:0 8px 24px rgb(0 0 0 / 25%); }
 .field-ghost .field-grip { color:var(--blue); }
 .section-arrow { display:inline-block; flex:none; transition:transform .15s ease; color:var(--blue); font-size:24px; }
@@ -165,6 +170,11 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .field-order-list { display:grid; gap:8px; max-height:300px; overflow:auto; }
 .field-order-item { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--input-bg); cursor:move; }
 .field-order-item.dragging { opacity:0.5; }
+.field-order-item.field-hidden .field-name { color:var(--muted); text-decoration:line-through; }
+.field-order-item .field-visibility { margin:0; padding:6px 10px; font-size:12px; }
+.hidden-fields-note { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:14px 0 0; font-size:12px; color:var(--muted); }
+.hidden-fields-note[hidden] { display:none; }
+.hidden-fields-note .button { margin:0; padding:6px 10px; font-size:12px; }
 .field-order-item .field-handle { cursor:move; color:var(--muted); font-size:18px; user-select:none; }
 .field-order-item .field-name { flex:1; font-weight:500; }
 .field-order-item .field-builtin { color:var(--blue); font-size:12px; margin-left:8px; }

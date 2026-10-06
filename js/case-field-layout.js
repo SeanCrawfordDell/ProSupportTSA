@@ -1,13 +1,37 @@
 "use strict";
-// Inline Case Details layout: unlock the grid, drag fields (or move them with the arrow keys), then Done saves the order.
+// Inline Case Details layout: unlock the grid, drag fields (or move them with the arrow keys), tick Show to hide or
+// unhide each one, then Done saves the order and the hidden set together.
 window.CaseFieldLayout = (() => {
-  let grid, toggle, cancelButton, status, options, snapshot = null, drag = null;
+  let grid, toggle, cancelButton, status, options, snapshot = null, hiddenSnapshot = null, hiddenDraft = null, drag = null;
   const editing = () => snapshot !== null;
   const items = () => Array.from(grid.children).filter(child => options.fieldId(child));
   const order = () => items().map(item => options.fieldId(item));
   const nameOf = item => options.label(options.fieldId(item));
   const announce = text => { status.textContent = text; };
   const grip = item => item.querySelector(":scope > .field-grip");
+  const showBox = item => item.querySelector(":scope > .field-show");
+  const sameSet = (a, b) => a.size === b.size && [...a].every(id => b.has(id));
+  // Outside editing, hidden fields are out of view; while editing they show dimmed so they can be brought back.
+  function applyHidden(set, editingNow) {
+    for (const item of items()) {
+      const id = options.fieldId(item), hidden = set.has(id);
+      item.hidden = hidden && !editingNow;
+      item.classList.toggle("field-hidden-preview", hidden && editingNow);
+    }
+  }
+  async function setShown(item, box) {
+    const id = options.fieldId(item), name = nameOf(item);
+    if (!box.checked) {
+      if (!(await options.acknowledge())) { box.checked = true; box.focus(); return; }
+      if (!editing()) return;
+      hiddenDraft.add(id);
+      announce(`${name} will be hidden when you choose Done.`);
+    } else {
+      hiddenDraft.delete(id);
+      announce(`${name} will be shown when you choose Done.`);
+    }
+    applyHidden(hiddenDraft, true);
+  }
   // Fields sit together at the start of the grid; anything after them stays where it is.
   function place(ids) {
     const list = items(), byId = new Map(list.map(item => [options.fieldId(item), item]));
@@ -22,8 +46,22 @@ window.CaseFieldLayout = (() => {
     grid.classList.toggle("layout-editing", on);
     for (const item of items()) {
       grip(item)?.remove();
+      showBox(item)?.remove();
       item.querySelectorAll("input, select, textarea").forEach(control => { control.inert = on; });
       if (!on) continue;
+      if (options.canHide(options.fieldId(item))) {
+        // Placed after the field's own control, so that control stays the <label>'s labelled control.
+        const wrap = document.createElement("span"), box = document.createElement("input"), text = document.createElement("span");
+        wrap.className = "field-show";
+        box.type = "checkbox"; box.checked = !hiddenDraft.has(options.fieldId(item));
+        box.setAttribute("aria-label", `Show ${nameOf(item)}`);
+        box.addEventListener("change", () => setShown(item, box));
+        text.textContent = "Show"; text.setAttribute("aria-hidden", "true");
+        wrap.append(box, text);
+        // The text is not a <label> (it would nest inside the field's label), so clicking it toggles the box directly.
+        wrap.addEventListener("click", event => { if (event.target !== box) { event.preventDefault(); box.click(); } });
+        item.append(wrap);
+      }
       // A span, not a button: a button inside the <label> would become the label's control.
       const handle = document.createElement("span");
       handle.className = "field-grip";
@@ -49,6 +87,7 @@ window.CaseFieldLayout = (() => {
   }
   function startDrag(event) {
     const item = event.target.closest?.(".field");
+    if (event.target.closest?.(".field-show")) return;
     if (!editing() || drag || event.button !== 0 || !item || item.parentElement !== grid || !options.fieldId(item)) return;
     event.preventDefault();
     const rect = item.getBoundingClientRect();
@@ -97,25 +136,30 @@ window.CaseFieldLayout = (() => {
   function unlock() {
     if (editing() || !options.canEdit()) return;
     options.expand?.();
+    hiddenSnapshot = new Set(options.hidden());
+    hiddenDraft = new Set(hiddenSnapshot);
+    applyHidden(hiddenDraft, true);
     snapshot = order();
     setEditing(true);
-    announce("Layout unlocked. Drag fields, or focus a grip and use the arrow keys. Choose Done to save the order.");
+    announce("Layout unlocked. Drag fields, or focus a grip and use the arrow keys. Clear Show to hide a field. Choose Done to save.");
     grip(items()[0])?.focus();
   }
-  function lock() {
+  function lock(hidden = hiddenSnapshot) {
     endDrag(true);
-    snapshot = null;
     setEditing(false);
+    if (hidden) applyHidden(hidden, false);
+    snapshot = null; hiddenSnapshot = null; hiddenDraft = null;
   }
   function done() {
     if (!editing()) return;
     endDrag(false);
-    const before = snapshot, next = order();
-    lock();
-    if (next.join() === before.join()) { announce("Layout locked. The field order is unchanged."); return; }
-    if (options.save(next)) { announce("Field order saved."); return; }
+    const before = snapshot, next = order(), hiddenBefore = hiddenSnapshot, hiddenNext = hiddenDraft;
+    if (next.join() === before.join() && sameSet(hiddenNext, hiddenBefore)) { lock(); announce("Layout locked. Nothing changed."); return; }
+    lock(hiddenNext);
+    if (options.save(next, [...hiddenNext])) { announce(hiddenNext.size ? `Layout saved. ${hiddenNext.size} field${hiddenNext.size === 1 ? "" : "s"} hidden.` : "Layout saved."); return; }
     place(before);
-    announce("Could not save the field order. The previous order was kept.");
+    applyHidden(hiddenBefore, false);
+    announce("Could not save the layout. The previous order and hidden fields were kept.");
   }
   function cancel(message = "Layout changes discarded.") {
     if (!editing()) return;

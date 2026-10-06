@@ -53,6 +53,10 @@ light and dark mode; its tooltip and accessible label identify the next mode.
 
 New field labels support up to 120 characters. Older backups with longer labels remain restorable. Removing a field or resetting custom fields removes its values from recent cases, Archive, Trash, and saved versions after confirmation. When a backup folder is connected, a safety copy of the history is saved first. Previously exported backup files are not changed. Both plain-text and HTML email exports include custom fields.
 
+### Hiding fields
+
+In **Customize Fields**, choose **Hide** beside a Case Details field, then **Save Configuration**. You can also choose **Unlock layout**: every field gets a **Show** checkbox, hidden fields reappear dimmed so they can be brought back, and **Done** saves the order and the hidden fields together (**Cancel** reverts both). The first time you hide a field, a one-time notice explains that the fields follow case-notes best practices and asks you to acknowledge that the information is still needed and will be recorded another way. Hidden fields keep their values and are only taken off the page: Copy to Lightning, email and escalation output still list them as before, and they still count in the notes score. OS/Solution, Notes and Action Plan / Next Steps cannot be hidden. Case Details lists the hidden fields with a **Show or hide fields** button; **Show** brings a field back, and **Reset to Default** shows every field. The hidden list is a browser preference included in settings backups.
+
 ### Rearranging Case Details on the page
 
 Choose **Unlock layout** in the Case Details heading to reorder fields without opening Customize Fields. While the layout is unlocked, fields cannot be edited. Drag a field by any part of its outlined box, or focus its ⋮⋮ grip and use the arrow keys. **Done** saves the order for every case; **Cancel** or Escape puts it back. Switching case, opening Customize Fields, or losing edit access locks the layout and discards unsaved moves. The saved order is the same one Customize Fields edits, so it is included in case-history backups.

@@ -59,7 +59,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
       append(...items){for(const item of items)this._children.push(item)},
       appendChild(item){this._children.push(item);return item},
       replaceChildren(...items){this._children=items},
-      addEventListener(k,f){this.listeners[k]=f},focus(){this.focused=true;},contains(item){return item===this||this._children.includes(item);}
+      addEventListener(k,f){this.listeners[k]=f},removeEventListener(k){delete this.listeners[k]},focus(){this.focused=true;},contains(item){return item===this||this._children.includes(item);}
     };
     return el;
   }
@@ -419,4 +419,29 @@ test('Load Example never archives a real case when Recent cases is full',()=>{
   const h=harness({initial:JSON.stringify(state)});const before=h.stored();
   h.click('loadExampleNote');
   assert.equal(h.stored(),before);assert.match(h.get('pageStatus').textContent,/Recent cases is full/);
+});
+
+test('hiding a field warns once, waits for Save Configuration, and stores a browser preference',async()=>{
+  const h=harness();h.click('newNote');const before=h.stored();
+  const visibility=id=>h.get('fieldOrderList').children.find(row=>row.dataset.fieldId===id)?.children.find(child=>/field-visibility/.test(child.className));
+  // The fake element keeps old children when askChoice clears it with textContent, so take the newest two buttons.
+  const choice=index=>h.get('backupConfirmButtons').children.slice(-2)[index].listeners.click();
+  h.click('customizeFields');
+  for(const id of ['os','notes','next'])assert.equal(visibility(id),undefined,id+' cannot be hidden');
+  let pending=visibility('tag').listeners.click();
+  assert.equal(h.get('backupConfirmDialog').open,true,'first hide shows the warning');
+  assert.match(h.get('backupConfirmMessage').textContent,/acknowledge that its information is still needed/);
+  choice(0);await pending;
+  assert.equal(visibility('tag').textContent,'Hide','Cancel keeps the field');
+  assert.equal(h.ctx.localStorage.getItem('dell-support.hidden-fields-ack'),null);
+  pending=visibility('tag').listeners.click();choice(1);await pending;
+  assert.equal(visibility('tag').textContent,'Show');assert.equal(h.ctx.localStorage.getItem('dell-support.hidden-fields-ack'),'true');
+  assert.equal(h.ctx.localStorage.getItem('dell-support.hidden-fields.v1'),null,'nothing is hidden before Save');
+  h.get('backupConfirmDialog').open=false;
+  await visibility('country').listeners.click();assert.equal(h.get('backupConfirmDialog').open,false,'the warning is shown only once');
+  await h.click('saveFieldConfig');
+  assert.deepEqual(JSON.parse(h.ctx.localStorage.getItem('dell-support.hidden-fields.v1')),['tag','country']);
+  assert.deepEqual(C.parse(h.stored()).fieldConfig,C.parse(before).fieldConfig,'case data is unchanged');
+  h.click('customizeFields');await visibility('tag').listeners.click();await visibility('country').listeners.click();await h.click('saveFieldConfig');
+  assert.equal(h.ctx.localStorage.getItem('dell-support.hidden-fields.v1'),null,'showing every field clears the preference');
 });
