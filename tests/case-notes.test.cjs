@@ -108,7 +108,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
   vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8'),ctx);
   return {get,events,intervals,ctx,setTime:n=>now=n,stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
 }
-test('Customize Fields opens the customizer from the shared Settings menu without changing case data',()=>{
+test('Customize Site Options opens the customizer from the shared Settings menu without changing case data',()=>{
   const h=harness();const before=h.stored();
   h.click('customizeFields');assert.equal(h.get('fieldCustomizer').open,true);
   assert.equal(h.ctx.window.SiteTopbar.closed,1,'the shared Settings menu is closed');assert.equal(h.stored(),before);
@@ -444,4 +444,28 @@ test('hiding a field warns once, waits for Save Configuration, and stores a brow
   assert.deepEqual(C.parse(h.stored()).fieldConfig,C.parse(before).fieldConfig,'case data is unchanged');
   h.click('customizeFields');await visibility('tag').listeners.click();await visibility('country').listeners.click();await h.click('saveFieldConfig');
   assert.equal(h.ctx.localStorage.getItem('dell-support.hidden-fields.v1'),null,'showing every field clears the preference');
+});
+test('Recent cases switches between grid cards and a title-only list, and remembers the choice',()=>{
+  const h=harness();h.click('newNote');
+  assert.equal(h.get('historyList').classList.contains('history-compact'),false,'grid cards are the default');
+  assert.equal(h.get('historyViewGrid').attributes['aria-pressed'],'true');
+  const card=()=>h.get('historyList').children[0].children[0];
+  h.click('historyViewList');
+  assert.ok(h.get('historyList').classList.contains('history-compact'));
+  assert.equal(h.get('historyViewList').attributes['aria-pressed'],'true');assert.equal(h.get('historyViewGrid').attributes['aria-pressed'],'false');
+  assert.equal(h.ctx.localStorage.getItem('dell-support.case-history-view'),'list');
+  assert.equal(card().title,'Untitled case','the full title is a tooltip when the list truncates it');
+  h.click('historyViewGrid');
+  assert.equal(h.get('historyList').classList.contains('history-compact'),false);assert.equal(h.ctx.localStorage.getItem('dell-support.case-history-view'),'grid');
+});
+test('List view hides everything but the case title',()=>{
+  const css=fs.readFileSync(require.resolve('../css/case-notes.css'),'utf8');
+  const hidden=/\.history-compact \.case-item span, \.history-compact \.case-item small, \.history-compact \.delete-case, \.history-compact \.case-row-actions \{ display:none; \}/;
+  assert.match(css,hidden);
+});
+test('the case list layout is backed up and validated with other settings',()=>{
+  const S=require('../js/case-settings-core.js');
+  const captured=S.capture({getItem:k=>k==='dell-support.case-history-view'?'list':null});assert.equal(captured.historyView,'list');
+  assert.equal(S.validate({fieldConfig:C.empty().fieldConfig,preferences:captured},C.fields).values['dell-support.case-history-view'],'list');
+  assert.throws(()=>S.validate({fieldConfig:C.empty().fieldConfig,preferences:{historyView:'tiles'}},C.fields));
 });

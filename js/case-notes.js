@@ -19,7 +19,7 @@
     openBackupRestore: "Back up, restore, or delete your case history and settings.",
     openToolsMenu: "Tools hub and support tool catalogs.",
     tutorialDemo: "See a guided tour of Case Notes and the toolbox.",
-    customizeFields: "Choose which case fields appear and their order.",
+    customizeFields: "Choose which case fields appear, their order, and site effects such as the Copy to Lightning shake.",
     toggleHistory: "Show or hide the list of saved case notes.",
     chooseSyncFolder: "Choose the folder where backups are saved. A OneDrive-synced folder is ideal.",
     backupNow: "Save a backup of your case history and settings right now.",
@@ -567,6 +567,23 @@
     setHistoryCollapsed(historyCollapsed);
     try { localStorage.setItem(sidebarKey, String(historyCollapsed)); } catch { /* Still works for this visit. */ }
   });
+  // Recent cases as cards (Grid, the default) or compact one-line rows (List).
+  const historyViewKey = "dell-support.case-history-view";
+  let historyView = "grid";
+  try { if (localStorage.getItem(historyViewKey) === "list") historyView = "list"; } catch { /* Use the grid default. */ }
+  function setHistoryView(view, persist) {
+    historyView = view === "list" ? "list" : "grid";
+    $("historyList").classList.toggle("history-compact", historyView === "list");
+    $("historyViewList").setAttribute("aria-pressed", String(historyView === "list"));
+    $("historyViewGrid").setAttribute("aria-pressed", String(historyView === "grid"));
+    if (!persist) return;
+    try { localStorage.setItem(historyViewKey, historyView); } catch { /* Still works for this visit. */ }
+    scheduleBackup();
+    history();
+  }
+  setHistoryView(historyView, false);
+  $("historyViewList").addEventListener("click", () => setHistoryView("list", true));
+  $("historyViewGrid").addEventListener("click", () => setHistoryView("grid", true));
   // Collapsible form sections (Case Details, Notes, Action Plan / Next Steps).
   const sectionsKey = "dell-support.case-notes-sections";
   const sectionIds = ["caseDetails", "notes", "actionPlan"];
@@ -742,7 +759,7 @@
     const now = Date.now();
     const matches = (state[collection] || []).filter(note => {
       const status = note.toolkit?.status || "Open";
-      return (!query || CaseNotes.searchText(note).toLowerCase().includes(query)) && (filter === "all" || filter === "overdue" && CaseToolkitCore.overdue(note, now) || filter === "active" && status !== "Completed" || filter === "completed" && status === "Completed");
+      return (!query || CaseNotes.searchText(note).toLowerCase().includes(query)) && (filter === "all" || filter === "overdue" && CaseToolkitCore.overdue(note, now) || filter === "soon" && CaseToolkitCore.dueSoon(note, now) || filter === "active" && status !== "Completed" || filter === "completed" && status === "Completed");
     }).sort((a,b) => Number(!!b.pinned)-Number(!!a.pinned) || (sort === "due" ? (Date.parse(a.toolkit?.due) || Infinity)-(Date.parse(b.toolkit?.due) || Infinity) : b[sort === "updated" ? "updated" : "created"]-a[sort === "updated" ? "updated" : "created"]));
     $("caseCount").textContent = collection === "cases" ? `${state.cases.length} / 100` : `${state[collection].length} ${collection === "archive" ? "archived" : "in Trash"}`;
     $("historyList").replaceChildren(...matches.map(note => {
@@ -750,14 +767,18 @@
       button.setAttribute("aria-current", String(note.id === state.selected));
       button.disabled = copying;
       const title = document.createElement("strong"); title.textContent = (note.id === CaseExample.ID ? "Sample · " : "") + (note.request || note.tag || "Untitled case");
+      if (historyView === "list") button.title = title.textContent;
       const issue = document.createElement("span"); issue.textContent = query ? CaseNotes.excerpt(note,query) : note.issue || "No issue description yet";
-      const meta = document.createElement("small"); meta.textContent = `${note.tag ? note.tag + " · " : ""}${new Date(note.created).toLocaleString()}`;
+      const meta = document.createElement("small"); meta.textContent = `${note.tag ? note.tag + " · " : ""}${historyView === "list" ? new Date(note.created).toLocaleDateString() : new Date(note.created).toLocaleString()}`;
       button.append(title, issue, meta);
+      // Red when the follow-up is overdue, yellow when it is due within 4 hours.
+      const followup = CaseToolkitCore.followupState(note, now);
+      if (followup) { button.classList.toggle("followup-" + followup, true); button.title = [button.title, followup === "overdue" ? "Follow-up overdue" : "Follow-up due within 4 hours"].filter(Boolean).join(" · "); }
       if (note.toolkit) {
         const badge = document.createElement("small");
-        const late = CaseToolkitCore.overdue(note, now);
-        badge.className = late ? "followup-badge overdue" : "followup-badge";
-        badge.textContent = `${late ? "Overdue · " : ""}${note.toolkit.status}${note.toolkit.owner ? " · " + note.toolkit.owner : ""}${note.toolkit.due ? " · " + new Date(note.toolkit.due).toLocaleString() : ""}`;
+        const late = followup === "overdue";
+        badge.className = followup ? "followup-badge " + followup : "followup-badge";
+        badge.textContent = `${late ? "Overdue · " : followup === "soon" ? "Due soon · " : ""}${note.toolkit.status}${note.toolkit.owner ? " · " + note.toolkit.owner : ""}${note.toolkit.due ? " · " + new Date(note.toolkit.due).toLocaleString() : ""}`;
         button.append(badge);
       }
       const row = document.createElement("div"); row.className = "case-row";
@@ -795,6 +816,17 @@
       if (collection === "cases") {
         addAction(note.pinned ? "Unpin" : "Pin", () => commitCaseChange(candidate => { candidate.cases.find(item => item.id === note.id).pinned = !note.pinned; }));
         addAction("Archive", () => commitCaseChange(candidate => CaseNotes.move(candidate,note.id,"cases","archive",Date.now())));
+        if (followup) addAction("Follow-up done", async () => {
+          const choice = await window.CaseToolkit?.finishFollowup(note, change => commitCaseChange(candidate => { change(candidate.cases.find(item => item.id === note.id)); }));
+          if (!choice) return;
+          report(choice === "new" ? `Follow-up recorded for ${caseName}. Set the next follow-up.` : choice === "none" ? `Follow-up recorded for ${caseName}. No further follow-up is scheduled.` : `Follow-up recorded. ${caseName} is marked Completed.`);
+          if (choice !== "new") return;
+          // Open the case's follow-up tracker so the next due date can be set straight away.
+          state.selected = note.id; dirty = true; save(); render();
+          $("actionPlanFollowup")?.click();
+          $("followupDue")?.focus();
+          $("toolkitStatus").textContent = "Follow-up recorded. Set the date and time for the next follow-up.";
+        });
       } else addAction("Restore", () => commitCaseChange(candidate => CaseNotes.move(candidate,note.id,collection,"cases",Date.now())));
       row.append(rowActions);
       button.addEventListener("click", () => {
@@ -1226,10 +1258,17 @@
     fieldDraft = JSON.parse(JSON.stringify(state.fieldConfig));
     hiddenDraft = new Set(readHidden());
     renderFieldCustomizer();
+    if (window.CopyRumble) $("copyRumbleToggle").checked = window.CopyRumble.enabled();
     $("fieldCustomizer").showModal();
     $("customizerStatus").textContent = "";
   });
   $("closeCustomizer").addEventListener("click", closeCustomizer);
+  $("copyRumbleToggle")?.addEventListener("change", event => {
+    const on = event.target.checked;
+    if (!window.CopyRumble?.setEnabled(on)) { event.target.checked = !on; $("customizerStatus").textContent = "Could not save the site effect setting. Check browser storage access."; return; }
+    scheduleBackup();
+    $("customizerStatus").textContent = on ? "Copy to Lightning will shake the screen and play a sound." : "Copy to Lightning shake and sound turned off.";
+  });
   $("fieldCustomizer").addEventListener("cancel", event => { event.preventDefault?.(); closeCustomizer(); });
   $("addCustomField").addEventListener("click", () => {
     if (!fieldDraft) return;
@@ -1383,6 +1422,7 @@
       await navigator.clipboard.writeText(text);
       CaseNotes.stop(note, now); note.updated = now; dirty = true;
       const saved = save();
+      window.CopyRumble?.play();
       $("copyStatus").textContent = saved ? "Copied to clipboard. Timer stopped. Ready to paste into Lightning." : "Copied to clipboard. Timer stopped, but saving failed. Keep this tab open and retry saving.";
     } catch {
       $("copyStatus").textContent = "Could not copy. Timer was not stopped. Allow clipboard access and try Copy to Lightning again.";
@@ -1540,6 +1580,7 @@
   });
   window.CaseToolkit?.init({
     save,
+    ask: askChoice,
     current: selected,
     canEdit: canEditEntry,
     mutate(change, immediate = true) {

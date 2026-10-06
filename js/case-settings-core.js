@@ -6,9 +6,10 @@ const CaseSettings = (() => {
     historyCollapsed: "dell-support.case-history-collapsed",
     sections: "dell-support.case-notes-sections", pins: "dell-support.pinned-resources.v1",
     retention: "dell-support.backup-retention-days",
-    hiddenFields: "dell-support.hidden-fields.v1", hiddenFieldsAck: "dell-support.hidden-fields-ack"
+    hiddenFields: "dell-support.hidden-fields.v1", hiddenFieldsAck: "dell-support.hidden-fields-ack",
+    copyRumble: "dell-support.copy-rumble", historyView: "dell-support.case-history-view"
   };
-  const rawKeys = ["theme", "floating", "historyCollapsed", "retention", "hiddenFieldsAck"];
+  const rawKeys = ["theme", "floating", "historyCollapsed", "retention", "hiddenFieldsAck", "copyRumble", "historyView"];
   const toolboxKeys = ["dell-support.toolbox-links.v1", "dell-support.toolbox-appearance.v1"];
   // Left in storage by the removed note templates feature; erased with everything else on Start Fresh.
   const legacyKeys = ["dell-support.case-templates.v1"];
@@ -49,8 +50,9 @@ const CaseSettings = (() => {
       for (const [name, value] of Object.entries(config.preferences)) {
         if (!Object.hasOwn(keys, name)) continue;
         if (name === "theme" && ![null,"dark","light"].includes(value)) bad();
-        if (["floating","historyCollapsed"].includes(name) && ![null,"true","false"].includes(value)) bad();
+        if (["floating","historyCollapsed","copyRumble"].includes(name) && ![null,"true","false"].includes(value)) bad();
         if (name === "sections" && (!object(value) || Object.keys(value).some(id => !["caseDetails","notes","actionPlan"].includes(id)) || Object.values(value).some(v => typeof v !== "boolean"))) bad();
+        if (name === "historyView" && ![null,"list","grid"].includes(value)) bad();
         if (name === "retention" && ![null,"7","30","90","never"].includes(value)) bad();
         if (name === "pins" && (!Array.isArray(value) || value.some(id => typeof id !== "string"))) bad();
         if (name === "hiddenFields" && (!Array.isArray(value) || value.length > 100 || value.some(id => typeof id !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(id)))) bad();

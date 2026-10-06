@@ -37,7 +37,7 @@ test('Case Notes and Escalation Quality render the same top bar',()=>{
  for(const markup of [notes,escalation]){
   assert.ok(/Tools Hub[\s\S]*ISG Tools Catalog[\s\S]*Microsoft Support Tools/.test(markup));
   assert.ok(/id="tutorialDemo"[^>]*>Tutorial Demo/.test(markup));
-  assert.ok(/Customize Fields[\s\S]*Backup &amp; Restore/.test(markup));
+  assert.ok(/Customize Site Options[\s\S]*Backup &amp; Restore/.test(markup));
   assert.ok(/Request feature \/ Report bug/.test(markup));
  }
  assert.match(notes,/id="loadExampleNote"[^>]*disabled/);

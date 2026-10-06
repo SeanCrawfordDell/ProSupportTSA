@@ -39,7 +39,7 @@ Folder backups contain customer information and are not encrypted by this app: u
 Use **+ New Note** beneath **Case Workspace** to start another case. When no case
 is open, use **Start New Note** in the empty workspace.
 
-Search includes case fields, note content, next steps, custom fields, and support-toolkit text. Matching excerpts appear in results. Search applies to the selected collection and follow-up filter. Pin important recent cases; pinned cases appear first. Sort the rest by creation time, last edit, or follow-up due date.
+Search includes case fields, note content, next steps, custom fields, and support-toolkit text. Matching excerpts appear in results. Search applies to the selected collection and follow-up filter. Pin important recent cases; pinned cases appear first. Sort the rest by creation time, last edit, or follow-up due date. Use **Grid** and **List** under the Recent cases heading to switch between the full case cards (the default) and a compact list that shows only case titles; pin, archive and delete are on the cards in Grid view. The choice is remembered and included in settings backups.
 
 ## Restoring settings and notes
 
@@ -48,18 +48,34 @@ Use **Backup & Restore → Restore…** and choose the **Case history** or **Set
 ## Custom fields
 
 Open the gear-icon **Settings** menu to the right of the sun/moon theme toggle
-in the top bar and choose **Customize Fields**. The theme icon switches between
+in the top bar and choose **Customize Site Options**. The theme icon switches between
 light and dark mode; its tooltip and accessible label identify the next mode.
 
 New field labels support up to 120 characters. Older backups with longer labels remain restorable. Removing a field or resetting custom fields removes its values from recent cases, Archive, Trash, and saved versions after confirmation. When a backup folder is connected, a safety copy of the history is saved first. Previously exported backup files are not changed. Both plain-text and HTML email exports include custom fields.
 
 ### Hiding fields
 
-In **Customize Fields**, choose **Hide** beside a Case Details field, then **Save Configuration**. You can also choose **Unlock layout**: every field gets a **Show** checkbox, hidden fields reappear dimmed so they can be brought back, and **Done** saves the order and the hidden fields together (**Cancel** reverts both). The first time you hide a field, a one-time notice explains that the fields follow case-notes best practices and asks you to acknowledge that the information is still needed and will be recorded another way. Hidden fields keep their values and are only taken off the page: Copy to Lightning, email and escalation output still list them as before, and they still count in the notes score. OS/Solution, Notes and Action Plan / Next Steps cannot be hidden. Case Details lists the hidden fields with a **Show or hide fields** button; **Show** brings a field back, and **Reset to Default** shows every field. The hidden list is a browser preference included in settings backups.
+In **Customize Site Options**, choose **Hide** beside a Case Details field, then **Save Configuration**. You can also choose **Unlock layout**: every field gets a **Show** checkbox, hidden fields reappear dimmed so they can be brought back, and **Done** saves the order and the hidden fields together (**Cancel** reverts both). The first time you hide a field, a one-time notice explains that the fields follow case-notes best practices and asks you to acknowledge that the information is still needed and will be recorded another way. Hidden fields keep their values and are only taken off the page: Copy to Lightning, email and escalation output still list them as before, and they still count in the notes score. OS/Solution, Notes and Action Plan / Next Steps cannot be hidden. Case Details lists the hidden fields with a **Show or hide fields** button; **Show** brings a field back, and **Reset to Default** shows every field. The hidden list is a browser preference included in settings backups.
 
 ### Rearranging Case Details on the page
 
-Choose **Unlock layout** in the Case Details heading to reorder fields without opening Customize Fields. While the layout is unlocked, fields cannot be edited. Drag a field by any part of its outlined box, or focus its ⋮⋮ grip and use the arrow keys. **Done** saves the order for every case; **Cancel** or Escape puts it back. Switching case, opening Customize Fields, or losing edit access locks the layout and discards unsaved moves. The saved order is the same one Customize Fields edits, so it is included in case-history backups.
+Choose **Unlock layout** in the Case Details heading to reorder fields without opening Customize Site Options. While the layout is unlocked, fields cannot be edited. Drag a field by any part of its outlined box, or focus its ⋮⋮ grip and use the arrow keys. **Done** saves the order for every case; **Cancel** or Escape puts it back. Switching case, opening Customize Site Options, or losing edit access locks the layout and discards unsaved moves. The saved order is the same one Customize Site Options edits, so it is included in case-history backups.
+
+### Copy to Lightning shake and sound
+
+When **Copy to Lightning** copies successfully, the page shakes for about a second and a soft, quiet camera-shutter click plays so you know the copy worked (phones that support it also give a short buzz). To turn it off, open **Customize Site Options** and clear **Shake the screen and play a sound when Copy to Lightning succeeds** under *Site Effects*; the change applies right away and is included in settings backups. If your system asks for reduced motion, the screen does not shake.
+
+## Follow-ups
+
+Use **Set follow-up** to give a case an owner, a due date and time, and a status. In Recent cases, a case whose follow-up is **overdue is red** and one **due within the next 4 hours is yellow**; both clear once the follow-up is marked done or the case is Completed. **Show cases → Follow-ups due within 4 hours** lists the yellow ones, alongside the existing overdue filter. Colors refresh every minute.
+
+When you have done the follow-up, choose **Mark follow-up done** in the follow-up tracker, or **Follow-up done** on a red or yellow card. You are asked what comes next:
+
+- **Schedule a new follow-up** clears the due date and opens the tracker so you can set the next one. The case stays open.
+- **No follow-up** records the follow-up as done and clears the due date without scheduling another; the case status is unchanged.
+- **Case is complete** clears the due date and sets the status to Completed.
+
+Each follow-up marked done is recorded with the case (the tracker shows the last one), and the record is kept in history backups.
 
 ## Sharing and printing
 

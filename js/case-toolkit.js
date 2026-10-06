@@ -39,7 +39,27 @@ window.CaseToolkit = (() => {
     const data=core.ensure(note);
     for(const [id,key] of Object.entries(bindings))$(id).value=data[key];
     $("followupDue").value=localDate(data.due);
+    refreshFollowupDone(note);
     notify("");refreshIssueTypes();
+  }
+  function refreshFollowupDone(note=api?.current()) {
+    const data=note && core.ensure(note), last=note && core.lastFollowup(note);
+    $("followupDone").disabled=!note || !api.canEdit() || !data.due || data.status==="Completed";
+    $("followupDone").title=data?.due ? "Record this follow-up as done, then choose whether another follow-up is needed or the case is complete." : "Set a due date first.";
+    $("followupLast").textContent=last ? `Last follow-up done ${new Date(last.at).toLocaleString()} · ${last.result}.` : "";
+    // Once a follow-up is scheduled, the buttons that open the tracker read "Update follow-up".
+    const scheduled=!!data?.due && data.status!=="Completed";
+    document.querySelectorAll('[data-toolkit="followup"]').forEach(button=>{
+      button.textContent=scheduled ? "Update follow-up" : "Set follow-up";
+      button.title=scheduled ? `Update this case's follow-up (due ${new Date(data.due).toLocaleString()}), or mark it done.` : "Set a follow-up owner, due date, and status for this case.";
+    });
+  }
+  // Asks whether another follow-up is needed, none is needed, or the case is complete, then records it. Returns the
+  // choice, or null if the dialog was dismissed (Escape) without an answer.
+  async function finishFollowup(note, commit) {
+    const choice=await api.ask({title:"Follow-up done",message:"Is another follow-up needed, or is the case complete?",buttons:[{label:"No follow-up",value:"none"},{label:"Case is complete",value:"complete"},{label:"Schedule a new follow-up",value:"new",primary:true}]});
+    if(!choice || !commit(current=>core.completeFollowup(current,Date.now(),choice)))return null;
+    return choice;
   }
   async function copyDraft(key) {
     const note=api.current();if(!note || !api.canEdit())return;
@@ -73,11 +93,21 @@ window.CaseToolkit = (() => {
         if(key==="issueType")refreshIssueTypes();
       });
     });
+    $("followupDone").addEventListener("click",async()=>{
+      const note=api.current();if(!note || !api.canEdit())return;
+      const choice=await finishFollowup(note,change=>{let ok=false;api.mutate(current=>{ok=change(current);});return ok;});
+      if(!choice)return;
+      refresh();
+      if(choice==="new"){notify("Follow-up recorded. Set the date and time for the next follow-up.");$("followupDue").focus();}
+      else notify(choice==="none" ? "Follow-up recorded. No further follow-up is scheduled." : "Follow-up recorded and the case is marked Completed.");
+    });
+    $("followupStatus").addEventListener("change",()=>refreshFollowupDone());
     $("followupDue").addEventListener("change",()=>{
       if(!api.canEdit())return;
       const value=$("followupDue").value;
       if(value && !Number.isFinite(new Date(value).getTime())){notify("Enter a valid follow-up date and time.");return;}
       api.mutate(note=>{core.ensure(note).due=value ? new Date(value).toISOString() : "";});
+      refreshFollowupDone();
     });
     for(const [id,key,build] of [["generateCustomer","customerDraft",note=>core.customerUpdate(note,CaseNotes.plainText,$("customerTone").value)],["generateSummary","summaryDraft",note=>core.summary({...note,notes:CaseNotes.exportField(note,"notes"),next:CaseNotes.exportField(note,"next")},CaseNotes.plainText,CaseNotes.duration(CaseNotes.elapsed(note,Date.now())))]] ) {
       $(id).addEventListener("click",()=>{
@@ -90,7 +120,7 @@ window.CaseToolkit = (() => {
     $("copyCustomer").addEventListener("click",()=>copyDraft("customerDraft"));
     $("copySummary").addEventListener("click",()=>copyDraft("summaryDraft"));
   }
-  return {init,refresh,refreshIssueTypes,canEdit:()=>!!api?.canEdit(),setEditable(value){window.CaseWorkflow?.setEditable(value);$("toolkitFields").disabled=!value;
+  return {init,refresh,refreshIssueTypes,finishFollowup,canEdit:()=>!!api?.canEdit(),setEditable(value){window.CaseWorkflow?.setEditable(value);$("toolkitFields").disabled=!value;refreshFollowupDone();
     $("caseIssueType").disabled=!value || !api?.current();
     refreshIssueTypes();
     document.querySelectorAll("[data-toolkit]").forEach(button=>{button.disabled=!api?.current();});}};
