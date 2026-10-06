@@ -96,3 +96,10 @@ test('Support Trends uses the shared bar without a tutorial menu',()=>{
  }
  assert.match(T.markup('case-notes'),/Tutorial &amp; examples/);
 });
+
+test('Escalation Quality links back to Case Notes and reopens the source case',()=>{
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
+ assert.match(html,/<a class="button secondary return-link" id="returnToCaseNotes" href="case-notes.html">← Return to Case Notes<\/a>/);
+ assert.match(fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8'),/escalation-quality\.html#import=" \+ token \+ "&case=" \+ encodeURIComponent\(note\.id\)/);
+ assert.match(fs.readFileSync(require.resolve('../js/app.js'),'utf8'),/"case-notes\.html#case=" \+ encodeURIComponent\(caseId\)/);
+});

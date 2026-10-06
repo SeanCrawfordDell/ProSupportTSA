@@ -18,6 +18,9 @@ main { max-width:1440px; margin:auto; padding:36px 24px 64px; }
 .hero p { margin:0; color:var(--muted); }
 .eyebrow { color:var(--blue)!important; font-size:11px!important; font-weight:800; letter-spacing:.13em; margin:0 0 7px!important; }
 .hero-actions,.form-actions { display:flex; gap:10px; }
+.hero-return { display:flex; flex:none; }
+.return-link { display:inline-flex; align-items:center; text-decoration:none; white-space:nowrap; }
+@media (max-width:650px) { .hero-return { margin-top:16px; } }
 .workspace { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:22px; align-items:start; }
 form,.results-shell { display:grid; gap:18px; }
 .results-shell { position:sticky; top:18px; }
