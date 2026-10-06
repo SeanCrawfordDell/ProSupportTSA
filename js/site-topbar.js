@@ -6,16 +6,16 @@ window.SiteTopbar = (() => {
   const pages = {
     "case-notes": {
       name: "Case Notes",
-      training: [["tutorialDemo", "Tutorial Demo"], ["loadExampleNote", "Load Example", true]],
+      training: [["openWiki", "Wiki Documentation ↗", false, true], ["tutorialDemo", "Tutorial Demo"], ["loadExampleNote", "Load Example", true]],
       // Case Notes owns the site settings dialogs; other pages link to them.
       settingsHere: true
     },
     "escalation": {
       name: "DE Escalation Request",
-      training: [["tutorialDemo", "Tutorial Demo"], ["loadWeak", "Load Weak Example"], ["loadStrong", "Load Strong Example"]],
+      training: [["openWiki", "Wiki Documentation ↗", false, true], ["tutorialDemo", "Tutorial Demo"], ["loadWeak", "Load Weak Example"], ["loadStrong", "Load Strong Example"]],
       settingsHere: false
     },
-    "trends": { name: "Support Trends", training: [], settingsHere: false }
+    "trends": { name: "Support Trends", training: [["openWiki", "Wiki Documentation ↗", false, true]], settingsHere: false }
   };
   const tools = [
     ["tools.html", "Tools Hub"],
@@ -38,7 +38,9 @@ window.SiteTopbar = (() => {
     if (!config) throw Error("Unknown top bar page: " + page);
     const menu = (name, label, items) => `<div class="topbar-menu" id="${name}Menu"><button class="button secondary" id="${menus[name]}" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="${name}MenuList">${label} <span aria-hidden="true">▾</span></button><div class="topbar-dropdown ${name}-dropdown" id="${name}MenuList" hidden>${items}</div></div>`;
     const toolItems = tools.map(([href, label, id, external]) => `<a class="dropdown-item"${id ? ` id="${id}"` : ""} href="${href}"${external ? ' target="_blank" rel="noopener noreferrer"' : ""}>${label}</a>`).join("");
-    const trainingItems = config.training.map(([id, label, disabled]) => `<button class="dropdown-item" id="${id}" type="button"${disabled ? " disabled" : ""}>${label}</button>`).join("");
+    const trainingItems = config.training.map(([id, label, disabled, external]) => external
+      ? `<a class="dropdown-item" id="${id}" href="wiki.html" target="_blank" rel="noopener noreferrer">${label}</a>`
+      : `<button class="dropdown-item" id="${id}" type="button"${disabled ? " disabled" : ""}>${label}</button>`).join("");
     const settingItems = settings.map(([id, label, hash]) => config.settingsHere
       ? `<button class="dropdown-item" id="${id}" type="button"${id === "customizeFields" ? " disabled" : ' aria-haspopup="dialog"'}>${label}</button>`
       : `<a class="dropdown-item" id="${id}" href="case-notes.html#${hash}" title="Opens in Case Notes, where site settings are kept.">${label}</a>`).join("");

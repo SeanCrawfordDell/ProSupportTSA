@@ -37,6 +37,7 @@ test('Case Notes and Escalation Quality render the same top bar',()=>{
  for(const markup of [notes,escalation]){
   assert.ok(/Tools Hub[\s\S]*ISG Tools Catalog[\s\S]*Microsoft Support Tools/.test(markup));
   assert.ok(/id="tutorialDemo"[^>]*>Tutorial Demo/.test(markup));
+  assert.ok(/id="openWiki" href="wiki.html"[^>]*>Wiki Documentation ↗/.test(markup));
   assert.ok(/Customize Site Options[\s\S]*Backup &amp; Restore/.test(markup));
   assert.ok(/Request feature \/ Report bug/.test(markup));
  }
@@ -86,11 +87,11 @@ test('menus stay open while the tutorial is showing them',()=>{
  assert.equal(h.get('settingsMenuList').hidden,true);
 });
 
-test('Support Trends uses the shared bar without a tutorial menu',()=>{
+test('Support Trends uses the shared bar with only the Wiki link in its tutorial menu',()=>{
  const {window}=harness('trends'),T=window.SiteTopbar;
  for(const [page,file] of [['trends','../support-trends.html']]){
   const markup=T.markup(page);
-  assert.ok(!markup.includes('openTraining'));assert.match(markup,/Tools Hub/);assert.match(markup,/href="case-notes.html#backup-restore"/);
+  assert.ok(markup.includes('openTraining'));assert.match(markup,/<a class="dropdown-item" id="openWiki" href="wiki.html" target="_blank" rel="noopener noreferrer">Wiki Documentation ↗<\/a>/);assert.ok(!markup.includes('id="tutorialDemo"'));assert.match(markup,/Tools Hub/);assert.match(markup,/href="case-notes.html#backup-restore"/);
   const html=fs.readFileSync(require.resolve(file),'utf8');
   assert.match(html,new RegExp(`<header class="topbar" id="siteTopbar" data-page="${page}"></header>\\s*<script src="js/site-topbar\\.js\\?v=[^"]+"></script>`));
  }

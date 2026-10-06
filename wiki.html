@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Step-by-step guides, screenshots, and reference for the Dell Pro-Support Technical Support Assistant: Case Notes, DE Escalation Request, and Support Trends.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
+  <script src="js/theme.js?v=20261006-sample-tour"></script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
+  <title>ProSupportTSA Wiki</title>
+  <link rel="stylesheet" href="css/wiki.css?v=20261006-sample-tour">
+  <script src="js/wiki.js?v=20261006-sample-tour" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#wikiMain">Skip to content</a>
+  <header class="wiki-topbar">
+    <button class="topbar-btn menu-toggle" id="menuToggle" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="wikiNav">☰</button>
+    <a class="wiki-brand" href="#welcome"><span class="brand-mark" aria-hidden="true">SA</span><span>Support Assistant <span class="brand-sub">Wiki</span></span></a>
+    <span class="topbar-spacer"></span>
+    <button class="search-trigger" id="searchTrigger" type="button" aria-haspopup="dialog"><span aria-hidden="true">⌕</span><span class="label">Search the wiki…</span><kbd>Ctrl K</kbd></button>
+    <span class="topbar-spacer"></span>
+    <a class="topbar-btn" href="case-notes.html"><span aria-hidden="true">✎</span><span class="btn-label">Open Case Notes</span></a>
+    <button class="topbar-btn" id="themeToggle" type="button"><span aria-hidden="true">◐</span><span class="btn-label" id="themeLabel">Dark</span></button>
+  </header>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="wiki-layout">
+    <nav class="wiki-nav" id="wikiNav" aria-label="Wiki pages"></nav>
+
+    <main class="wiki-main" id="wikiMain">
+
+<!-- ======================= GET STARTED ======================= -->
+<article class="doc-page" id="welcome" data-title="Welcome" data-group="Get started">
+  <h1>Welcome to the Technical Support Assistant</h1>
+  <p class="page-meta">Overview of the tools and how they fit together</p>
+  <p class="lead">A set of browser-based tools that help Dell Pro-Support technicians document cases clearly, hand off escalations with the evidence a Domain Engineer needs, and notice patterns across their own work.</p>
+
+  <figure class="shot"><img src="docs/wiki-images/00-home.png" alt="The Technical Support Assistant home page with the Open Case Notes button and tool cards" loading="lazy"><figcaption>The home page. Open Case Notes is the usual starting point.</figcaption></figure>
+
+  <h2>Choose where to go</h2>
+  <div class="cards">
+    <a class="card" href="#quick-start"><span class="tag">Start here</span><h3>Quick start</h3><p>Load the sample cases and write your first note in about ten minutes.</p></a>
+    <a class="card" href="#cases"><span class="tag">Tool</span><h3>Case Notes</h3><p>Dated notes, a four-stage workflow, a quality score, follow-ups, and exports.</p></a>
+    <a class="card" href="#escalation"><span class="tag">Tool</span><h3>DE Escalation Request</h3><p>Check that an escalation is ready, with a transparent 100-point score.</p></a>
+    <a class="card" href="#trends"><span class="tag">Tool</span><h3>Support Trends</h3><p>See overdue follow-ups, missing verification, and repeat configurations.</p></a>
+    <a class="card" href="#ai"><span class="tag">Optional</span><h3>AI assistance</h3><p>Copy a ready-made prompt to any AI tool, or send it to Devin CLI.</p></a>
+    <a class="card" href="#backup"><span class="tag">Important</span><h3>Backup and recovery</h3><p>Keep a second copy of your notes in a OneDrive-synced folder.</p></a>
+  </div>
+
+  <h2>How the tools fit together</h2>
+  <p>The tools follow the life of a support case. You can use any of them on their own, but data flows forward when you use them in order.</p>
+  <ol class="flow">
+    <li><strong>1 · Capture</strong>Case Notes: case details and a dated note for each day of work.</li>
+    <li><strong>2 · Collect</strong>Evidence stage and the log collection helper.</li>
+    <li><strong>3 · Resolve</strong>Record the fix, verify it, plan prevention.</li>
+    <li><strong>4 · Escalate</strong>Escalate to DE imports your case and scores readiness.</li>
+    <li><strong>5 · Learn</strong>Knowledge draft and Support Trends.</li>
+  </ol>
+
+  <h2>What you should know first</h2>
+  <ul>
+    <li><strong>Your data stays in your browser.</strong> Notes are saved in this browser on this computer. Nothing is uploaded unless you choose to copy, email, back up to a folder, or send something to an AI tool. See <a href="#privacy">Privacy and security</a>.</li>
+    <li><strong>Notes autosave</strong> every ten seconds, but browser storage can be erased by clearing site data. Set up a backup folder early. See <a href="#backup">Backup and recovery</a>.</li>
+    <li><strong>Scores find gaps; they do not judge accuracy.</strong> The note quality score and escalation readiness score are rule-based checks for missing or vague information. They cannot verify that your technical conclusions are correct.</li>
+    <li><strong>AI is optional.</strong> Every AI feature shows you what will be sent and needs an explicit click.</li>
+  </ul>
+
+  <div class="callout tip"><span class="callout-title">Using this wiki</span>
+    <p>Press <kbd>Ctrl</kbd> <kbd>K</kbd> (or <kbd>/</kbd>) to search every page. Click any screenshot to enlarge it, and use the arrow keys to step through the screenshots on a page. The right-hand outline shows where you are on long pages. Choose <strong>Dark</strong> in the top bar to switch themes.</p>
+  </div>
+</article>
+
+<article class="doc-page" id="quick-start" data-title="Quick start" data-group="Get started">
+  <h1>Quick start</h1>
+  <p class="page-meta">Your first case in about ten minutes</p>
+  <p class="lead">The fastest way to learn Case Notes is to explore the built-in sample cases, then start one of your own.</p>
+
+  <ol class="steps">
+    <li><strong>Open Case Notes.</strong> From the home page choose <strong>Open Case Notes</strong>, or use <strong>Case Management → Case Notes</strong> in the navigation. A message reading “Opening case history…” appears for a moment while the page checks that no other tab is editing.</li>
+    <li><strong>Load the sample cases.</strong> Open <strong>Tutorial &amp; examples</strong> in the top bar and choose <strong>Load Example</strong>. It adds ten labelled sample cases to Recent cases and opens the main one: a PowerEdge R750 Hyper-V host whose virtual machines lose network connectivity after a NIC driver update. Your own cases are not changed.
+      <figure class="shot medium"><img src="docs/wiki-images/02-tutorial-menu.png" alt="The Tutorial and examples menu showing Wiki Documentation, Tutorial Demo and Load Example" loading="lazy"><figcaption>The Tutorial &amp; examples menu.</figcaption></figure></li>
+    <li><strong>Take the guided tour.</strong> Choose <strong>Tutorial Demo</strong> from the same menu. The 33-step tour highlights each area using the sample case and returns you to your own case when it ends. Use <strong>Next</strong>, <strong>Back</strong>, or <strong>Skip demo</strong>.</li>
+    <li><strong>Look around the sample.</strong> Click the three date tabs, open <strong>Case Summary</strong>, switch between the four workflow stages, and read the <strong>Note quality score</strong> at the bottom. Notice the red and yellow cards in Recent cases and the “2 overdue · 3 due within 4 hours” pill in the page header.</li>
+    <li><strong>Start your own case.</strong> Choose <strong>+ New Case</strong> (or <strong>Start New Case</strong> in an empty workspace). Fill in the <strong>Case Details</strong>, then write your first note. The time tracker starts automatically.</li>
+    <li><strong>Record actions with their results.</strong> For every step, write what you did and what happened (“Result: …”). The quality score and any later escalation depend on outcomes, not just actions.</li>
+    <li><strong>Work through the workflow.</strong> Use <strong>1 · Triage</strong>, <strong>2 · Evidence</strong>, <strong>3 · Verify resolution</strong>, and <strong>4 · Knowledge draft</strong> as the case progresses.</li>
+    <li><strong>Close the loop.</strong> Choose <strong>Copy to Lightning</strong> to copy the day’s record, which also stops the timer (see <a href="#sharing">Copy, email, print and export</a> for copying the whole case).</li>
+    <li><strong>Protect your work.</strong> Choose <strong>Set Up Backups</strong> in the banner, or <strong>Settings (gear) → Backup &amp; Restore → Choose Backup Folder</strong>, and pick a folder in your work OneDrive.</li>
+  </ol>
+
+  <figure class="shot"><img src="docs/wiki-images/01-case-notes-empty.png" alt="Case Notes with no cases yet, showing the Start New Case button and the backup banner" loading="lazy"><figcaption>Case Notes before any case exists. The welcome panel offers Start New Case, and the banner offers Set Up Backups.</figcaption></figure>
+
+  <h2>Your first-day checklist</h2>
+  <ul class="checklist">
+    <li>Loaded the sample cases and opened each date tab and workflow stage.</li>
+    <li>Completed the Tutorial Demo.</li>
+    <li>Created a case with a valid Service Tag, Service Request number, OS version, and Log Location.</li>
+    <li>Recorded at least one action <em>and</em> its result.</li>
+    <li>Chose a backup folder so a second copy of your notes exists.</li>
+    <li>Tried <strong>Escalate to DE</strong> on the sample case to see the readiness check (see <a href="#escalation">DE Escalation Request</a>).</li>
+  </ul>
+  <div class="callout note"><span class="callout-title">The samples are safe to change</span><p>Edit them, archive them, or delete them like any other case. Loading the example again asks before resetting them. They are labelled “Sample ·”, are left out of Support Trends, and never send desktop notifications. If Recent cases does not have room for ten more cases, nothing is loaded and you are told how many to archive; your real cases are never archived to make room.</p></div>
+</article>
+
+<article class="doc-page" id="screen-tour" data-title="Find your way around" data-group="Get started">
+  <h1>Find your way around</h1>
+  <p class="page-meta">A map of the Case Notes screen</p>
+  <p class="lead">Every tool shares the same dark top bar. Case Notes adds a case list on the left, the workspace in the middle, and an action bar with the copy, email, and AI buttons.</p>
+
+  <figure class="shot"><img src="docs/wiki-images/03b-sample-top.png" alt="The top of Case Notes with the sample cases loaded: top bar, follow-up pill, backup banner, action bar, Recent cases and the case workspace" loading="lazy"><figcaption>Case Notes with the sample cases loaded.</figcaption></figure>
+  <figure class="shot"><img src="docs/wiki-images/03-case-notes-sample.png" alt="The complete Case Notes page scrolled out to show the workflow, case details, dated notes, quality score and action bar" loading="lazy"><figcaption>The whole page, scrolled out: workflow, case details, dated notes, and the quality score. Click to enlarge.</figcaption></figure>
+
+  <h2>The top bar</h2>
+  <table>
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>← Support Assistant</td><td>Returns to the home page.</td></tr>
+      <tr><td>Tools</td><td>Opens the Tools Hub, the ISG Tools Catalog, and the Microsoft Support Tools repository (external links open in a new tab).</td></tr>
+      <tr><td>Tutorial &amp; examples</td><td>Wiki Documentation, Tutorial Demo, and Load Example (on the escalation page: Load Weak Example and Load Strong Example).</td></tr>
+      <tr><td>Request feature / Report bug</td><td>Opens a pre-labelled GitHub issue form. Do not paste customer or case data into it.</td></tr>
+      <tr><td>Moon / sun</td><td>Switches between light and dark mode for every tool.</td></tr>
+      <tr><td>Gear (Settings)</td><td><strong>Customize Site Options</strong> and <strong>Backup &amp; Restore</strong>. Other pages link back to these two dialogs in Case Notes.</td></tr>
+    </tbody>
+  </table>
+  <div class="compare">
+    <figure class="shot"><img src="docs/wiki-images/26-tools-menu.png" alt="The Tools menu with Tools Hub, ISG Tools Catalog and Microsoft Support Tools" loading="lazy"><figcaption>Tools menu.</figcaption></figure>
+    <figure class="shot"><img src="docs/wiki-images/23-settings-menu.png" alt="The Settings menu with Customize Site Options and Backup and Restore" loading="lazy"><figcaption>Settings menu.</figcaption></figure>
+  </div>
+
+  <h2>The page header</h2>
+  <ul>
+    <li>A red pill such as <strong>2 overdue · 3 due within 4 hours</strong> summarizes follow-ups. Select it to filter Recent cases. The browser tab title also starts with the count, for example “(5) Case Notes”.</li>
+    <li>When backups are not set up, a banner offers <strong>Set Up Backups</strong> and <strong>Remind me in a week</strong>.</li>
+  </ul>
+
+  <h2>The action bar</h2>
+  <p>The buttons you use at the end of a case sit together in one place. On laptop-sized screens (narrower than 1500 px or shorter than 780 px) they form a slim row above the workspace:</p>
+  <figure class="shot"><img src="docs/wiki-images/14-action-bar.png" alt="The slim action bar with Copy to Lightning, Escalate to DE, Email to Case, Customer Update, Handoff Summary, Log Collection Helper, AI tools and Stop floating" loading="lazy"><figcaption>The slim action bar. Copy to Lightning is the solid blue main action; Escalate to DE is red.</figcaption></figure>
+  <p>On wide, tall screens the same controls become a resizable right-hand rail with everything visible, including the AI tools:</p>
+  <figure class="shot"><img src="docs/wiki-images/14b-action-rail-wide.png" alt="Case Notes on a wide screen with the action rail on the right" loading="lazy"><figcaption>The wide-screen rail. Drag its left edge to resize it.</figcaption></figure>
+  <p>See <a href="#sharing">Copy, email, print and export</a> and <a href="#ai">AI assistance</a> for what each button does.</p>
+
+  <h2>Recent cases and the workspace</h2>
+  <p>The left panel lists your cases; the workspace holds the timer, the case workflow, case details, dated notes, the action plan, and the quality score. <strong>Jump to Notes</strong> in the workspace header scrolls straight to the notes editor.</p>
+  <figure class="shot narrow"><img src="docs/wiki-images/04-case-history-grid.png" alt="The Recent cases panel in Grid view with colour-coded follow-up cards" loading="lazy"><figcaption>Recent cases panel (Grid view).</figcaption></figure>
+
+  <h2>Where do I find…?</h2>
+  <table>
+    <thead><tr><th>I want to…</th><th>Go to</th></tr></thead>
+    <tbody>
+      <tr><td>Start a case</td><td><strong>+ New Case</strong> in the workspace header (<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>)</td></tr>
+      <tr><td>Add another day’s notes</td><td><strong>+ New note</strong> beside the date tabs (<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>)</td></tr>
+      <tr><td>Read the whole case at once</td><td>The <strong>Case Summary</strong> tab</td></tr>
+      <tr><td>Set or update a reminder</td><td><strong>Set follow-up</strong> / <strong>Update follow-up</strong> in the workspace header</td></tr>
+      <tr><td>Get a log collection plan</td><td><strong>Log Collection Helper</strong> in the action bar, or Workflow → <strong>2 · Evidence</strong></td></tr>
+      <tr><td>Send the case to a Domain Engineer</td><td><strong>Escalate to DE</strong></td></tr>
+      <tr><td>Back up my notes</td><td>Gear → <strong>Backup &amp; Restore</strong></td></tr>
+      <tr><td>Recover an older version</td><td><strong>Version History</strong> in the workspace header</td></tr>
+      <tr><td>Recover a deleted case</td><td><strong>Filters → Collection → Trash</strong> in Recent cases, then <strong>Restore</strong></td></tr>
+      <tr><td>Rearrange or hide fields</td><td><strong>Unlock layout</strong> in Case Details, or gear → <strong>Customize Site Options</strong></td></tr>
+    </tbody>
+  </table>
+</article>
+
+<!-- ======================= CASE NOTES ======================= -->
+<article class="doc-page" id="cases" data-title="Cases and case details" data-group="Case Notes">
+  <h1>Cases and case details</h1>
+  <p class="page-meta">Creating, finding, and organizing cases</p>
+  <p class="lead">A case is one service request. It holds shared details (the system, the OS, where the logs are) plus any number of dated notes.</p>
+
+  <h2>Create a case</h2>
+  <ol class="steps">
+    <li>Choose <strong>+ New Case</strong> in the workspace header (or <strong>Start New Case</strong> when nothing is open).</li>
+    <li>Fill in <strong>Case Details</strong> (below). Everything saves automatically.</li>
+    <li>Write your first dated note. The time tracker starts as soon as you begin typing.</li>
+  </ol>
+  <div class="callout note"><span class="callout-title">Why can’t I edit?</span><p>Only one browser tab can edit Case Notes at a time so two tabs can never overwrite each other. Other tabs show “Read-only while another tab is editing Case Notes.” A read-only tab becomes editable by itself when the editing tab closes, or choose <strong>Take over editing here</strong> to switch immediately: the other tab is asked to save first, then becomes read-only.</p></div>
+
+  <h2>Case details reference</h2>
+  <figure class="shot"><img src="docs/wiki-images/10-case-details.png" alt="The Case Details section filled in for the sample case" loading="lazy"><figcaption>Case Details for the sample case.</figcaption></figure>
+  <table>
+    <thead><tr><th>Field</th><th>What to enter</th><th>Format check</th></tr></thead>
+    <tbody>
+      <tr><td>Service Tag</td><td>The system’s Service Tag.</td><td>5–10 letters and digits</td></tr>
+      <tr><td>System/Platform</td><td>Model, for example <code>PowerEdge R750</code>.</td><td>None</td></tr>
+      <tr><td>Service Request Number</td><td>The SR number. If another case already uses it, a warning under the field links to that case.</td><td>6 or more digits</td></tr>
+      <tr><td>OS version / build</td><td>Exact version, build, and relevant component firmware.</td><td>Must contain a number</td></tr>
+      <tr><td>Customer Country</td><td>Pick from the list (or Other).</td><td>None</td></tr>
+      <tr><td>OS Support Entitlement Verification</td><td>OEM OS, ProSupport Plus Bring Your own License, Solution Support includes OS, or No Software Support.</td><td>None</td></tr>
+      <tr><td>Log Location</td><td>Where the collected logs live, for example <code>https://…</code> or <code>\\server\share</code>.</td><td>Link or path</td></tr>
+      <tr><td>Issue Description</td><td>Summarize the issue and customer impact in concrete terms.</td><td>Checked for repeated or placeholder text</td></tr>
+    </tbody>
+  </table>
+  <p>The format checks feed the <a href="#quality">note quality score</a>. A value that does not match earns half credit rather than none. A case with no SR number or Service Tag is titled from the start of its issue description and its date.</p>
+
+  <h3>OS/Solution choices</h3>
+  <p>Azure Local, Azure Stack Hub, Debian, ESX, Nutanix, OpenShift, Redhat, Systems Management, Ubuntu, Windows Server, and No OS. Some choices reveal an extra <strong>Product/Application</strong> field. The OS also drives the log collection plan and which issue types are offered.</p>
+
+  <h3>Rearrange or hide fields</h3>
+  <figure class="shot"><img src="docs/wiki-images/10b-unlock-layout.png" alt="Case Details with Unlock layout turned on, showing drag grips and a Show checkbox on each field" loading="lazy"><figcaption>Unlock layout adds a drag grip and a Show checkbox to every field.</figcaption></figure>
+  <ul>
+    <li><strong>Unlock layout</strong> (in the Case Details heading) lets you drag fields, or focus a field’s ⋮⋮ grip and use the arrow keys. While it is unlocked, fields cannot be edited. <strong>Done</strong> saves the order for every case; <strong>Cancel</strong> or <kbd>Esc</kbd> puts it back.</li>
+    <li>Each field also has a <strong>Show</strong> checkbox. Hidden fields appear dimmed so you can bring them back. The first time you hide one, a notice asks you to acknowledge that the information is still needed and will be recorded another way.</li>
+    <li>Hidden fields <em>keep their values</em>. Copy to Lightning, email, and escalation output still include them, and they still count in the quality score. <strong>OS/Solution</strong>, <strong>Notes</strong>, and <strong>Action Plan / Next Steps</strong> cannot be hidden.</li>
+    <li>A <strong>Show or hide fields</strong> button under Case Details lists what is hidden. The same controls exist in <a href="#customize">Customize Site Options</a>.</li>
+  </ul>
+
+  <h2>Find and organize cases</h2>
+  <p>The <strong>Recent cases</strong> panel keeps up to 100 cases.</p>
+  <figure class="shot narrow"><img src="docs/wiki-images/04c-case-history-filters.png" alt="Recent cases with Filters open showing Show cases, Collection and Sort by" loading="lazy"><figcaption>Filters open. The button shows how many filters differ from the defaults.</figcaption></figure>
+  <table>
+    <thead><tr><th>Control</th><th>Behaviour</th></tr></thead>
+    <tbody>
+      <tr><td>Grid / List</td><td>Grid shows full case cards (default). List is a compact view with only case titles. Your choice is remembered.</td></tr>
+      <tr><td>Search cases</td><td>Searches case fields, note content, next steps, custom fields, and Case Toolkit text. Tick <strong>Search Archive and Trash too</strong> to search everything; results from other collections are labelled “In Archive” or “In Trash”.</td></tr>
+      <tr><td>Filters → Show cases</td><td>All cases, Overdue follow-ups, Follow-ups due within 4 hours, Active cases, or Completed cases.</td></tr>
+      <tr><td>Filters → Collection</td><td>Recent cases, Archive, or Trash.</td></tr>
+      <tr><td>Filters → Sort by</td><td>Newest created, Recently edited, or Follow-up due. Pinned cases always come first.</td></tr>
+      <tr><td>Pin / Unpin</td><td>Keeps an important case at the top of the list (Grid view).</td></tr>
+      <tr><td>Archive</td><td>Moves a case out of the working list without losing anything (Grid view).</td></tr>
+      <tr><td>Follow-up done</td><td>Appears on red and yellow cards. See <a href="#toolkit">Time, follow-ups and handoffs</a>.</td></tr>
+      <tr><td>Trash icon</td><td>Moves a case to Trash after you confirm. In Trash the icon permanently deletes the case and its versions.</td></tr>
+      <tr><td>Hide / Show Recent Cases</td><td>Collapses the list so the workspace gets more room. Your choice is remembered.</td></tr>
+    </tbody>
+  </table>
+  <figure class="shot narrow"><img src="docs/wiki-images/04b-case-history-list.png" alt="Recent cases in List view showing only case titles" loading="lazy"><figcaption>List view.</figcaption></figure>
+  <h3>Colour coding</h3>
+  <p>A case with an <strong>overdue</strong> follow-up is red. One <strong>due within the next 4 hours</strong> is yellow. Both clear when the follow-up is marked done or the case is Completed. Colours refresh every minute.</p>
+  <h3>Archive and Trash</h3>
+  <ul>
+    <li>When you pass 100 recent cases, older <em>unpinned</em> cases move to <strong>Archive</strong> automatically instead of being discarded. If every case is pinned, the oldest one still moves to Archive.</li>
+    <li>Archived and trashed cases keep their notes, screenshots, and versions. Choose the collection, open a case to read it, and use <strong>Restore</strong> to bring it back.</li>
+    <li>Trash is kept until you permanently delete a case. That cannot be undone.</li>
+  </ul>
+  <div class="callout warning"><span class="callout-title">Storage is shared</span><p>Recent cases, Archive, Trash, and saved versions all live in the same browser storage, which is not unlimited. Screenshots take the most room. A backup folder (see <a href="#backup">Backup and recovery</a>) is your safety net.</p></div>
+</article>
+
+<article class="doc-page" id="notes" data-title="Dated notes and the editor" data-group="Case Notes">
+  <h1>Dated notes and the editor</h1>
+  <p class="page-meta">One case, one note per day of work</p>
+  <p class="lead">Instead of one ever-growing note, each day of work gets its own dated entry. Case details, screenshots, workflow, and total time are shared across the whole case.</p>
+
+  <figure class="shot"><img src="docs/wiki-images/11-dated-notes.png" alt="The Notes section with date tabs and the formatting toolbar" loading="lazy"><figcaption>Date tabs, the formatting toolbar, and the rich-text editor.</figcaption></figure>
+
+  <h2>Dated entries</h2>
+  <ul>
+    <li><strong>+ New note</strong> (beside the Pop out button) starts another dated entry for the same case. Use <strong>+ New Case</strong> only for a different service request.</li>
+    <li>Tabs show each entry’s <strong>creation date in your local time zone</strong>. Several entries on the same day also show a time and entry number.</li>
+    <li>Editing an old entry never changes its date. Switching tabs saves your current work first; if a save fails you stay on the current entry with your edits intact.</li>
+    <li>Each entry has its own <strong>Notes</strong> and <strong>Action Plan / Next Steps</strong>. Case details, screenshots, workflow, and total time are shared.</li>
+  </ul>
+
+  <h2>Case Summary</h2>
+  <p>The <strong>Case Summary</strong> tab shows the shared case details once, then every dated note and action plan from oldest to newest. Each dated section collapses. It is a formatted read-through of what you wrote, <em>not</em> an AI summary. Select a date tab to resume editing. Its <strong>Copy case summary</strong> button copies the whole case (see <a href="#sharing">Copy, email, print and export</a>).</p>
+  <figure class="shot"><img src="docs/wiki-images/12-case-summary.png" alt="The Case Summary tab showing shared case details followed by the first dated note" loading="lazy"><figcaption>Case Summary: shared details first, then each dated note.</figcaption></figure>
+  <p>HTML email, Print/PDF, the escalation handoff, and AI review include the <em>complete</em> dated history, regardless of which tab is selected.</p>
+
+  <h2>The editor</h2>
+  <ul>
+    <li><strong>Formatting toolbar:</strong> Bold, Italic, Underline, Bullets, Numbered list, Link, and Clear formatting.</li>
+    <li><strong>Screenshots:</strong> paste with <kbd>Ctrl</kbd> <kbd>V</kbd> (<kbd>⌘</kbd> <kbd>V</kbd> on Mac). Click an image, then drag its bottom-right corner to resize it. With a resize handle focused, use the arrow keys.</li>
+    <li><strong>Collapsible sections:</strong> Case Details, Notes, and Action Plan / Next Steps each collapse with their arrow. The state is remembered.</li>
+    <li><strong>Jump to Notes</strong> (<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>J</kbd>) scrolls to the editor. If you mostly write notes, <a href="#customize">Customize Site Options</a> can show Notes and Action Plan above the workflow and Case Details.</li>
+    <li><strong>Pop out ↗</strong> opens a compact window with the editor so you can write beside a customer call. Only one window edits at a time; <strong>Return to case</strong> saves before returning. If your browser blocks the pop-up, you are offered a compact view in the same tab.</li>
+  </ul>
+
+  <h2>Action Plan / Next Steps</h2>
+  <p>Use this section for what happens next and who owns it. Include an owner and a date or time for each step, for example “Customer to collect a TSR and upload it to the SR file share. Owner: customer Hyper-V administrator. Due: tomorrow 12:00.” An owner and date here count toward the <strong>Next steps</strong> part of the quality score.</p>
+
+  <h2>Write actions with results</h2>
+  <table>
+    <thead><tr><th>Weak</th><th>Strong</th></tr></thead>
+    <tbody>
+      <tr><td>Checked the logs.</td><td>Reviewed the System event log for the 09:42 drop. Observed Event ID 27 on NIC port 2 and Event ID 16949 on the vSwitch team at the same second.</td></tr>
+      <tr><td>Tested the network.</td><td>Ran Test-NetConnection from a VM to the gateway during a drop. Result: requests timed out for 47 seconds, then recovered without any action.</td></tr>
+      <tr><td>Updated drivers.</td><td>Rolled the NIC driver back to 225.0.4.0. Result: Device Manager shows 225.0.4.0 on both ports; no Event ID 27 for 60 minutes of continuous ping.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout tip"><span class="callout-title">Make outcomes easy to find</span><p>Start each outcome with the word “Result:” or “Observed”. The score and the escalation readiness check both look for a recorded outcome next to each step.</p></div>
+</article>
+
+<article class="doc-page" id="workflow" data-title="Case workflow" data-group="Case Notes">
+  <h1>Case workflow</h1>
+  <p class="page-meta">Triage, Evidence, Verify resolution, Knowledge draft</p>
+  <p class="lead">The Case workflow panel walks a case from first look to a reusable knowledge article. Everything you record is saved with the case and flows into your exports and Support Trends.</p>
+
+  <p>The panel sits above Case Details and can be collapsed. Choose a stage with the buttons at its top.</p>
+
+  <h2>1 · Triage</h2>
+  <figure class="shot"><img src="docs/wiki-images/06-workflow-triage.png" alt="The Triage stage showing OS/Solution, Issue type, Service Impact and Recent change" loading="lazy"><figcaption>Triage.</figcaption></figure>
+  <table>
+    <thead><tr><th>Field</th><th>Choices / purpose</th></tr></thead>
+    <tbody>
+      <tr><td>OS/Solution</td><td>The platform or solution stack (same list as Case Details).</td></tr>
+      <tr><td>Issue type</td><td>General investigation; Boot / startup failure; Crash / unexpected restart; Network / DNS connectivity; Performance / system hangs; Storage / disk / filesystem; Active Directory / authentication / Group Policy; Hyper-V / virtual machines; Failover clustering; Windows Update / installation failures; File shares / SMB / permissions. For <em>Systems Management</em> the only choice is <strong>fix ME OMSA</strong>. Drives the evidence checklist and the log plan.</td></tr>
+      <tr><td>Product/Application</td><td>Appears for Systems Management cases.</td></tr>
+      <tr><td>Service Impact</td><td>Unspecified, Service unavailable, Service degraded, Deployment, or How-to / planning. Carried into escalations.</td></tr>
+      <tr><td>Recent change</td><td>What changed before the issue began. Carried into escalations as Recent changes.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout note"><span class="callout-title">Templates were retired</span><p>Earlier versions had Apply template and Manage templates buttons. They have been removed. Existing cases with older custom issue types still open, and old settings backups that mention templates still restore (the templates are ignored).</p></div>
+
+  <h2>2 · Evidence</h2>
+  <figure class="shot"><img src="docs/wiki-images/07-workflow-evidence.png" alt="The Evidence stage with a checklist of evidence items and the Open log collection helper button" loading="lazy"><figcaption>Evidence checklist for a network issue on Windows Server.</figcaption></figure>
+  <ul>
+    <li>The checklist adapts to the OS and issue type. Tick an item only <em>after</em> you have reviewed the evidence.</li>
+    <li><strong>Collection guide ↗</strong> links open official collection instructions in a new tab.</li>
+    <li>Add the incident window and artifact location to your notes, and record the <strong>Log Location</strong> in Case Details.</li>
+  </ul>
+  <h3>Log collection helper</h3>
+  <p>The helper builds a targeted plan from the case’s OS and issue type. Open it from <strong>Open log collection helper</strong> here, the <strong>Log Collection Helper</strong> button in the action bar, or the quick-action toolbox. You can override the OS and issue type inside the helper; overrides affect only that plan.</p>
+  <figure class="shot medium"><img src="docs/wiki-images/20a-log-helper-warning.png" alt="The warning that the Log Collection Helper is in development, with Cancel and I understand, continue buttons" loading="lazy"><figcaption>Every time you open it, a warning asks you to double-check the suggestions.</figcaption></figure>
+  <div class="callout warning"><span class="callout-title">The helper is in development</span><p>Each time it opens you are asked to double-check every suggestion and verify its validity, including commands, tools, and collection guides. Choose <strong>I understand, continue</strong> to see the plan, or <strong>Cancel</strong> / <kbd>Esc</kbd> to close it. A reminder stays in the helper itself.</p></div>
+  <figure class="shot medium"><img src="docs/wiki-images/20-log-helper.png" alt="The Which logs should I collect dialog with a plan for a Windows Server network issue" loading="lazy"><figcaption>The helper recommends what to collect and explains why.</figcaption></figure>
+  <p>Nothing runs automatically. Review permissions, production impact, and approved storage before collecting. Logs and dumps can contain sensitive customer data. Closing the helper returns focus to the button that opened it.</p>
+
+  <h2>3 · Verify resolution</h2>
+  <figure class="shot"><img src="docs/wiki-images/08-workflow-resolve.png" alt="The Verify resolution stage with fields for the fix, verification, prevention plan and related case" loading="lazy"><figcaption>Resolution evidence for the sample case.</figcaption></figure>
+  <table>
+    <thead><tr><th>Field</th><th>What to record</th></tr></thead>
+    <tbody>
+      <tr><td>Resolution / workaround</td><td>What was changed and why.</td></tr>
+      <tr><td>Verification test and observed result</td><td>Repeat the customer’s <em>failing scenario</em> and record the result.</td></tr>
+      <tr><td>Prevention / monitoring plan</td><td>What should be monitored, for how long, and what triggers a follow-up.</td></tr>
+      <tr><td>Related / repeat case</td><td>Previous SR, if this is a repeat contact. Support Trends counts these.</td></tr>
+      <tr><td>Customer confirmed…</td><td>Tick when the customer confirms the issue is resolved.</td></tr>
+    </tbody>
+  </table>
+  <p>The status line under the fields lists what is still missing (“Still to record: …”). <strong>Mark verified and completed</strong> becomes available once the fix, verification, prevention plan, and customer confirmation are all present. It sets the case status to <strong>Completed</strong> <em>in this browser</em>; use <strong>Copy to Lightning</strong> to transfer the record. <strong>Set follow-up</strong> opens the follow-up tracker.</p>
+
+  <h2>4 · Knowledge draft</h2>
+  <figure class="shot"><img src="docs/wiki-images/09-workflow-knowledge.png" alt="The Knowledge draft stage with an editable draft and export buttons" loading="lazy"><figcaption>Build, edit, then export a knowledge draft.</figcaption></figure>
+  <ol class="steps">
+    <li>Choose <strong>Build knowledge candidate</strong>. If a draft already exists you are asked before it is replaced.</li>
+    <li>Edit the draft. Remove customer-identifying information.</li>
+    <li>Set an <strong>Export title</strong> and, for Obsidian, the exact <strong>Obsidian vault name</strong> of an approved vault.</li>
+    <li>Export with <strong>Copy knowledge draft</strong>, <strong>Copy for OneNote</strong>, <strong>Send to Obsidian</strong>, or <strong>Download Markdown</strong>.</li>
+  </ol>
+  <div class="callout warning"><span class="callout-title">Nothing is published for you</span><p>Exports contain only the edited draft below its title, not hidden case fields, and screenshots are not bundled. There is no automatic OneNote publishing, and the browser cannot confirm that an Obsidian hand-off succeeded. Use only a work-approved notebook or vault.</p></div>
+
+  <h2>Where workflow data goes</h2>
+  <ul>
+    <li><strong>Copy to Lightning</strong> and <strong>Escalate to DE</strong> include the recorded workflow findings.</li>
+    <li><strong>Support Trends</strong> reads the verification and repeat-case fields.</li>
+    <li>The <strong>quality score</strong> counts Triage (service impact and recent change) and Evidence.</li>
+  </ul>
+</article>
+
+<article class="doc-page" id="quality" data-title="Note quality score" data-group="Case Notes">
+  <h1>Note quality score</h1>
+  <p class="page-meta">A live, rule-based check for missing and vague information</p>
+  <p class="lead">At the bottom of every case, a score from 0 to 100 updates as you write and scores <em>every dated entry</em> of the case together. Its job is to show you the biggest gaps first.</p>
+
+  <figure class="shot"><img src="docs/wiki-images/13-quality-score.png" alt="The Note quality score panel showing a total of 100 and category breakdown" loading="lazy"><figcaption>The sample case scores 100. The “To raise the score” list appears when anything is missing.</figcaption></figure>
+
+  <h2>Ratings</h2>
+  <p><span class="pill good">85+ Strong</span> <span class="pill mid">60–84 Needs detail</span> <span class="pill bad">Below 60 Incomplete</span></p>
+
+  <h2>What is scored</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Points</th><th>What earns credit</th></tr></thead>
+    <tbody>
+      <tr><td>Case details</td><td>25</td><td>Filled fields. Service Tag, Service Request, OS version, and Log Location are also checked for format.</td></tr>
+      <tr><td>Issue clarity</td><td>14</td><td>A specific description of what is failing and its impact.</td></tr>
+      <tr><td>Triage</td><td>6</td><td>Service impact and recent change, from the Triage stage, the Handoff Summary, or written in the Issue Description.</td></tr>
+      <tr><td>Troubleshooting</td><td>25</td><td>Steps that have recorded outcomes. Full credit needs an outcome for at least half of the steps.</td></tr>
+      <tr><td>Evidence</td><td>15</td><td>Evidence that was gathered, and where it is.</td></tr>
+      <tr><td>Next steps</td><td>15</td><td>Actions with an owner and a date, from the Action Plan or the follow-up tracker.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Rules that keep a note below “Strong”</h2>
+  <ul>
+    <li><strong>Placeholder or repeated text.</strong> A field that reads as filler (few distinct words, repeated sentences, lorem-ipsum, or keyboard-mashing) earns nothing and is flagged.</li>
+    <li><strong>Copied fields.</strong> If two scored fields are nearly identical, the earlier one keeps the credit and the later one is flagged by name.</li>
+    <li><strong>Steps without outcomes.</strong> Credit is proportional to the share of steps with an outcome term such as “Result”, “Observed”, or “confirmed”.</li>
+    <li><strong>Format mismatches</strong> in Service Tag (5–10 letters and digits), Service Request (6+ digits), OS version (contains a number), or Log Location (link or path) earn half credit.</li>
+    <li><strong>Leftover prompt text</strong> from the retired templates earns no troubleshooting credit. A prompt label followed by a very short answer is ignored.</li>
+  </ul>
+  <div class="callout note"><span class="callout-title">What the score cannot do</span><p>It finds missing information. It does not verify that your diagnosis is right or replace your judgment, and it is not a team metric. Hidden Case Details fields still count.</p></div>
+
+  <h2>A fast route to 100</h2>
+  <ol class="steps">
+    <li>Read <strong>To raise the score</strong>. It lists the biggest gaps first.</li>
+    <li>Fix the format checks in Case Details (they are quick wins).</li>
+    <li>Add “Result:” to each troubleshooting step.</li>
+    <li>Set an owner and due date in <strong>Set follow-up</strong>, or write them in the Action Plan.</li>
+    <li>Tick the evidence checklist items you have genuinely reviewed.</li>
+  </ol>
+</article>
+
+<article class="doc-page" id="toolkit" data-title="Time, follow-ups and handoffs" data-group="Case Notes">
+  <h1>Time, follow-ups and handoffs</h1>
+  <p class="page-meta">The Case Toolkit</p>
+  <p class="lead">Small tools that keep a case moving: a timer, a follow-up tracker with colour-coded alerts, and generators for customer updates and handoff summaries.</p>
+
+  <h2>Time tracking</h2>
+  <figure class="shot"><img src="docs/wiki-images/05-timer-header.png" alt="The workspace header with New Case, Update follow-up, Version History, Print/PDF, Jump to Notes and the timers" loading="lazy"><figcaption>The workspace header: save status, case buttons, and the timers.</figcaption></figure>
+  <ul>
+    <li>Tracking <strong>starts automatically</strong> when notes are started or modified.</li>
+    <li>The large number on the left is the <strong>current session</strong>; <strong>Total time on case</strong> adds every session across all dated notes.</li>
+    <li><strong>Stop Tracking</strong> stops the timer. <strong>Copy to Lightning</strong> also stops it.</li>
+    <li>When tracking is stopped the label reads “Timer stopped” and keeps the length of the session you just finished until a new one begins.</li>
+    <li>The ⓘ button explains the rules in the app.</li>
+    <li><strong>Optional away prompt:</strong> in Chrome and Edge, <a href="#customize">Customize Site Options</a> can ask whether to keep the time when you come back after 15 minutes away (idle or screen locked). If the timer was running you choose to keep or remove that time. The browser asks permission first.</li>
+  </ul>
+  <div class="callout note"><span class="callout-title">AI never touches the timer</span><p>Neither Copy to AI nor Send to Devin stops your timer or replaces your notes.</p></div>
+
+  <h2>Follow-up tracker</h2>
+  <figure class="shot narrow"><img src="docs/wiki-images/15-followup-dialog.png" alt="The Follow-up tracker dialog with Owner, Due date and time, Status and Mark follow-up done" loading="lazy"><figcaption>Set follow-up (Update follow-up once one is scheduled).</figcaption></figure>
+  <ul>
+    <li><strong>Owner:</strong> the person or team responsible.</li>
+    <li><strong>Due date and time:</strong> uses this device’s local time zone.</li>
+    <li><strong>Status:</strong> Open, In progress, Waiting on customer, or Completed.</li>
+  </ul>
+  <p>Open the tracker from <strong>Set follow-up</strong> in the workspace header, beside the Action Plan heading, or from the Verify resolution stage.</p>
+  <h3>Follow-up urgency</h3>
+  <ul>
+    <li><strong>Red</strong> cards are overdue; <strong>yellow</strong> cards are due within 4 hours. Use <strong>Filters → Show cases</strong> for <em>Overdue follow-ups</em> or <em>Follow-ups due within 4 hours</em>, or <strong>Sort by → Follow-up due</strong>.</li>
+    <li>The header pill (for example “1 overdue · 2 due within 4 hours”) filters Recent cases when selected, and the tab title shows the count.</li>
+    <li>Optionally turn on <strong>desktop notifications</strong> in Customize Site Options: you are notified once when a follow-up is within 4 hours and once when it is overdue. The browser asks permission, and notifications appear while Case Notes is open in a tab.</li>
+  </ul>
+  <h3>Mark follow-up done</h3>
+  <figure class="shot medium"><img src="docs/wiki-images/15b-mark-done-prompt.png" alt="The Follow-up done prompt offering No follow-up, Case is complete and Schedule a new follow-up" loading="lazy"><figcaption>Marking a follow-up done asks what comes next.</figcaption></figure>
+  <p>Use <strong>Mark follow-up done</strong> in the tracker, or <strong>Follow-up done</strong> on a red or yellow card. You choose:</p>
+  <ul>
+    <li><strong>Schedule a new follow-up</strong> clears the due date and opens the tracker for the next one. The case stays open.</li>
+    <li><strong>No follow-up</strong> records the follow-up as done and clears the due date. The case status is unchanged.</li>
+    <li><strong>Case is complete</strong> clears the due date and sets the status to Completed.</li>
+  </ul>
+  <p>Each one is recorded with the case, and the tracker shows the last one. <a href="#trends">Support Trends</a> counts overdue and unassigned cases.</p>
+
+  <h2>Customer Update</h2>
+  <figure class="shot medium"><img src="docs/wiki-images/16-customer-update.png" alt="The Customer update generator dialog with a generated draft" loading="lazy"><figcaption>Customer update generator.</figcaption></figure>
+  <ol class="steps">
+    <li>Choose <strong>Customer Update</strong> in the action bar.</li>
+    <li>Pick a <strong>Tone</strong>: Clear and professional, Reassuring, or Concise.</li>
+    <li>Choose <strong>Generate customer update</strong>. The draft is built from the issue, investigation, and next steps. If a draft already exists you are asked before it is replaced.</li>
+    <li>Edit the wording. Remove internal system names, unverified causes, and collection instructions.</li>
+    <li>Choose <strong>Copy customer update</strong>.</li>
+  </ol>
+
+  <h2>Handoff Summary</h2>
+  <figure class="shot medium"><img src="docs/wiki-images/17-handoff-summary.png" alt="The Handoff Summary dialog" loading="lazy"><figcaption>Handoff Summary for shift changes and transfers.</figcaption></figure>
+  <p>A structured summary for the next engineer: Service Request, Service Tag, platform, OS, the issue, business impact, the investigation by date, next steps, remaining questions, evidence location, owner, status, follow-up due date, and total time spent. Use the dialog’s <em>business impact</em> and <em>remaining questions</em> fields to add what the notes alone do not say. Service impact and recent change recorded here also count toward the Triage score.</p>
+</article>
+
+<article class="doc-page" id="sharing" data-title="Copy, email, print and export" data-group="Case Notes">
+  <h1>Copy, email, print and export</h1>
+  <p class="page-meta">Getting a case out of the app</p>
+  <p class="lead">Copy to Lightning copies the <strong>selected day</strong>; email, print, escalation, and AI review use the <strong>complete dated history</strong>.</p>
+
+  <table>
+    <thead><tr><th>Action</th><th>What happens</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Copy to Lightning</td><td>Copies every case field, plus the notes and action plan from the dated notes created on the <em>same day</em> as the selected one, and the tracked time.</td><td>Stops the timer. Includes workflow findings. Shakes the screen and plays a quiet click so you know it worked.</td></tr>
+      <tr><td>Copy case summary</td><td>In <strong>Case Summary</strong>: copies every field and <em>every</em> dated note.</td><td>Does not change the timer.</td></tr>
+      <tr><td>Email to Case</td><td>Downloads an email draft with your screenshots included inline.</td><td>Has a plain-text alternative. Review and remove internal details before sending.</td></tr>
+      <tr><td>Print / PDF</td><td>Opens the browser print dialog.</td><td>Choose “Save as PDF” to make a file.</td></tr>
+      <tr><td>Escalate to DE</td><td>Opens the escalation page pre-filled from this case.</td><td>See <a href="#escalation">DE Escalation Request</a>. Each escalation plays one of eight short animations.</td></tr>
+      <tr><td>Customer Update / Handoff Summary</td><td>Generates editable drafts you copy yourself.</td><td>See <a href="#toolkit">Time, follow-ups and handoffs</a>.</td></tr>
+      <tr><td>Knowledge export</td><td>OneNote, Obsidian, Markdown, or clipboard.</td><td>See <a href="#workflow">Case workflow</a>.</td></tr>
+      <tr><td>Copy to AI / Send to Devin</td><td>Builds a prompt from the case.</td><td>See <a href="#ai">AI assistance</a>.</td></tr>
+    </tbody>
+  </table>
+  <p>Custom fields are included in plain-text and HTML email exports. Use <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> to copy to Lightning from the keyboard.</p>
+  <div class="callout warning"><span class="callout-title">Review before you share</span><p>Case notes contain customer information. Read every export before it leaves your device, and follow your organization’s policy for where customer data may be stored or pasted.</p></div>
+
+  <h2>Shake and sound</h2>
+  <p>When Copy to Lightning succeeds the page shakes for about a second and a soft camera-shutter click plays (phones that support it also buzz briefly). To turn this off, clear <strong>Shake the screen and play a sound when Copy to Lightning succeeds</strong> in <a href="#customize">Customize Site Options</a>. If your system asks for reduced motion, the screen does not shake.</p>
+
+  <h2>The action bar</h2>
+  <ul>
+    <li><strong>Slim row</strong> (screens narrower than 1500 px or shorter than 780 px): <strong>Copy to Lightning</strong> first and solid blue, <strong>Escalate to DE</strong> in red, then Email to Case, Customer Update, Handoff Summary, and Log Collection Helper. The AI tools open from <strong>AI tools</strong>, and your choice is remembered.</li>
+    <li><strong>Side rail</strong> (wide, tall screens): everything is shown. Drag the rail’s edge to resize it, or focus the edge and use <kbd>←</kbd> <kbd>→</kbd> (and <kbd>Home</kbd>/<kbd>End</kbd>). Width ranges from 180 to 480 px.</li>
+    <li><strong>Stop floating</strong> keeps the bar in place at the top of the workspace; <strong>Enable floating</strong> turns floating back on. Your choice is remembered.</li>
+  </ul>
+
+  <h2>The quick-action toolbox</h2>
+  <figure class="shot medium"><img src="docs/wiki-images/27-toolbox.png" alt="The toolbox launcher next to the page title opened to show quick actions" loading="lazy"><figcaption>The toolbox launcher offers the most-used actions while you scroll.</figcaption></figure>
+  <ul>
+    <li>Select the launcher (beside the page title) to open <strong>Email to Case</strong>, <strong>Escalate to DE</strong>, <strong>Copy Notes</strong>, and the <strong>Log Collection Helper</strong>.</li>
+    <li><strong>Edit toolbox</strong> lets you add up to four URL shortcuts, choose the launcher icon (toolbox, dancing paperclips, wizards, or T-rex), resize the button from 40 to 120 px, size the icon, hide the background circle, and turn the animation off.</li>
+    <li>Focus the launcher and hold <kbd>Alt</kbd> with the arrow keys to move it. The toolbox never lands on the site header. Animation also stops automatically if your system asks for reduced motion.</li>
+  </ul>
+</article>
+
+<article class="doc-page" id="ai" data-title="AI assistance" data-group="Case Notes">
+  <h1>AI assistance</h1>
+  <p class="page-meta">Optional: Copy to AI and Send to Devin</p>
+  <p class="lead">Case Notes can build a ready-made prompt from your case. You decide where it goes. Everything here is optional.</p>
+
+  <figure class="shot"><img src="docs/wiki-images/14c-ai-tools-open.png" alt="The AI tools panel open under the action bar with Ask AI to, Add your own AI prompt, Copy to AI, Send to Devin and AI Settings" loading="lazy"><figcaption>Open <strong>AI tools</strong> in the slim action bar (on wide screens they are always visible).</figcaption></figure>
+
+  <h2>Two ways to use AI</h2>
+  <table>
+    <thead><tr><th></th><th>Copy to AI</th><th>Send to Devin</th></tr></thead>
+    <tbody>
+      <tr><td>Needs setup?</td><td>No</td><td>Yes: Devin CLI plus a small Windows connection</td></tr>
+      <tr><td>What happens</td><td>Copies the prompt; you paste it into the AI tool you are approved to use.</td><td>Shows the same prompt for review, then submits it to Devin on your PC.</td></tr>
+      <tr><td>Result</td><td>In your AI tool.</td><td>A suggestion appears in Case Notes for you to review.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Choose a task</h2>
+  <p>The <strong>Ask AI to</strong> list has four built-in tasks:</p>
+  <ul>
+    <li><strong>Review the case</strong> finds missing facts, contradictions, unclear reproduction steps, and troubleshooting without recorded outcomes, and returns a short prioritized list.</li>
+    <li><strong>Improve the case notes</strong> rewrites your facts into a concise summary (issue, impact, environment, evidence, troubleshooting, results, next steps) without inventing details.</li>
+    <li><strong>Suggest next troubleshooting</strong> proposes 3–5 diagnostic steps based only on what you recorded, and says what each could confirm or rule out.</li>
+    <li><strong>Recommend logs to collect</strong> suggests targeted logs and explains why, separating a plan from logs already gathered.</li>
+  </ul>
+  <h3>Add your own AI prompt</h3>
+  <figure class="shot medium"><img src="docs/wiki-images/24-ai-prompts.png" alt="The Add your own AI prompt dialog" loading="lazy"><figcaption>Custom AI tasks.</figcaption></figure>
+  <p>Choose <strong>Add your own AI prompt</strong>, give the task a <strong>Task Label</strong> (up to 80 characters) and an <strong>Instruction</strong> (up to 8,000 characters), then <strong>Add Task</strong>. <strong>Load Example</strong> fills in a sample. Custom tasks appear in the list, are saved in this browser, and are included in settings backups.</p>
+
+  <h2>Copy to AI</h2>
+  <ol class="steps">
+    <li>Pick a task.</li>
+    <li>Choose <strong>Copy to AI</strong>. The app copies a bounded prompt: the task instruction plus the current case details.</li>
+    <li>Review it, remove anything you should not share, and paste it into your approved AI tool.</li>
+  </ol>
+
+  <h2>Connect Devin (optional)</h2>
+  <p>The first time you open Case Notes an introduction explains the optional Devin connection. Choose <strong>Continue with Copy to AI</strong> to skip it, or <strong>Set up Devin</strong>. Later, the line “Optional, advanced: send AI prompts straight to Devin CLI on this PC” offers <strong>Learn more</strong> and <strong>Dismiss</strong>, and you can reopen the instructions any time from <strong>AI Settings</strong>.</p>
+  <p><strong>Requirements:</strong> the native Windows Devin CLI with a signed-in account, Node.js 22 or newer, and the small Windows connection.</p>
+  <ol class="steps">
+    <li>Open <strong>AI Settings</strong> and choose <strong>Copy connection command</strong>.</li>
+    <li>Paste it into PowerShell. It fetches and starts the connection automatically; no ZIP or manual download is needed. Review the linked source and follow your organization’s policy for downloaded code.</li>
+    <li>Keep the PowerShell window open.</li>
+    <li>Paste the pairing token into AI Settings and choose <strong>Connect Devin</strong>.</li>
+  </ol>
+  <p>Your browser may ask for local-network permission the first time. See <code>companion/README.md</code> in the repository for CLI installation, login, workspace trust, and troubleshooting.</p>
+
+  <h2>Reviewing a Devin response</h2>
+  <ul>
+    <li><strong>Send to Devin</strong> first shows the exact prompt for review.</li>
+    <li>The suggestion appears for you to read. <strong>Append to Notes</strong> requires an explicit click and only affects the original, selected, editable case and entry. If you switch entries meanwhile, the result cannot be added to a different one.</li>
+    <li>If you close the dialog before the response arrives, you can recover it when you return.</li>
+  </ul>
+  <div class="callout warning"><span class="callout-title">Protect customer data</span><p>Prompts contain case details. Remove customer names, contact information, and internal system names that are not needed. Use only AI tools your organization approves, and treat AI output as suggestions to verify, not facts.</p></div>
+</article>
+
+<article class="doc-page" id="backup" data-title="Backup and recovery" data-group="Case Notes">
+  <h1>Backup and recovery</h1>
+  <p class="page-meta">Keeping your notes safe</p>
+  <p class="lead">Notes save automatically in your browser. A backup folder gives you a second copy that survives clearing browser data, moving to a new PC, or a mistake.</p>
+
+  <div class="callout danger"><span class="callout-title">Do this on day one</span><p>Browser storage is erased if you clear site data or reset the browser. Until you choose a backup folder, that is the <em>only</em> copy of your notes. A banner at the top of the page reminds you, and <strong>Remind me in a week</strong> hides it for seven days.</p></div>
+  <figure class="shot"><img src="docs/wiki-images/21c-backup-banner.png" alt="The banner reading Your notes are saved only in this browser with Set Up Backups and Remind me in a week buttons" loading="lazy"><figcaption>The backup banner.</figcaption></figure>
+
+  <h2>How saving works</h2>
+  <ul>
+    <li><strong>Autosave:</strong> changes are saved in this browser every ten seconds. The workspace shows <strong>Saved</strong> when nothing is pending, and a <strong>Retry save</strong> button if a save fails.</li>
+    <li><strong>Storage:</strong> Recent cases (up to 100), Archive, Trash, and saved versions share browser storage on this computer and this browser profile. Another browser or profile has its own data.</li>
+    <li><strong>One editor:</strong> only one tab can edit at a time, which protects notes from being overwritten.</li>
+  </ul>
+
+  <h2>Quick start (about 30 seconds)</h2>
+  <figure class="shot medium"><img src="docs/wiki-images/21-backup-restore.png" alt="The Backup and Restore dialog before a folder is chosen, showing Not backed up yet" loading="lazy"><figcaption>Gear → Backup &amp; Restore, before a folder is chosen.</figcaption></figure>
+  <ol class="steps">
+    <li>Open <strong>Settings (gear) → Backup &amp; Restore</strong> and choose <strong>Choose Backup Folder</strong>.</li>
+    <li>Pick a folder inside your <strong>work OneDrive</strong> (Documents is a good choice) so OneDrive also keeps a cloud copy. Use an approved location.</li>
+    <li>Approve the browser’s permission prompt. Case Notes creates a <code>ProSupportToolsBackup</code> folder inside it and makes the first backup immediately.</li>
+    <li>The status card turns green and shows <strong>Backed up just now</strong>.</li>
+  </ol>
+  <p>Folder backup needs Chrome or Edge. In other browsers use <strong>Download a copy instead</strong> (below).</p>
+
+  <h2>How automatic backup works</h2>
+  <ul>
+    <li>A few seconds after you change a note (and at most every 30 seconds), the <strong>latest copy</strong> is refreshed. The page must be open: backup is not a background service.</li>
+    <li>Once an hour while you work, a dated <strong>automatic snapshot</strong> is saved, so you can go back to how things looked earlier in the day or last week.</li>
+    <li><strong>Back Up Now</strong> saves immediately and adds a <strong>manual backup</strong>, which is never deleted automatically. Use it before risky edits or at the end of a case.</li>
+    <li>Before anything is replaced or removed (a restore, removing a custom field, resetting fields) a <strong>safety copy</strong> is saved first. Safety copies are never deleted automatically.</li>
+    <li><strong>Settings</strong> (fields, toolbox, preferences) are backed up with the history, and also within about a minute of any setting change, even if you have not edited a note.</li>
+  </ul>
+  <p>If the browser closes and reopens it may need permission again. The card says <strong>Backups are paused</strong>; select <strong>Reconnect Backup Folder</strong> and approve.</p>
+
+  <h2>Restore</h2>
+  <ol class="steps">
+    <li>Open <strong>Backup &amp; Restore → Restore…</strong></li>
+    <li>Choose <strong>Case history</strong> or <strong>Settings</strong> at the top. On the Settings tab, a copy marked <em>same as your current settings</em> is already active, so its Restore button is disabled.</li>
+    <li>Pick a backup. The list is grouped as <em>Most recent</em>, <em>Manual backups</em>, <em>Safety copies</em>, and <em>Automatic snapshots</em>, newest first, with a friendly time and size.</li>
+    <li>Select <strong>Restore</strong>, read the confirmation (it states how many cases will be replaced), and confirm. Your current data is saved as a safety copy first, so if you picked the wrong one, restore the safety copy.</li>
+  </ol>
+  <ul>
+    <li><strong>On a new computer or browser:</strong> choose the same OneDrive folder. Case Notes sees the existing backups and asks whether to <strong>Restore from these backups</strong> or <strong>Keep my current notes and back up here</strong>. It never overwrites the folder silently; if you close the question, backups stay paused until you decide.</li>
+    <li><strong>Restore from a file…</strong> accepts a file you downloaded or copied from another computer. Case-history and settings files are told apart automatically.</li>
+    <li>A history restore replaces the complete history, including Archive, Trash, and versions. After a settings restore the page reloads once so every setting takes effect.</li>
+  </ul>
+
+  <h2>What settings backups include</h2>
+  <ul>
+    <li><strong>Toolbox:</strong> shortcut links (up to four), button order and colours, launcher icon, sizes, circle and animation options.</li>
+    <li><strong>Case fields:</strong> custom fields, their order, and which fields are hidden; and your own <strong>AI prompts</strong>.</li>
+    <li><strong>Preferences:</strong> theme, floating action bar, Grid/List view, site effects and options, collapsed sections and Recent cases panel, pinned site resources, and the backup retention choice.</li>
+  </ul>
+  <p>Not included: the temporary dragged position of the toolbox, and the browser’s folder permission.</p>
+
+  <h2>Delete backups or start fresh</h2>
+  <table>
+    <thead><tr><th>Action</th><th>What it removes</th><th>Your notes</th></tr></thead>
+    <tbody>
+      <tr><td>Delete (next to one backup)</td><td>That one backup file, and screenshots only it used.</td><td>Kept</td></tr>
+      <tr><td>Delete All Backups…</td><td>Every backup the app made in the folder, including manual backups, safety copies and screenshots. Files that are not the app’s are never touched.</td><td>Kept. Automatic backups start again when your notes next change.</td></tr>
+      <tr><td>Start Fresh…</td><td>Everything above <strong>and</strong> all case notes, settings, and preferences in this browser.</td><td><strong>Erased.</strong> No safety copy. Cannot be undone.</td></tr>
+      <tr><td>Stop Using This Folder</td><td>Nothing. Backups stop; the folder and its files stay.</td><td>Kept</td></tr>
+    </tbody>
+  </table>
+  <p>Delete All Backups and Start Fresh both require typing <strong>DELETE</strong>. OneDrive keeps removed files in its recycle bin for a while, which can help if you change your mind. Use <strong>Download a copy instead</strong> before Start Fresh if you might want the notes later.</p>
+
+  <h2>Automatic cleanup (retention)</h2>
+  <p>Under <strong>Automatic cleanup</strong>, choose how long to keep automatic snapshots: <strong>7 days, 30 days (default), 90 days, or Forever</strong>.</p>
+  <ul>
+    <li>Cleanup runs after each hourly snapshot; <strong>Clean Up Now</strong> runs it on demand and tells you how much space it freed.</li>
+    <li>Snapshots from the last 24 hours are all kept; older ones are thinned to one per day for up to 30 days, then one per week up to your limit.</li>
+    <li>The newest snapshot, the latest copy, <strong>manual backups, safety copies</strong>, and any file the app did not create are never removed.</li>
+    <li>Settings copies follow their own rule: the newest 5 automatic copies from today and the newest 1 from yesterday are kept.</li>
+  </ul>
+
+  <h2>What is in the folder</h2>
+  <pre><code>ProSupportToolsBackup/
+  case-history.json                             latest copy of your cases
+  customer-config.json                          latest copy of your settings
+  case-history-2026-10-05_141500.json           automatic hourly snapshot
+  case-history-manual-2026-10-05_160000.json    manual backup (kept)
+  case-history-before-restore-…json             safety copy (kept)
+  customer-config-…json                         dated settings copies
+  images/                                       screenshots, stored once each</code></pre>
+  <p>Because snapshots refer to <code>images/</code>, copy the whole folder together when moving it by hand. Files you <strong>download</strong> are self-contained.</p>
+
+  <h2>Download a copy instead</h2>
+  <p><strong>Download Case History</strong> and <strong>Download Settings</strong> save files through the browser, in any browser, with screenshots included. Restore them with <strong>Restore from a file…</strong>.</p>
+
+  <h2>Built-in recovery tools</h2>
+  <h3>Version History</h3>
+  <figure class="shot narrow"><img src="docs/wiki-images/18-version-history.png" alt="The Version History dialog" loading="lazy"><figcaption>Version History.</figcaption></figure>
+  <ul>
+    <li>Keeps up to <strong>ten previous saved versions</strong> per case.</li>
+    <li>Preview a version before restoring it. Restoring also keeps the current content as a version.</li>
+    <li>These are saved snapshots, not a record of every keystroke, and switching tabs does not use one up.</li>
+  </ul>
+  <h3>Archive and Trash</h3>
+  <p>Archive holds older cases; Trash holds deleted ones until you permanently delete them. Both preserve notes, screenshots, and versions and both can be restored.</p>
+
+  <h2>Protect your work checklist</h2>
+  <ul class="checklist">
+    <li>The status card shows <strong>Backed up</strong> with a recent time.</li>
+    <li>The folder is in an approved, protected location (files are <strong>not encrypted</strong> by the app).</li>
+    <li>After restarting the browser, you have confirmed backups are not paused.</li>
+    <li>You know how to restore, and have tried it once on a spare browser profile.</li>
+  </ul>
+</article>
+
+<article class="doc-page" id="customize" data-title="Customize and personalize" data-group="Case Notes">
+  <h1>Customize and personalize</h1>
+  <p class="page-meta">Site options, fields, toolbox, and appearance</p>
+  <p class="lead">Adapt Case Notes to the way you work. Your choices are personal to this browser and are saved in your settings backup.</p>
+
+  <h2>Customize Site Options</h2>
+  <figure class="shot narrow"><img src="docs/wiki-images/22-customize-site-options.png" alt="The Customize Site Options dialog showing Site Effects and Options, keyboard shortcuts and the field order list" loading="lazy"><figcaption>Gear → Customize Site Options.</figcaption></figure>
+  <h3>Site effects and options</h3>
+  <ul>
+    <li><strong>Shake the screen and play a sound when Copy to Lightning succeeds</strong> (on by default).</li>
+    <li><strong>Show Notes and Action Plan above Case workflow and Case Details</strong>, for people who mostly write notes.</li>
+    <li><strong>Ask whether to keep the time when I come back after 15 minutes away.</strong> The browser asks permission (Chrome and Edge).</li>
+    <li><strong>Desktop notification when a follow-up is due within 4 hours or overdue.</strong> The browser asks permission.</li>
+  </ul>
+  <p>These apply right away. The dialog also lists the <a href="#shortcuts">keyboard shortcuts</a>.</p>
+
+  <h3>Fields</h3>
+  <ul>
+    <li><strong>Reorder</strong> any field by dragging it, or with the up and down buttons. Built-in fields (marked ✓ Built-in) are required for escalation and cannot be removed.</li>
+    <li><strong>Hide</strong> takes a Case Details field off the page without deleting its values. Choose <strong>Save Configuration</strong> to apply. See <a href="#cases">Rearrange or hide fields</a>.</li>
+    <li><strong>Add Custom Field:</strong> give a <strong>Field ID</strong> (letters, numbers, underscores, and hyphens only, for example <code>customerContact</code>) and a <strong>Field Label</strong> (up to 120 characters), then <strong>Add Field</strong>.</li>
+    <li>Changes stay in a draft until you choose <strong>Save Configuration</strong>. <strong>Reset to Default</strong> removes custom fields and shows every field.</li>
+    <li>Custom fields are searchable and are included in plain-text and HTML email exports.</li>
+  </ul>
+  <div class="callout warning"><span class="callout-title">Removing a field removes its data</span><p>Deleting a custom field, or resetting fields, removes its saved values from recent cases, Archive, Trash, and saved versions after you confirm. When a backup folder is connected, a safety copy of your history is saved first. Hiding a field does <em>not</em> delete values.</p></div>
+
+  <h2>Quick-action toolbox</h2>
+  <p>Choose <strong>Edit toolbox</strong> from the launcher menu to add URL shortcuts and change the launcher’s look. See <a href="#sharing">Copy, email, print and export</a>.</p>
+
+  <h2>Appearance and layout</h2>
+  <figure class="shot"><img src="docs/wiki-images/29-dark-mode.png" alt="Case Notes in dark mode" loading="lazy"><figcaption>Dark mode. The choice applies to every tool, including this wiki.</figcaption></figure>
+  <ul>
+    <li>The moon/sun button switches between light and dark. With no saved preference the app follows your operating system.</li>
+    <li><strong>Grid / List</strong>, <strong>Hide Recent Cases</strong>, collapsed sections, <strong>AI tools</strong> open or closed, floating or fixed action bar, and action rail width are all remembered.</li>
+  </ul>
+</article>
+
+<!-- ======================= ESCALATION & TRENDS ======================= -->
+<article class="doc-page" id="escalation" data-title="DE Escalation Request" data-group="Escalation and trends">
+  <h1>DE Escalation Request</h1>
+  <p class="page-meta">Check that a Domain Engineer can start work immediately</p>
+  <p class="lead">The escalation page scores how ready a handoff is, explains every point, and produces a copy-ready summary once it passes.</p>
+
+  <figure class="shot"><img src="docs/wiki-images/30-escalation-empty.png" alt="The DE Escalation Request page before any data is entered" loading="lazy"><figcaption>The escalation page. The result panel on the right fills in after you review.</figcaption></figure>
+
+  <h2>Two ways to start</h2>
+  <ul>
+    <li><strong>From Case Notes:</strong> choose <strong>Escalate to DE</strong> to import the case (see <a href="#escalation-import">below</a>).</li>
+    <li><strong>From scratch:</strong> open <strong>Case Management → DE Escalation Request</strong> and fill in the form. Your draft autosaves in this browser, and the status line shows whether a draft is saved. <strong>Clear</strong> empties the form.</li>
+  </ul>
+  <p>When the escalation came from Case Notes, <strong>← Return to Case Notes</strong> in the page header takes you back to that case. If the case is no longer in Recent cases, Case Notes explains that instead.</p>
+
+  <h2>The form</h2>
+  <p>The <strong>Case Title</strong> at the top is generated for you as <em>System platform | OS | Issue description</em> and appears at the top of the copied escalation.</p>
+  <figure class="shot"><img src="docs/wiki-images/31-escalation-form.png" alt="The escalation form with a completed example" loading="lazy"><figcaption>A completed form for the strong example.</figcaption></figure>
+  <h3>1 · Issue and impact</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Guidance</th></tr></thead>
+    <tbody>
+      <tr><td>Problem statement</td><td>What is failing? Include the affected component and scope. “Not working” is not enough.</td></tr>
+      <tr><td>Severity</td><td>Sev 1 to Sev 4.</td></tr>
+      <tr><td>Service Impact</td><td>Service unavailable, Service degraded, Deployment, or How-to / planning.</td></tr>
+      <tr><td>Affected Systems / Users</td><td>For example “2 hosts, 40 users”.</td></tr>
+      <tr><td>Business impact</td><td>Who is affected, how many, and what business process is blocked.</td></tr>
+      <tr><td>Timeline and frequency</td><td>When it began, constant or intermittent, and the last occurrence.</td></tr>
+      <tr><td>Customer Country / Timezone</td><td>Choose the time zone the <em>customer</em> wants to work in.</td></tr>
+    </tbody>
+  </table>
+  <h3>2 · Technical context</h3>
+  <ul>
+    <li><strong>System/Platform</strong>, <strong>OS Support Entitlement Verification</strong>, <strong>OS version / build</strong> (exact, with relevant firmware), and <strong>OS/Solution</strong>.</li>
+    <li><strong>Exact errors and timestamps:</strong> paste the exact text and codes with times, or state that no error is shown.</li>
+    <li><strong>Is this issue reproducible?</strong> If <em>Yes</em>, a <strong>Reproduction steps</strong> field appears (use numbered steps).</li>
+  </ul>
+  <h3>3 · Investigation</h3>
+  <figure class="shot medium"><img src="docs/wiki-images/36-escalation-investigation.png" alt="The Investigation section of the escalation form" loading="lazy"><figcaption>Troubleshooting, results, logs, and recent changes.</figcaption></figure>
+  <ul>
+    <li><strong>Troubleshooting performed</strong> and <strong>Results and observations</strong>. Results must be written in your own words and must not copy the troubleshooting text.</li>
+    <li><strong>Do you have the Required Logs for this Escalation?</strong> <em>Yes</em> reveals <strong>Log Location</strong>. <em>No</em> reveals <strong>Reason logs cannot be obtained</strong>. <strong>Which logs should I collect?</strong> opens the same helper as in Case Notes, including its in-development warning.</li>
+    <li><strong>Recent changes:</strong> updates, configuration changes, or deployments. “None” or “no known changes” is accepted.</li>
+  </ul>
+  <h3>Paired action and result rows</h3>
+  <figure class="shot medium"><img src="docs/wiki-images/35-escalation-actions.png" alt="Troubleshooting actions and outcomes rows with an action and a result" loading="lazy"><figcaption>Pair each action with what you observed.</figcaption></figure>
+  <p>Choose <strong>Add action and result</strong> for each step. The rows also satisfy the Troubleshooting and Results fields, so you do not have to type them twice. Imported notes are preserved.</p>
+
+  <h2 id="escalation-score">Reading the result</h2>
+  <p>Choose <strong>Review escalation</strong>. The right-hand panel shows a status, the score ring, the category bars, <strong>Blocking issues</strong>, <strong>Recommendations</strong>, and <strong>What’s working</strong>.</p>
+  <div class="compare">
+    <figure class="shot"><img src="docs/wiki-images/32-escalation-weak-result.png" alt="Result for the weak example scoring 35 and not ready, with blocking issues" loading="lazy"><figcaption>Weak example: 35, not ready, blockers listed.</figcaption></figure>
+    <figure class="shot"><img src="docs/wiki-images/33-escalation-strong-result.png" alt="Result for the strong example scoring 100 and ready" loading="lazy"><figcaption>Strong example: 100, ready, with a copy preview.</figcaption></figure>
+  </div>
+  <table>
+    <thead><tr><th>Category</th><th>Points</th><th>What earns it</th></tr></thead>
+    <tbody>
+      <tr><td>Completeness</td><td>35</td><td>The required fields are filled with real content.</td></tr>
+      <tr><td>Specificity</td><td>20</td><td>13 points for concrete detail in the problem, impact, timeline, and OS fields, plus 7 for Severity (2), Service Impact (2), and Affected Systems / Users (3).</td></tr>
+      <tr><td>Reproducibility</td><td>15</td><td>Detailed reproduction steps, or (when not reproducible) a detailed timeline.</td></tr>
+      <tr><td>Evidence</td><td>15</td><td>Gathered evidence and where it is. A collection <em>plan</em> alone earns nothing.</td></tr>
+      <tr><td>Troubleshooting</td><td>15</td><td>Actions paired with observed outcomes. Credit is proportional and full when at least half of the actions have a result.</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><span class="pill good">Ready</span> needs <strong>75 or more points and no blocking issues</strong>.</li>
+    <li><strong>Blocking issues:</strong> short vague answers (“see above”, “latest”, “n/a”, “ok”) in a required field under 25 characters; repeated or placeholder text; Results that copy Troubleshooting; and missing required fields.</li>
+    <li>When the review is ready, an <strong>Escalation preview</strong> appears with <strong>Copy escalation data</strong>. Review it, then paste it into your escalation system.</li>
+  </ul>
+
+  <h2 id="escalation-import">Importing from Case Notes</h2>
+  <p>Choose <strong>Escalate to DE</strong> in Case Notes. If a saved escalation draft exists you are asked to confirm replacing it. The page opens with an <strong>Imported from Case Notes</strong> panel holding the original note.</p>
+  <figure class="shot"><img src="docs/wiki-images/37-escalation-import.png" alt="The escalation page after importing the sample case, showing the Imported from Case Notes panel and the Return to Case Notes button" loading="lazy"><figcaption>An imported case: review the populated fields and complete what is missing.</figcaption></figure>
+  <table>
+    <thead><tr><th>Case Notes</th><th>Escalation field</th></tr></thead>
+    <tbody>
+      <tr><td>Platform, OS, OS version, country, entitlement</td><td>Same fields</td></tr>
+      <tr><td>Issue description</td><td>Problem statement (and the generated title)</td></tr>
+      <tr><td>Workflow → Recent change</td><td>Recent changes</td></tr>
+      <tr><td>Workflow → Service Impact</td><td>Service Impact</td></tr>
+      <tr><td>Notes and next steps</td><td>Troubleshooting</td></tr>
+      <tr><td>Log Location / evidence ticked</td><td>Required logs = Yes, with the Log Location</td></tr>
+      <tr><td>—</td><td><strong>Results and observations is left empty</strong>: record outcomes yourself or use action rows</td></tr>
+    </tbody>
+  </table>
+  <figure class="shot medium"><img src="docs/wiki-images/38-escalation-imported-panel.png" alt="The Imported from Case Notes panel with the original case note" loading="lazy"><figcaption>The original note stays visible in the Imported from Case Notes panel while you complete the form.</figcaption></figure>
+  <p>Severity, business impact, affected systems, and timeline are not in Case Notes; complete them on the escalation page. Hidden Case Details fields are still imported. Importing does not stop your case timer.</p>
+
+  <h2>Practice with examples</h2>
+  <p>Open <strong>Tutorial &amp; examples</strong>. <strong>Load Weak Example</strong> (scores 35) and <strong>Load Strong Example</strong> (scores 100) let you compare. <strong>Tutorial Demo</strong> is a 22-step tour: seven core steps first, with the rest offered as “More features”. It leaves your own draft unchanged.</p>
+</article>
+
+<article class="doc-page" id="trends" data-title="Support Trends" data-group="Escalation and trends">
+  <h1>Support Trends</h1>
+  <p class="page-meta">A private dashboard built from your own Case Notes</p>
+  <p class="lead">See where follow-through and evidence collection need attention. Support Trends reads only the case history saved in this browser. It does not upload or share anything.</p>
+
+  <figure class="shot"><img src="docs/wiki-images/40-support-trends.png" alt="The Support Trends dashboard showing prevention signals, metrics, status and issue breakdowns, and a Next attention list" loading="lazy"><figcaption>The dashboard, shown here with a handful of invented cases.</figcaption></figure>
+
+  <h2>What each section shows</h2>
+  <table>
+    <thead><tr><th>Section</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Resolution and repeat prevention</td><td>How many cases are marked as repeat contacts, how many <em>completed</em> cases lack verification details, and groups of similar cases (same platform, OS, OS version, and issue type) with their SR numbers.</td></tr>
+      <tr><td>Total cases</td><td>Cases in <strong>Recent cases</strong> (not Archive or Trash).</td></tr>
+      <tr><td>Active cases</td><td>Cases whose status is not Completed.</td></tr>
+      <tr><td>Overdue follow-ups</td><td>Active cases whose follow-up due time has passed.</td></tr>
+      <tr><td>Cases by status</td><td>Open, In progress, Waiting on customer, and Completed.</td></tr>
+      <tr><td>Issues by type</td><td>Counts by issue type, named as in the Issue type list.</td></tr>
+      <tr><td>Next attention</td><td>Up to eight overdue or unassigned active cases, with their due time.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>How to use it</h2>
+  <ol class="steps">
+    <li><strong>Start with Next attention.</strong> Open each case in Case Notes and set an owner or a new due date.</li>
+    <li><strong>Check completed cases</strong> flagged as missing verification. Add the verification test and result in Verify resolution.</li>
+    <li><strong>Look at similar-case groups.</strong> Several cases with the same configuration are candidates for investigation. They are <em>not</em> confirmed common causes.</li>
+    <li><strong>Review issue types</strong> to decide which knowledge articles would save you time.</li>
+  </ol>
+  <div class="callout note"><span class="callout-title">What this is not</span><p>Matching configurations are investigation hints for your own cases. This dashboard is not a team-wide first-contact-resolution or repeat-call metric.</p></div>
+  <ul>
+    <li>The built-in <strong>sample cases never count</strong> toward trends.</li>
+    <li>The page updates when Case Notes changes in another tab. With no cases it shows “No case history yet”.</li>
+    <li>If the history cannot be read, open Case Notes to protect and restore it (see <a href="#backup">Backup and recovery</a>).</li>
+  </ul>
+</article>
+
+<!-- ======================= LEARN ======================= -->
+<article class="doc-page" id="training" data-title="Tutorials and samples" data-group="Learn">
+  <h1>Tutorials and samples</h1>
+  <p class="page-meta">Learn by exploring</p>
+  <p class="lead">The tools ship with realistic samples and guided tours that never touch your real data.</p>
+
+  <h2>Case Notes: sample cases</h2>
+  <p><strong>Tutorial &amp; examples → Load Example</strong> adds <strong>ten</strong> sample cases and opens the main one: a PowerEdge R750 Hyper-V host whose virtual machines lose network connectivity after a NIC driver update. The main sample includes:</p>
+  <ul>
+    <li>Three dated notes on three different days (initial contact, log review, verification).</li>
+    <li>Every case detail, a completed evidence checklist, and a documented verification.</li>
+    <li>A screenshot, a follow-up, customer update and handoff drafts, and a knowledge draft.</li>
+  </ul>
+  <p>The other nine are shorter cases across ESXi, Windows Server, Red Hat, Ubuntu, and Azure Local, each with one dated note and a follow-up: two are overdue (red), three are due within 4 hours (yellow), and the rest are due later, so the header shows <strong>2 overdue · 3 due within 4 hours</strong>. Follow-up times are set from the moment you load them.</p>
+  <ul>
+    <li>Every sample scores 100 on the note quality check and is labelled “Sample ·” in Recent cases.</li>
+    <li>Samples are left out of Support Trends and never send desktop notifications.</li>
+    <li>Loading again asks before resetting them. Archive or delete them like any case.</li>
+  </ul>
+
+  <h2>Case Notes: Tutorial Demo</h2>
+  <figure class="shot"><img src="docs/wiki-images/28-tutorial-demo.png" alt="Step 1 of 33 of the Case Notes Tutorial Demo" loading="lazy"><figcaption>The Tutorial Demo spotlights a control and explains what it is and why to use it.</figcaption></figure>
+  <ul>
+    <li>33 steps covering case history, the Grid/List view, follow-up colours and alerts, the timer, all four workflow stages, case details and Unlock layout, dated notes, Case Summary, the editor, Pop out, the quality score, customer updates, the action bar, AI, the toolbox, menus, appearance, Customize Site Options, and backups.</li>
+    <li>It opens the main sample case first (adding the samples if needed) and returns to your own case when it ends.</li>
+    <li><strong>Back</strong>, <strong>Next</strong>, and <strong>Skip demo</strong> are always available. <kbd>Esc</kbd> also closes it.</li>
+  </ul>
+
+  <h2>Escalation: samples and tour</h2>
+  <ul>
+    <li><strong>Load Weak Example</strong> (35) and <strong>Load Strong Example</strong> (100) fill the form and run the review so you can compare them.</li>
+    <li><strong>Tutorial Demo</strong> has 22 steps. Seven core steps run first, then “More features” if you want them. Your own draft is restored afterwards.</li>
+  </ul>
+
+  <h2>A suggested 30-minute learning path</h2>
+  <table>
+    <thead><tr><th>Time</th><th>Do this</th><th>Read</th></tr></thead>
+    <tbody>
+      <tr><td>5 min</td><td>Load the samples and run the Case Notes tour.</td><td><a href="#quick-start">Quick start</a></td></tr>
+      <tr><td>5 min</td><td>Click each date tab and Case Summary; edit a note.</td><td><a href="#notes">Dated notes</a></td></tr>
+      <tr><td>5 min</td><td>Walk the four workflow stages; open the log helper.</td><td><a href="#workflow">Case workflow</a></td></tr>
+      <tr><td>5 min</td><td>Remove a step’s “Result:” and watch the score change.</td><td><a href="#quality">Note quality score</a></td></tr>
+      <tr><td>5 min</td><td>Mark a red case’s follow-up done; escalate the main sample, then load the weak example.</td><td><a href="#toolkit">Follow-ups</a>, <a href="#escalation">Escalation</a></td></tr>
+      <tr><td>5 min</td><td>Choose a backup folder.</td><td><a href="#backup">Backup and recovery</a></td></tr>
+    </tbody>
+  </table>
+</article>
+
+<article class="doc-page" id="best-practices" data-title="Best practices and recipes" data-group="Learn">
+  <h1>Best practices and recipes</h1>
+  <p class="page-meta">Habits and step-by-step workflows</p>
+  <p class="lead">The tools reward specific, outcome-focused notes. These habits make every case easier to hand off.</p>
+
+  <h2>Principles</h2>
+  <ul>
+    <li><strong>Be specific.</strong> Name the component, the version, the exact error, and the time.</li>
+    <li><strong>Pair every action with its result.</strong> “Checked X” is half a sentence.</li>
+    <li><strong>Write for the next reader.</strong> Assume the next person has never seen the case.</li>
+    <li><strong>Record evidence <em>location</em>, not just that evidence exists.</strong></li>
+    <li><strong>Always leave a next step with an owner and a date.</strong> Your future self will thank you when the card turns red.</li>
+    <li><strong>Close completely.</strong> Verify by repeating the failing scenario, then plan prevention.</li>
+  </ul>
+
+  <h2>Before and after</h2>
+  <table>
+    <thead><tr><th>Field</th><th>Weak</th><th>Strong</th></tr></thead>
+    <tbody>
+      <tr><td>Problem statement</td><td>Server not working.</td><td>14 VMs on Hyper-V host HV-NODE-02 (PowerEdge R750, Windows Server 2022) lose network connectivity for 30–90 seconds, 3–5 times per day. Other cluster nodes are unaffected.</td></tr>
+      <tr><td>Recent changes</td><td>Latest updates.</td><td>Windows Update installed NIC driver 226.0.145.0 (was 225.0.4.0) two days before the first drop. No firmware or switch changes.</td></tr>
+      <tr><td>Log location</td><td>See above.</td><td>Case attachment <code>TSR_ABC1234.zip</code> and <code>\\fileshare\sr-123456789\</code></td></tr>
+      <tr><td>Timeline</td><td>Happens sometimes.</td><td>Began 10/2 at 08:15. Intermittent: three to five times daily. Last drop 10/4 09:42.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Recipe: handle a new case</h2>
+  <ol class="steps">
+    <li>+ New Case. Fill in all case details and check the format of the Service Tag, SR, and Log Location.</li>
+    <li>Triage: set OS/Solution, Issue type, Service Impact, and Recent change.</li>
+    <li>Write the first dated note: customer description, scope, and what you checked with results.</li>
+    <li>Evidence: open the log collection helper (and verify what it suggests) and decide what to request. Set a follow-up for when the customer should respond.</li>
+  </ol>
+
+  <h2>Recipe: next day on the same case</h2>
+  <ol class="steps">
+    <li>Open the case, then <strong>+ New note</strong> (<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>). Use <strong>Case Summary</strong> to re-read earlier days.</li>
+    <li>Write what changed, what you did, and what happened.</li>
+    <li>Update the follow-up owner, status, and due date.</li>
+  </ol>
+
+  <h2>Recipe: work through your follow-ups</h2>
+  <ol class="steps">
+    <li>Select the header pill, or set <strong>Show cases</strong> to <em>Overdue follow-ups</em>.</li>
+    <li>Open each red card first, then the yellow ones.</li>
+    <li>Do the follow-up, add a dated note of what happened, then choose <strong>Follow-up done</strong> and pick <em>Schedule a new follow-up</em>, <em>No follow-up</em>, or <em>Case is complete</em>.</li>
+  </ol>
+
+  <h2>Recipe: repeat contact</h2>
+  <ol class="steps">
+    <li>Search Recent cases by Service Tag or SR to find the earlier case (tick <strong>Search Archive and Trash too</strong>).</li>
+    <li>Read its Case Summary to see what was tried.</li>
+    <li>In the new case, enter the previous SR in <strong>Related / repeat case</strong>, and note what is different now.</li>
+    <li>Check Support Trends to see if other cases share the same configuration.</li>
+  </ol>
+
+  <h2>Recipe: escalate to a Domain Engineer</h2>
+  <ol class="steps">
+    <li>Make sure troubleshooting steps have results and logs are collected.</li>
+    <li>Choose <strong>Escalate to DE</strong>. Complete severity, business impact, affected systems, and timeline.</li>
+    <li>Add action and result rows for anything not in your notes.</li>
+    <li>Choose <strong>Review escalation</strong> and clear all blocking issues. Aim comfortably above 75.</li>
+    <li><strong>Copy escalation data</strong> and submit it. Use <strong>← Return to Case Notes</strong> and record the DE’s findings back in your case.</li>
+  </ol>
+
+  <h2>Recipe: shift handoff</h2>
+  <ol class="steps">
+    <li>Open <strong>Handoff Summary</strong>, fill in business impact and remaining questions, and generate.</li>
+    <li>Copy it, and make sure the follow-up has an owner and due time.</li>
+  </ol>
+
+  <h2>Recipe: close a case and capture what you learned</h2>
+  <ol class="steps">
+    <li>Verify resolution: fix, verification test and result, prevention plan, customer confirmation.</li>
+    <li><strong>Mark verified and completed</strong>, then <strong>Copy to Lightning</strong> for the day’s notes, or <strong>Copy case summary</strong> for the whole case.</li>
+    <li>Build a knowledge draft, redact it, and export it to an approved destination.</li>
+  </ol>
+</article>
+
+<article class="doc-page" id="faq" data-title="FAQ" data-group="Learn">
+  <h1>Frequently asked questions</h1>
+  <p class="page-meta">Quick answers</p>
+
+  <h2>Data and privacy</h2>
+  <details class="faq"><summary>Where are my notes stored?</summary><p>In your browser’s local storage on this computer, for this site. Nothing is uploaded unless you copy, email, send to an AI tool, or choose a backup folder.</p></details>
+  <details class="faq"><summary>I cleared my browser data. Are my notes gone?</summary><p>Yes, unless you had a backup folder. Open <strong>Backup &amp; Restore</strong>, choose the same folder, and pick <strong>Restore from these backups</strong>. See <a href="#backup">Backup and recovery</a>.</p></details>
+  <details class="faq"><summary>Can I use the tools on another computer or browser?</summary><p>Data does not follow you automatically. Choose the same backup folder (for example in OneDrive) on the other machine and restore from it.</p></details>
+  <details class="faq"><summary>Is customer data sent to AI automatically?</summary><p>No. <strong>Copy to AI</strong> only copies a prompt to your clipboard. <strong>Send to Devin</strong> shows the prompt for review and needs a click. Neither runs on its own.</p></details>
+
+  <h2>Cases and notes</h2>
+  <details class="faq"><summary>Should I use + New Case or + New note?</summary><p><strong>+ New Case</strong> for a different service request; <strong>+ New note</strong> for another day on the same request.</p></details>
+  <details class="faq"><summary>Why can’t I edit? The buttons are greyed out.</summary><p>Another tab is editing Case Notes, or the history could not be read. Close the other tab, choose <strong>Take over editing here</strong>, or reload. See <a href="#troubleshooting">Troubleshooting</a>.</p></details>
+  <details class="faq"><summary>What happens to cases after 100?</summary><p>Older unpinned cases move to Archive automatically. Nothing is deleted.</p></details>
+  <details class="faq"><summary>What does Copy to Lightning copy?</summary><p>Every case field plus only the notes and action plan from the dated notes made on the same day as the selected one. To copy the whole case, open <strong>Case Summary</strong> and choose <strong>Copy case summary</strong>.</p></details>
+  <details class="faq"><summary>The page shook when I copied. Is something wrong?</summary><p>No, that is the copy confirmation, with a quiet click sound. Turn it off in <strong>Customize Site Options</strong>.</p></details>
+  <details class="faq"><summary>Where did Apply template go?</summary><p>The templates feature was removed. The Issue type list still drives the evidence checklist and the log plan, and older cases and backups keep working.</p></details>
+  <details class="faq"><summary>Can I hide fields I never use?</summary><p>Yes. Use <strong>Unlock layout</strong> in Case Details or <strong>Hide</strong> in Customize Site Options. Hidden fields keep their values and still appear in exports and the score.</p></details>
+  <details class="faq"><summary>Does the timer run while I am away?</summary><p>It runs while tracking is on. Use <strong>Stop Tracking</strong> when you step away, or turn on the 15-minute away prompt in Customize Site Options (Chrome and Edge).</p></details>
+  <details class="faq"><summary>Can I undo a bad edit?</summary><p>Use <strong>Version History</strong> (up to ten saved versions per case) or restore a backup.</p></details>
+  <details class="faq"><summary>How do I recover a deleted case?</summary><p>Open <strong>Filters</strong>, set <strong>Collection</strong> to <strong>Trash</strong>, open the case, and choose <strong>Restore</strong> (unless you permanently deleted it).</p></details>
+
+  <h2>Scores</h2>
+  <details class="faq"><summary>My note scores low but I know the work was done.</summary><p>The score can only see what you wrote. Add outcomes, an owner and date, and correct any format issues listed under <strong>To raise the score</strong>.</p></details>
+  <details class="faq"><summary>Does 100 mean the diagnosis is right?</summary><p>No. Scores measure completeness and specificity, not technical accuracy.</p></details>
+  <details class="faq"><summary>Why is my escalation “Not ready” with a high score?</summary><p>Readiness needs 75+ <em>and</em> no blocking issues. A single vague or copied required field can block it.</p></details>
+
+  <h2>AI and Devin</h2>
+  <details class="faq"><summary>Do I need Devin to use the AI buttons?</summary><p>No. <strong>Copy to AI</strong> works on its own. Devin is optional.</p></details>
+  <details class="faq"><summary>I cannot see the AI buttons.</summary><p>On laptop-sized screens they are inside <strong>AI tools</strong> in the action bar. Select it to open them.</p></details>
+  <details class="faq"><summary>Send to Devin is greyed out.</summary><p>The connection is not set up or not running. Open <strong>AI Settings</strong> and follow <a href="#ai">Connect Devin</a>.</p></details>
+
+  <h2>This wiki</h2>
+  <details class="faq"><summary>Something looks different from what I see in the app.</summary><p>The app changes over time. Use <strong>Request feature / Report bug</strong> in the top bar of any tool to tell us, and do not include customer data.</p></details>
+  <details class="faq"><summary>Can I print this wiki?</summary><p>Yes. Use your browser’s print command; all pages print in order without the navigation.</p></details>
+</article>
+
+<article class="doc-page" id="troubleshooting" data-title="Troubleshooting" data-group="Learn">
+  <h1>Troubleshooting</h1>
+  <p class="page-meta">Symptoms, causes, and fixes</p>
+  <p class="lead">Messages quoted below are the ones the app shows.</p>
+
+  <table>
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>“Read-only while another tab is editing Case Notes.”</td><td>Another tab or window has the editing lock.</td><td>Close the other tab (including a Pop out window); this tab becomes editable by itself. Or choose <strong>Take over editing here</strong>.</td></tr>
+      <tr><td>“Editing moved to another tab or window, so this tab is now read-only.”</td><td>You (or another tab) took over editing.</td><td>Wait for that tab to close, or choose <strong>Take over editing here</strong>.</td></tr>
+      <tr><td>“Case history could not be read. Editing is disabled…”</td><td>Stored data could not be parsed.</td><td>Reload. If it persists, restore a backup (<a href="#backup">Backup and recovery</a>).</td></tr>
+      <tr><td>“Read-only: this browser cannot protect notes against simultaneous editing.”</td><td>The page is not on HTTPS or localhost, or the browser lacks Web Locks.</td><td>Open the site over HTTPS in a current Edge or Chrome.</td></tr>
+      <tr><td>The Retry save button appears.</td><td>The browser refused to write storage (full or blocked).</td><td>Select <strong>Retry save</strong>. If it keeps failing, free space by archiving or deleting old cases and screenshots, then back up.</td></tr>
+      <tr><td>“Not backed up yet”</td><td>No backup folder is chosen.</td><td>Choose <strong>Choose Backup Folder</strong> (Chrome or Edge), or use <strong>Download a copy instead</strong>.</td></tr>
+      <tr><td>“Backups are paused”</td><td>The browser needs permission to use the folder again (common after a restart).</td><td>Select <strong>Reconnect Backup Folder</strong> and approve.</td></tr>
+      <tr><td>“Backups are waiting for your choice”</td><td>The folder you chose already contains backups.</td><td>Choose <strong>Restore from these backups</strong> or <strong>Keep my current notes and back up here</strong>.</td></tr>
+      <tr><td>“Folder backup isn’t available in this browser”</td><td>The browser cannot pick folders.</td><td>Use Chrome or Edge, or the download buttons.</td></tr>
+      <tr><td>“The backup folder is full”</td><td>No space in the folder or OneDrive.</td><td>Select <strong>Clean Up Now</strong>, lower the retention, or free space.</td></tr>
+      <tr><td>“That backup can’t be restored”</td><td>The file is damaged or incomplete (for example a missing screenshot).</td><td>Nothing was changed. Try another backup.</td></tr>
+      <tr><td>The Restore list is empty.</td><td>No backups of that type yet.</td><td>Select <strong>Back Up Now</strong>.</td></tr>
+      <tr><td>Pop out did nothing.</td><td>The browser blocked the pop-up.</td><td>Allow pop-ups for the site, or use the offered same-tab compact view.</td></tr>
+      <tr><td>Pasting a screenshot does nothing.</td><td>Focus is not in the Notes or Action Plan editor.</td><td>Click inside the editor, then paste with <kbd>Ctrl</kbd> <kbd>V</kbd>.</td></tr>
+      <tr><td>A field is missing from Case Details.</td><td>It was hidden.</td><td>Select <strong>Show or hide fields</strong> under Case Details and choose <strong>Show</strong>.</td></tr>
+      <tr><td>The fields will not accept typing.</td><td>Unlock layout is on.</td><td>Choose <strong>Done</strong> or <strong>Cancel</strong>.</td></tr>
+      <tr><td>Mark verified and completed is disabled.</td><td>Something is still missing.</td><td>Read “Still to record: …” under the fields. It needs a fix, verification, prevention plan, and customer confirmation.</td></tr>
+      <tr><td>The desktop notification never appears.</td><td>Permission was not granted, or Case Notes is closed.</td><td>Allow notifications for the site; they appear only while Case Notes is open in a tab.</td></tr>
+      <tr><td>Escalation says Not ready.</td><td>Score under 75, or a blocking issue.</td><td>Read <strong>Blocking issues</strong> first. Replace vague phrases, remove copied text, and add outcomes.</td></tr>
+      <tr><td>Copy escalation data is missing.</td><td>The review is not ready yet.</td><td>Clear the blocking issues and run the review again.</td></tr>
+      <tr><td>Support Trends is empty.</td><td>No saved cases (the samples are excluded), or storage could not be read.</td><td>Create a real case in Case Notes. Use the same browser and profile.</td></tr>
+      <tr><td>Send to Devin is disabled or fails.</td><td>The connection is not running or the pairing token expired.</td><td>Keep the PowerShell window open, copy a fresh connection command from <strong>AI Settings</strong>, and allow local-network access if prompted. See <code>companion/README.md</code>.</td></tr>
+      <tr><td>The page looks outdated after an update.</td><td>The browser cached old files.</td><td>Reload with <kbd>Ctrl</kbd> <kbd>F5</kbd>. Reload every open tab of the site.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout tip"><span class="callout-title">Still stuck?</span><p>Use <strong>Request feature / Report bug</strong> in the top bar. Describe the steps and what you expected; never include customer names, Service Tags, SR numbers, logs, or other case data.</p></div>
+</article>
+
+<!-- ======================= REFERENCE ======================= -->
+<article class="doc-page" id="shortcuts" data-title="Keyboard and accessibility" data-group="Reference">
+  <h1>Keyboard and accessibility</h1>
+  <p class="page-meta">Everything works without a mouse</p>
+
+  <h2>Shortcuts</h2>
+  <p>On a Mac use <kbd>Option</kbd>+<kbd>Shift</kbd> instead of <kbd>Alt</kbd>+<kbd>Shift</kbd>. Case Notes shortcuts do nothing while a dialog is open.</p>
+  <table>
+    <thead><tr><th>Keys</th><th>Where</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></td><td>Case Notes</td><td>Copy to Lightning.</td></tr>
+      <tr><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd></td><td>Case Notes</td><td>Add a dated note to this case.</td></tr>
+      <tr><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd></td><td>Case Notes</td><td>Start a new case.</td></tr>
+      <tr><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd></td><td>Case Notes</td><td>Jump to Notes.</td></tr>
+      <tr><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></td><td>Case Notes</td><td>Opens Recent cases and focuses search.</td></tr>
+      <tr><td><kbd>Alt</kbd> + arrow keys</td><td>Toolbox launcher</td><td>Moves the toolbox.</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Toolbox launcher</td><td>Opens quick actions.</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Menus, dialogs, tours</td><td>Closes them.</td></tr>
+      <tr><td><kbd>←</kbd> <kbd>→</kbd> <kbd>Home</kbd> <kbd>End</kbd></td><td>Action rail edge</td><td>Resizes the right-hand rail.</td></tr>
+      <tr><td>Arrow keys</td><td>Selected screenshot handle</td><td>Resizes a pasted screenshot.</td></tr>
+      <tr><td><kbd>↓</kbd></td><td>A top-bar menu button</td><td>Opens the menu and focuses the first item.</td></tr>
+      <tr><td><kbd>Ctrl</kbd> <kbd>K</kbd> or <kbd>/</kbd></td><td>This wiki</td><td>Searches all pages.</td></tr>
+      <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>This wiki’s screenshot viewer</td><td>Previous / next screenshot.</td></tr>
+    </tbody>
+  </table>
+  <p>Use <kbd>Tab</kbd> and <kbd>Shift</kbd> <kbd>Tab</kbd> to move between controls, and <kbd>Enter</kbd> or <kbd>Space</kbd> to activate buttons.</p>
+
+  <h2>Accessibility features</h2>
+  <ul>
+    <li>A <strong>Skip to content</strong> link is the first control on every page.</li>
+    <li>Status messages (saving, copying, backing up) are announced to screen readers.</li>
+    <li>Field ordering has <strong>Move up / Move down</strong> buttons, and Unlock layout works with arrow keys, as alternatives to dragging.</li>
+    <li>Light and dark themes; the theme button names the mode it will switch to.</li>
+    <li>Animations (including the toolbox icon and the Copy to Lightning shake) stop when your system requests reduced motion, and both can be turned off.</li>
+    <li>Dialogs return focus to the control that opened them.</li>
+  </ul>
+</article>
+
+<article class="doc-page" id="glossary" data-title="Glossary" data-group="Reference">
+  <h1>Glossary</h1>
+  <p class="page-meta">Terms used in the tools</p>
+  <dl class="glossary">
+    <dt>Action bar</dt><dd>The row (or wide-screen rail) of copy, escalate, email, update, handoff, helper, and AI buttons.</dd>
+    <dt>Action Plan / Next Steps</dt><dd>The section of a dated note listing what happens next and who owns it.</dd>
+    <dt>Archive</dt><dd>Where older cases go once Recent cases passes 100. Archived cases keep everything and can be restored.</dd>
+    <dt>Automatic snapshot</dt><dd>A dated copy of your case history saved to the backup folder about once an hour while you work.</dd>
+    <dt>Backup folder</dt><dd>A folder you choose (ideally in OneDrive) where Case Notes keeps its backups, inside a <code>ProSupportToolsBackup</code> folder.</dd>
+    <dt>Case Summary</dt><dd>A read-only, formatted view of shared case details plus every dated note, oldest to newest.</dd>
+    <dt>Case Toolkit</dt><dd>The follow-up tracker, customer update generator, and handoff summary.</dd>
+    <dt>Copy to Lightning</dt><dd>Copies the case fields and the selected day’s notes so they can be pasted into the case system. Stops the timer.</dd>
+    <dt>DE</dt><dd>Domain Engineer: the senior technician an escalation is handed to.</dd>
+    <dt>Dated note (entry)</dt><dd>One day’s notes and action plan within a case, labelled by creation date.</dd>
+    <dt>Escalation readiness</dt><dd>A 100-point, rule-based score showing whether a DE has enough specific evidence to begin. Ready means 75+ and no blocking issues.</dd>
+    <dt>Evidence checklist</dt><dd>The Evidence stage list of items to collect, adapted to the OS and issue type.</dd>
+    <dt>Follow-up</dt><dd>An owner, due date and time, and status attached to a case. Red when overdue, yellow when due within 4 hours.</dd>
+    <dt>Knowledge draft</dt><dd>An editable article built from a case, for export to an approved notebook or vault. Never published automatically.</dd>
+    <dt>Log collection helper</dt><dd>A dialog that recommends which logs to collect for the case’s OS and issue type. Recommendations only, and still in development.</dd>
+    <dt>Manual backup / safety copy</dt><dd>Backups made by Back Up Now, and automatic copies made just before a restore or removal. Never deleted automatically.</dd>
+    <dt>Note quality score</dt><dd>A 0–100 rule-based check of a case’s notes for missing or vague information.</dd>
+    <dt>Obsidian vault</dt><dd>The Obsidian notebook folder that a knowledge draft can be sent to.</dd>
+    <dt>Pop out</dt><dd>A compact window for the notes editor.</dd>
+    <dt>Sample case</dt><dd>A labelled practice case added by Load Example. Not counted in Support Trends.</dd>
+    <dt>Service Tag</dt><dd>The identifier on a Dell system. The tools expect 5–10 letters and digits.</dd>
+    <dt>SR</dt><dd>Service Request. The tools expect a number of six or more digits.</dd>
+    <dt>Trash</dt><dd>Where deleted cases wait until you restore or permanently delete them.</dd>
+    <dt>TSR</dt><dd>Technical Support Report: a hardware and configuration collection exported from iDRAC.</dd>
+    <dt>Unlock layout</dt><dd>A mode that lets you drag, reorder, and show or hide Case Details fields directly on the page.</dd>
+    <dt>Version History</dt><dd>Up to ten previous saved versions of a case that you can preview and restore.</dd>
+  </dl>
+</article>
+
+<article class="doc-page" id="privacy" data-title="Privacy and security" data-group="Reference">
+  <h1>Privacy and security</h1>
+  <p class="page-meta">What is stored, where, and what can leave your device</p>
+
+  <h2>Where your data lives</h2>
+  <table>
+    <thead><tr><th>Data</th><th>Location</th></tr></thead>
+    <tbody>
+      <tr><td>Cases, Archive, Trash, versions, screenshots</td><td>This browser’s local storage for this site</td></tr>
+      <tr><td>Settings, custom AI prompts, theme</td><td>This browser’s local storage</td></tr>
+      <tr><td>Escalation draft</td><td>This browser’s local storage</td></tr>
+      <tr><td>Backups (<code>case-history*.json</code>, <code>customer-config*.json</code>, <code>images/</code>)</td><td>The <code>ProSupportToolsBackup</code> folder inside the folder <em>you</em> choose</td></tr>
+      <tr><td>Backup folder permission</td><td>Remembered by the browser</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What can leave your device, and only when you act</h2>
+  <table>
+    <thead><tr><th>Action</th><th>Where it goes</th></tr></thead>
+    <tbody>
+      <tr><td>Copy to Lightning / Copy Notes / Copy case summary / Copy customer update</td><td>Your clipboard</td></tr>
+      <tr><td>Email to Case</td><td>A draft file saved to your computer</td></tr>
+      <tr><td>Print / PDF</td><td>Your printer or a PDF file</td></tr>
+      <tr><td>Copy to AI</td><td>Your clipboard, then wherever you paste it</td></tr>
+      <tr><td>Send to Devin</td><td>Devin CLI running on your own PC, through the local connection you started</td></tr>
+      <tr><td>Knowledge exports</td><td>Clipboard, a downloaded file, or an Obsidian vault you name</td></tr>
+      <tr><td>Backup folder, Download a copy</td><td>The folder you picked (and OneDrive if that folder is synced), or a file in your Downloads</td></tr>
+      <tr><td>Desktop notifications</td><td>Shown by your operating system. They name the case by SR number (or Service Tag) and show the due time and owner, so consider that on shared screens</td></tr>
+    </tbody>
+  </table>
+  <p>The tools do not send case data to a server of their own, and have no analytics.</p>
+
+  <h2>Safe handling</h2>
+  <ul>
+    <li>Case notes, exports, backups, and prompts can contain <strong>customer information</strong>. Follow your organization’s retention and handling policies.</li>
+    <li>Backup files are <strong>not encrypted</strong> by the app. Use an approved, protected location. The app cannot confirm that OneDrive finished uploading.</li>
+    <li>Remove customer-identifying information from knowledge drafts and AI prompts.</li>
+    <li>Do not paste case data into bug reports or feature requests.</li>
+  </ul>
+
+  <h2>Built-in protections</h2>
+  <ul>
+    <li>Pages refuse to render inside another site’s frame to prevent clickjacking.</li>
+    <li>A strict Content Security Policy limits each page to its own scripts, styles, and images.</li>
+    <li>Rich text is sanitized before it is displayed or printed.</li>
+    <li>Imports and restores are validated before they change anything, and risky actions ask first or save a safety copy.</li>
+  </ul>
+
+  <div class="callout warning"><span class="callout-title">Known limitation: shared origin</span><p>Browsers separate storage by <em>origin</em> (scheme and host), not by path. Other pages published on the same host can in principle read the same storage. Use the tools only from a host you trust and avoid sharing the host with untrusted sites.</p></div>
+</article>
+
+<article class="doc-page" id="about" data-title="About this wiki" data-group="Reference">
+  <h1>About this wiki</h1>
+  <p class="page-meta">Sources and maintenance</p>
+  <p>This wiki is a static page set in the same repository as the tools: <code>wiki.html</code>, <code>css/wiki.css</code>, <code>js/wiki.js</code>, and screenshots in <code>docs/wiki-images/</code>. It works offline, needs no build step, and shares the site’s theme preference.</p>
+
+  <h2>Related documents in the repository</h2>
+  <ul>
+    <li><a href="docs/CASE_NOTES_GUIDE.md">docs/CASE_NOTES_GUIDE.md</a> — longer technical notes on Case Notes behaviour.</li>
+    <li><a href="docs/BACKUP_GUIDE.md">docs/BACKUP_GUIDE.md</a> — the full Backup &amp; Restore guide.</li>
+    <li><a href="docs/DEV-NOTES.md">docs/DEV-NOTES.md</a> — development setup, scoring rules, and release notes.</li>
+    <li><code>companion/README.md</code> — Devin CLI connection setup and troubleshooting.</li>
+  </ul>
+
+  <h2>For maintainers</h2>
+  <ol class="steps">
+    <li>Edit <code>wiki.html</code>. Each <code>&lt;article class="doc-page"&gt;</code> is one page; set <code>id</code>, <code>data-title</code>, and <code>data-group</code>. Navigation, the outline, search, and previous/next links are generated automatically.</li>
+    <li>Use only real UI labels and keep screenshots free of customer data. The sample cases and invented trend cases are safe to photograph.</li>
+    <li>Keep the <code>?v=</code> tag on the wiki’s script and stylesheet in step with the site’s current cache tag.</li>
+    <li>When a feature changes, update its page and replace its screenshot.</li>
+  </ol>
+  <div class="callout note"><span class="callout-title">Spot something wrong?</span><p>Use <strong>Request feature / Report bug</strong> in any tool’s top bar and name the wiki page. Never include customer data.</p></div>
+</article>
+
+    </main>
+    <aside class="wiki-toc" id="wikiToc" aria-label="On this page"><p class="toc-title">On this page</p><ul class="toc-list" id="tocList"></ul></aside>
+  </div>
+
+  <button class="back-top" id="backTop" type="button" hidden>↑ Top</button>
+
+  <dialog class="search-dialog" id="searchDialog" aria-label="Search the wiki">
+    <div class="search-box"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Search every page…" autocomplete="off" aria-label="Search the wiki"><kbd>Esc</kbd></div>
+    <ul class="search-results" id="searchResults" role="listbox"></ul>
+    <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>Enter</kbd> to open</span><span><kbd>Esc</kbd> to close</span></div>
+  </dialog>
+
+  <dialog class="lightbox" id="lightbox" aria-label="Screenshot viewer">
+    <div class="lightbox-bar"><span><button id="lightboxPrev" type="button">← Previous</button> <button id="lightboxNext" type="button">Next →</button></span><button id="lightboxClose" type="button">Close</button></div>
+    <img id="lightboxImage" alt="">
+    <p id="lightboxCaption"></p>
+  </dialog>
+</body>
+</html>
