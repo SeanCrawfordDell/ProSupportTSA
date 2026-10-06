@@ -18,6 +18,12 @@ const CaseToolkitCore = (() => {
     "fix ME OMSA": { name:"fix ME OMSA", prompts:["OMSA version and build", "Affected system or component", "Exact error message and incident time", "Recent OMSA or system changes", "OMSA logs and diagnostic location", "Troubleshooting actions and results"] }
   };
   const statuses = ["Open", "In progress", "Waiting on customer", "Completed"];
+  // Systems Management cases use only the OMSA issue type, and that issue type belongs to Systems Management only.
+  const sysmanOs = "Systems Management", sysmanIssue = "fix ME OMSA";
+  function issueTypesFor(os) {
+    return Object.keys(issueTypes).filter(id => (os === sysmanOs) === (id === sysmanIssue));
+  }
+  const defaultIssueType = os => (os === sysmanOs ? sysmanIssue : "general");
   // Cases saved while personal templates existed may still carry a custom-* issue type.
   const validIssueType = id => typeof id === "string" && (Object.hasOwn(issueTypes,id) || /^custom-[a-zA-Z0-9-]{1,80}$/.test(id));
   function defaults() { return { issueType:"general", impact:"", questions:"", owner:"", due:"", status:"Open", checks:{}, timeline:[], timelineAction:"", timelineResult:"", customerDraft:"", summaryDraft:"", productApp:"" }; }
@@ -81,6 +87,6 @@ const CaseToolkitCore = (() => {
     const data=ensure(note);
     return `HANDOFF SUMMARY\nService Request: ${note.request || "Not provided"}\nService Tag: ${note.tag || "Not provided"}\nSystem/Platform: ${note.platform || "Not provided"}\nOS/Solution: ${note.os || "Not provided"}\n\nIssue:\n${note.issue || "Not recorded"}\n\nBusiness impact:\n${data.impact || "Not recorded"}\n\nInvestigation:\n${concise(plain(note.notes)) || "Not recorded"}\n\nNext steps:\n${plain(note.next) || "Not recorded"}\n\nRemaining questions:\n${data.questions || "Not recorded"}\n\nEvidence location: ${note.logLocation || "Not recorded"}\nOwner: ${data.owner || "Not assigned"}\nStatus: ${data.status}\nFollow-up due: ${data.due ? new Date(data.due).toLocaleString() : "Not scheduled"}\nTime spent: ${elapsed}`;
   }
-  return {issueTypes,statuses,defaults,ensure,validate,overdue,checklist,extraText,customerUpdate,summary};
+  return {issueTypes,issueTypesFor,defaultIssueType,sysmanOs,statuses,defaults,ensure,validate,overdue,checklist,extraText,customerUpdate,summary};
 })();
 if(typeof module!=="undefined")module.exports=CaseToolkitCore;

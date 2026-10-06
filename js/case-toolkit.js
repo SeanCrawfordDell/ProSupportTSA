@@ -2,19 +2,29 @@
 window.CaseToolkit = (() => {
   const core=CaseToolkitCore, $=id=>document.getElementById(id);
   let api;
+  // The issue type list depends on the case's OS/Solution; see CaseToolkitCore.issueTypesFor.
   function refreshIssueTypes() {
-    const select=$("caseIssueType"),id=api?.current()?.toolkit?.issueType || "general";
-    const osSelect=$("os");
-
-    // If Systems Management is selected, don't override the issue type dropdown
-    if(osSelect.value==="Systems Management") {
-      return;
-    }
-
-    select.replaceChildren(...Object.entries(core.issueTypes).map(([key,item])=>{const option=document.createElement("option");option.value=key;option.textContent=item.name;return option;}));
-    // Cases saved with a personal template keep its id until another issue type is chosen.
-    if (!Object.hasOwn(core.issueTypes,id)) { const option=document.createElement("option");option.value=id;option.textContent="Custom issue (no longer available)";select.append(option); }
+    const select=$("caseIssueType"),note=api?.current(),id=note?.toolkit?.issueType || "general",os=note ? note.os : $("os").value;
+    const allowed=core.issueTypesFor(os);
+    select.replaceChildren(...allowed.map(key=>{const option=document.createElement("option");option.value=key;option.textContent=core.issueTypes[key].name;return option;}));
+    // A saved issue type outside the list (an older case, or a removed personal template) stays selected until changed.
+    if (!allowed.includes(id)) { const option=document.createElement("option");option.value=id;option.textContent=core.issueTypes[id]?.name || "Custom issue (no longer available)";select.append(option); }
     select.value=id;
+    const sysman=os===core.sysmanOs;
+    $("productAppLabel").hidden=!sysman;
+  }
+  // Changing OS/Solution moves a built-in issue type that does not apply to the new OS to that OS's default.
+  function osChanged() {
+    const note=api?.current();if(!note || !api.canEdit())return;
+    const data=core.ensure(note),allowed=core.issueTypesFor(note.os);
+    api.mutate(current=>{
+      const toolkit=core.ensure(current);
+      if(Object.hasOwn(core.issueTypes,toolkit.issueType) && !allowed.includes(toolkit.issueType))toolkit.issueType=core.defaultIssueType(current.os);
+      if(current.os!==core.sysmanOs)toolkit.productApp="";
+    },false);
+    $("productApp").value=data.productApp;
+    refreshIssueTypes();
+    window.CaseWorkflow?.refresh();
   }
   const notify=text=>$("toolkitStatus").textContent=text;
   const bindings={caseIssueType:"issueType",followupOwner:"owner",followupStatus:"status",caseImpact:"impact",caseQuestions:"questions",customerDraft:"customerDraft",summaryDraft:"summaryDraft",productApp:"productApp"};
@@ -41,6 +51,7 @@ window.CaseToolkit = (() => {
   function init(options) {
     api=options;
     window.CaseWorkflow?.init(options);
+    $("os").addEventListener("change",osChanged);
     const dialog=$("toolkitDialog");
     document.querySelectorAll("[data-toolkit]").forEach(button=>{
       button.addEventListener("click",()=>{

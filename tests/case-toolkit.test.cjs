@@ -41,3 +41,9 @@ test('System/Platform saves, restores and appears in case outputs',()=>{
  assert.ok(T.summary(note,C.plainText,'00:00:01').includes('System/Platform: PowerEdge R750'));
  delete note.platform;assert.equal(C.parse(JSON.stringify(state)).cases[0].platform,'');
 });
+
+test('issueTypesFor gives Systems Management only fix ME OMSA and every other OS the rest',()=>{
+ assert.deepEqual(T.issueTypesFor('Systems Management'),['fix ME OMSA']);
+ for(const os of ['','Windows Server','Redhat'])assert.deepEqual(T.issueTypesFor(os),Object.keys(T.issueTypes).filter(id=>id!=='fix ME OMSA'));
+ assert.equal(T.defaultIssueType('Systems Management'),'fix ME OMSA');assert.equal(T.defaultIssueType('ESX'),'general');
+});
