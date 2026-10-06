@@ -38,6 +38,22 @@ const CaseToolkitCore = (() => {
     return data;
   }
   const overdue = (note, now) => !!note.toolkit?.due && note.toolkit.status !== "Completed" && Date.parse(note.toolkit.due) < now;
+  // Due within the next four hours (and not yet overdue).
+  const soonWindow = 4 * 60 * 60 * 1000;
+  const dueSoon = (note, now) => !!note.toolkit?.due && note.toolkit.status !== "Completed" && Date.parse(note.toolkit.due) >= now && Date.parse(note.toolkit.due) - now <= soonWindow;
+  const followupState = (note, now) => overdue(note, now) ? "overdue" : dueSoon(note, now) ? "soon" : "";
+  // Records a finished follow-up in the case timeline and clears the due date. `next` is "new" (another follow-up
+  // will be scheduled), "none" (no further follow-up; the case stays as it is) or "complete" (the case is done).
+  function completeFollowup(note, now, next) {
+    const data = ensure(note);
+    if (!data.due || !["new", "none", "complete"].includes(next)) return false;
+    data.timeline.push({ id: "followup-" + now, at: now, action: "Follow-up done (was due " + new Date(data.due).toLocaleString() + ")", result: { complete: "Case marked Completed", none: "No further follow-up", new: "New follow-up needed" }[next] });
+    data.due = "";
+    if (next === "complete") data.status = "Completed";
+    else if (next === "new" && data.status === "Completed") data.status = "In progress";
+    return true;
+  }
+  const lastFollowup = note => [...(note.toolkit?.timeline || [])].reverse().find(entry => entry.id.startsWith("followup-")) || null;
   const guides = {
     "Windows Server": ["windows", "Export System, Application, and relevant role event logs for the incident window", "Microsoft support tools", "https://github.com/DellProSupportGse/Tools"],
     "Redhat": ["rhel", "Collect an sos report using the Red Hat procedure", "Red Hat sos report guide", "https://access.redhat.com/solutions/3592"],
@@ -87,6 +103,6 @@ const CaseToolkitCore = (() => {
     const data=ensure(note);
     return `HANDOFF SUMMARY\nService Request: ${note.request || "Not provided"}\nService Tag: ${note.tag || "Not provided"}\nSystem/Platform: ${note.platform || "Not provided"}\nOS/Solution: ${note.os || "Not provided"}\n\nIssue:\n${note.issue || "Not recorded"}\n\nBusiness impact:\n${data.impact || "Not recorded"}\n\nInvestigation:\n${concise(plain(note.notes)) || "Not recorded"}\n\nNext steps:\n${plain(note.next) || "Not recorded"}\n\nRemaining questions:\n${data.questions || "Not recorded"}\n\nEvidence location: ${note.logLocation || "Not recorded"}\nOwner: ${data.owner || "Not assigned"}\nStatus: ${data.status}\nFollow-up due: ${data.due ? new Date(data.due).toLocaleString() : "Not scheduled"}\nTime spent: ${elapsed}`;
   }
-  return {issueTypes,issueTypesFor,defaultIssueType,sysmanOs,statuses,defaults,ensure,validate,overdue,checklist,extraText,customerUpdate,summary};
+  return {issueTypes,issueTypesFor,defaultIssueType,sysmanOs,statuses,defaults,ensure,validate,overdue,dueSoon,followupState,completeFollowup,lastFollowup,soonWindow,checklist,extraText,customerUpdate,summary};
 })();
 if(typeof module!=="undefined")module.exports=CaseToolkitCore;
