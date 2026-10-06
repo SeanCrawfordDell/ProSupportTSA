@@ -23,7 +23,9 @@ function ui({failCopy=false,symptom='network',shortcuts=[]}={}) {
  const body={append(item){elements[item.id]=item;}};
  vm.runInNewContext(fs.readFileSync(require.resolve('../js/log-helper.js'),'utf8'),{window,document:{body,getElementById:get,createElement:node,querySelectorAll:sel=>sel==='[data-log-helper]'?shortcuts.map(get):[]},LogHelperCore:core,navigator:{clipboard:{async writeText(text){if(failCopy)throw Error();copied=text}}}});
  window.LogHelper.init({context:()=>({id:'one',os:'Windows Server',platform:'PowerEdge R750',symptom})});
- return {get,window,click:id=>get(id).listeners.click(),press:id=>get(id).listeners.click({currentTarget:get(id)}),copied:()=>copied,focused:()=>focused};
+ // Opening the helper first shows the in-development warning; these helpers acknowledge it unless told not to.
+ const ack=()=>{if(get('logHelperWarning').open)get('logHelperWarningOk').listeners.click();};
+ return {get,window,click:id=>{get(id).listeners.click();ack();},press:id=>{get(id).listeners.click({currentTarget:get(id)});ack();},raw:id=>get(id).listeners.click({currentTarget:get(id)}),copied:()=>copied,focused:()=>focused};
 }
 test('helper builds its own dialog and prefills OS and issue type from the page',()=>{
  const h=ui();
@@ -115,4 +117,19 @@ test('Case Notes offers Log Collection Helper in the toolbox and the action rail
  assert.match(rail,/id="railLogHelper" data-log-helper[^>]*disabled>Log Collection Helper<\/button>/);
  const notes=fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8');
  assert.match(notes,/logs:'openLogHelper'/);assert.match(notes,/railLogHelper"\)\.disabled = \$\("openLogHelper"\)\.matches/);
+});
+test('every opening warns that the helper is in development before showing it',()=>{
+ const h=ui({shortcuts:['railLogHelper']});
+ assert.match(h.window.LogHelper.warningMarkup,/This feature is in development/);
+ assert.match(h.window.LogHelper.warningMarkup,/Double-check all suggestions and verify their validity before using them/);
+ assert.match(h.window.LogHelper.markup,/In development\.<\/strong> Double-check all suggestions/,'the helper itself keeps a reminder');
+ assert.equal(h.get('logHelperWarning').attributes.role,'alertdialog');
+ h.raw('openLogHelper');assert.equal(h.get('logHelperWarning').open,true);assert.notEqual(h.get('logHelperDialog').open,true,'the plan waits for the acknowledgement');
+ assert.equal(h.focused(),h.get('logHelperWarningOk'));
+ h.get('logHelperWarningCancel').listeners.click();
+ assert.equal(h.get('logHelperWarning').open,false);assert.notEqual(h.get('logHelperDialog').open,true);assert.equal(h.focused(),h.get('openLogHelper'),'Cancel returns focus to the opener');
+ h.raw('railLogHelper');assert.equal(h.get('logHelperWarning').open,true,'warns again on the next opening, from any shortcut');
+ h.get('logHelperWarningOk').listeners.click();
+ assert.equal(h.get('logHelperWarning').open,false);assert.equal(h.get('logHelperDialog').open,true);
+ h.click('closeLogHelper');assert.equal(h.focused(),h.get('railLogHelper'));
 });
