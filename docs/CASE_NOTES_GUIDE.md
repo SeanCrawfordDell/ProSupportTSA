@@ -4,7 +4,7 @@
 
 **Training → Load Example** adds a sample case to Recent cases: a PowerEdge R750 Hyper-V host whose virtual machines lose network connectivity after a NIC driver update. It has three dated notes on three different days (initial contact, log review, and verification), every case detail, a completed evidence checklist and verification, a screenshot, a follow-up, customer update and handoff drafts, and a knowledge draft. It scores 100 on the note quality check. Your other cases are not changed. Loading it again asks before resetting the sample; archive or delete it like any other case.
 
-**Training → Tutorial Demo** walks through every area of Case Notes using the sample case, adding it first if needed. When the tour ends, the case you had open is selected again.
+**Training → Tutorial Demo** walks through every area of Case Notes using the sample case, adding it first if needed, including the Grid/List case view, follow-up colors and Mark follow-up done, Unlock layout, and Customize Site Options. When the tour ends, the case you had open is selected again.
 
 ## Dated notes within a case
 
@@ -85,7 +85,7 @@ Review customer information before sharing exports or copying notes into AI tool
 
 ## Keyboard access
 
-Use Tab and Shift+Tab to move among controls and Enter/Space to activate buttons. **Alt+Shift+F** opens the history panel and focuses search. Focus the toolbox launcher and use **Alt+Arrow keys** to move it. The toolbox includes **Log Collection Helper** by default, alongside Email to Case, Escalate to DE and Copy Notes; the same helper is also in the right-hand action bar and under Evidence. Closing the helper returns focus to the button that opened it (the toolbox launcher when opened from the toolbox). **Edit toolbox** lets you choose the launcher icon (toolbox, dancing paperclips, wizards, T-rex), resize the button from 40 to 120 px, size the icon from 40% to 140% of the button, hide the background circle, and turn the icon animation off; animation also stops when your system asks for reduced motion. Escape closes its menu. Field ordering has Move up/Move down buttons as an alternative to dragging. Screenshot resize handles support arrow keys.
+Use Tab and Shift+Tab to move among controls and Enter/Space to activate buttons. **Alt+Shift+F** opens the history panel and focuses search. Focus the toolbox launcher and use **Alt+Arrow keys** to move it. The toolbox includes **Log Collection Helper** by default, alongside Email to Case, Escalate to DE and Copy Notes; the same helper is also in the right-hand action bar and under Evidence. Closing the helper returns focus to the button that opened it (the toolbox launcher when opened from the toolbox). The helper is still in development: each time it opens, a warning asks you to double-check all suggestions and verify their validity before using them, and **I understand, continue** shows the plan (**Cancel** or Escape closes it). **Edit toolbox** lets you choose the launcher icon (toolbox, dancing paperclips, wizards, T-rex), resize the button from 40 to 120 px, size the icon from 40% to 140% of the button, hide the background circle, and turn the icon animation off; animation also stops when your system asks for reduced motion. Escape closes its menu. Field ordering has Move up/Move down buttons as an alternative to dragging. Screenshot resize handles support arrow keys.
 # Optional Devin CLI connection
 
 On your first full Case Notes visit, an introduction explains optional Devin

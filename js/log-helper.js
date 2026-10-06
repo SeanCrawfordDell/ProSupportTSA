@@ -3,8 +3,10 @@
 // The dialog markup lives here, so both pages always show the same helper. A page only needs
 // an #openLogHelper button and an #os select, then calls LogHelper.init({context}).
 // Any other element with data-log-helper also opens it; data-log-helper-return names the element that gets focus back.
+// The helper is still in development, so every opening first shows a warning that must be acknowledged.
 window.LogHelper = (() => {
   const markup = `<div class="log-helper-heading"><h2 id="logHelperTitle">Which logs should I collect?</h2><button class="button secondary" id="closeLogHelper" type="button">Close</button></div>
+<p class="log-helper-dev-note" id="helperDevNote"><strong>In development.</strong> Double-check all suggestions and verify they are valid before using them.</p>
 <p id="helperContext"></p>
 <p>Recommendations only — nothing runs automatically. Review permissions, production impact, and approved storage before collection. Logs and dumps can contain sensitive customer data. Defer host commands if Windows is unavailable.</p>
 <div class="field-grid">
@@ -12,6 +14,16 @@ window.LogHelper = (() => {
 <label class="field">Issue type for this plan<select id="helperSymptom" aria-describedby="helperContext"></select></label>
 </div><div id="helperResults"></div>
 <div class="log-helper-actions"><button class="button secondary" id="closeLogHelperBottom" type="button">Close</button></div><p id="helperStatus" role="status"></p>`;
+  const warningMarkup = `<h2 id="logHelperWarningTitle">This feature is in development</h2>
+<p id="logHelperWarningText">The Log Collection Helper is still being developed. Double-check all suggestions and verify their validity before using them, including commands, tools and collection guides.</p>
+<div class="log-helper-actions"><button class="button secondary" id="logHelperWarningCancel" type="button">Cancel</button><button class="button primary" id="logHelperWarningOk" type="button">I understand, continue</button></div>`;
+  function mountWarning() {
+    const warning=document.createElement("dialog");
+    warning.id="logHelperWarning";warning.className="log-helper-warning";warning.setAttribute("role","alertdialog");
+    warning.setAttribute("aria-labelledby","logHelperWarningTitle");warning.setAttribute("aria-describedby","logHelperWarningText");
+    warning.innerHTML=warningMarkup;document.body.append(warning);
+    return warning;
+  }
   function mount() {
     const dialog=document.createElement("dialog");
     dialog.id="logHelperDialog";dialog.className="log-helper-dialog";dialog.setAttribute("aria-labelledby","logHelperTitle");
@@ -19,7 +31,7 @@ window.LogHelper = (() => {
     return dialog;
   }
   function init(api) {
-    const $=id=>document.getElementById(id), dialog=mount();
+    const $=id=>document.getElementById(id), dialog=mount(), warning=mountWarning();
     let activePlan, platform="";
     function render() {
       activePlan=LogHelperCore.plan({os:$("helperOS").value,platform,symptom:$("helperSymptom").value,reachable:null});
@@ -45,9 +57,12 @@ window.LogHelper = (() => {
       }));
       $("helperStatus").textContent="";
     }
-    let opener=null;
+    let opener=null, proceeding=false;
     function open(event){
       opener=event?.currentTarget || $("openLogHelper");
+      proceeding=false;warning.showModal();$("logHelperWarningOk").focus();
+    }
+    function showHelper(){
       const context=api.context();
       $("helperOS").replaceChildren(...[...$("os").options].map(item=>{const option=document.createElement("option");option.value=item.value;option.textContent=item.textContent;return option;}));
       $("helperOS").value=context.os || "";platform=context.platform || "";
@@ -61,12 +76,17 @@ window.LogHelper = (() => {
     $("openLogHelper").addEventListener("click",open);
     document.querySelectorAll?.("[data-log-helper]").forEach(button=>button.addEventListener("click",open));
     for(const id of ["helperOS","helperSymptom"]) $(id).addEventListener("change",render);
+    $("logHelperWarningOk").addEventListener("click",()=>{proceeding=true;warning.close();showHelper();});
+    $("logHelperWarningCancel").addEventListener("click",()=>warning.close());
+    // Cancel or Escape on the warning returns focus to whatever opened the helper.
+    warning.addEventListener("close",()=>{if(proceeding)return;returnFocus();});
     $("closeLogHelper").addEventListener("click",()=>dialog.close());
     $("closeLogHelperBottom").addEventListener("click",()=>dialog.close());
-    dialog.addEventListener("close",()=>{
+    function returnFocus(){
       const target=(opener?.dataset?.logHelperReturn && $(opener.dataset.logHelperReturn)) || opener || $("openLogHelper");
       opener=null;target.focus();
-    });
+    }
+    dialog.addEventListener("close",returnFocus);
   }
-  return {init,markup};
+  return {init,markup,warningMarkup};
 })();
