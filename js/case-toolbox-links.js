@@ -14,12 +14,19 @@
     if (!heading) return;
     const range = document.createRange();
     range.selectNodeContents(heading);
-    const rect = range.getBoundingClientRect();
+    const rect = range.getBoundingClientRect(), size = toolbox.offsetWidth;
+    // Never on top of the site header: when the heading is scrolled out of view (for example a restored scroll
+    // position), use the bottom-right corner instead.
+    const headerBottom = document.getElementById('siteTopbar')?.getBoundingClientRect().bottom ?? 0;
+    const top = rect.top + rect.height / 2 - size / 2;
+    if (top < Math.max(8, headerBottom + 8) || top > window.innerHeight - size - 8) {
+      for (const side of ['left', 'top', 'right', 'bottom']) toolbox.style.removeProperty(side);
+      return;
+    }
     toolbox.style.right = 'auto';
     toolbox.style.bottom = 'auto';
-    const size = toolbox.offsetWidth;
     toolbox.style.left = `${Math.max(8, Math.min(window.innerWidth - size - 8, rect.right + 18))}px`;
-    toolbox.style.top = `${Math.max(8, Math.min(window.innerHeight - size - 8, rect.top + rect.height / 2 - size / 2))}px`;
+    toolbox.style.top = `${top}px`;
   }
   launcher.addEventListener('pointerdown', event => {
     positionStart = {x:event.clientX, y:event.clientY};

@@ -3,7 +3,7 @@
   const key = "dell-support.case-notes.v1";
   const $ = id => document.getElementById(id);
   const escapeHtml = value => String(value).replace(/[&<>"']/g,char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
-  let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release;
+  let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release, assist = null;
   let savedState = null;
   let summaryCaseId = null;
   let notesPopout, devinIntegration;
@@ -27,7 +27,7 @@
     stopTimer: "Stop time tracking for the current case.",
     emailNote: "Download the case notes as an email draft with screenshots.",
     escalateNote: "Open a pre-filled escalation request using these case details.",
-    copyNote: "Copy the case notes to paste into Lightning and stop the timer.",
+    copyNote: "Copy the case details with the selected day's notes to paste into Lightning, and stop the timer. Use Copy case summary in Case Summary to copy every day.",
     manageAiTasks: "Add or manage your own AI prompts and skills.",
     copyDevin: "Copy the selected AI prompt with the current case context.",
     toggleActionDock: "Keep the action dock in place instead of floating while you scroll.",
@@ -537,6 +537,8 @@
     actionDock.classList.toggle("floating-disabled", !actionDockFloating);
     actionDock.classList.toggle("right-rail", actionDockFloating && Boolean(rightRailQuery?.matches));
     caseWorkArea?.classList.toggle("action-rail", actionDockFloating && Boolean(rightRailQuery?.matches));
+    // The wide side rail always shows the AI tools; the slim bar shows them only when opened.
+    if ($("aiToolsPanel")) $("aiToolsPanel").hidden = !(aiToolsOpen || actionDock.classList.contains("right-rail"));
     if (actionDockToggle) {
       actionDockToggle.textContent = actionDockFloating ? "Stop floating" : "Enable floating";
       actionDockToggle.setAttribute("aria-pressed", String(!actionDockFloating));
@@ -546,6 +548,21 @@
     actionDockFloating = !actionDockFloating;
     try { localStorage.setItem(actionDockPreferenceKey, String(actionDockFloating)); } catch { /* This visit still honors the choice. */ }
     updateActionDockMode();
+  });
+  // Below the side-rail size the action bar stays one slim row; the AI tools open from "AI tools" on demand.
+  const aiToolsKey = "dell-support.ai-tools-open";
+  let aiToolsOpen = false;
+  try { aiToolsOpen = localStorage.getItem(aiToolsKey) === "true"; } catch { /* Closed by default. */ }
+  function setAiTools(open) {
+    aiToolsOpen = open;
+    $("aiToolsPanel").hidden = !open && !actionDock?.classList.contains("right-rail");
+    $("toggleAiTools").setAttribute("aria-expanded", String(open));
+  }
+  setAiTools(aiToolsOpen);
+  $("toggleAiTools").addEventListener("click", () => {
+    setAiTools(!aiToolsOpen);
+    try { localStorage.setItem(aiToolsKey, String(aiToolsOpen)); } catch { /* Still works for this visit. */ }
+    if (aiToolsOpen) $("devinTask").focus();
   });
   rightRailQuery?.addEventListener?.("change", updateActionDockMode);
   updateActionDockMode();
@@ -673,7 +690,18 @@
   }
   function renderCaseSummary(note,entries) {
     const panel=$("caseSummaryPanel"); panel.replaceChildren();
-    const title=document.createElement("h3"); title.textContent="Case Summary"; panel.append(title);
+    const heading=document.createElement("div"); heading.className="case-summary-heading";
+    const title=document.createElement("h3"); title.textContent="Case Summary";
+    const copyAll=document.createElement("button"); copyAll.type="button"; copyAll.className="button primary"; copyAll.id="copyCaseSummary";
+    copyAll.textContent="Copy case summary"; copyAll.title="Copy every case field and every dated note as plain text. The timer is not changed.";
+    copyAll.disabled=copying;
+    const copyStatus=document.createElement("p"); copyStatus.id="caseSummaryCopyStatus"; copyStatus.setAttribute("role","status");
+    copyAll.addEventListener("click",async()=>{
+      const current=selected(); if(!current || copying) return;
+      try { await navigator.clipboard.writeText(CaseNotes.copyText(current, Date.now(), state.fieldConfig)); copyStatus.textContent="Copied the whole case: every field and all "+entries.length+" dated note"+(entries.length===1 ? "" : "s")+". The timer is unchanged."; }
+      catch { copyStatus.textContent="Could not copy. Allow clipboard access and try again."; }
+    });
+    heading.append(title,copyAll); panel.append(heading,copyStatus);
     const context=document.createElement("dl"); context.className="case-summary-details";
     CaseNotes.getEffectiveFields(state).filter(field=>!["notes","next"].includes(field.id) && note[field.id]).forEach(field=>{
       const label=document.createElement("dt"), value=document.createElement("dd");
@@ -751,26 +779,52 @@
     }
   }
 
+  // SR number or Service Tag when known; otherwise the start of the issue description and the date, so untitled
+  // cases can still be told apart (especially in the title-only List view).
+  function caseListTitle(note) {
+    if (note.request || note.tag) return note.request || note.tag;
+    const date = new Date(note.created).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const words = CaseNotes.plainText(note.issue || "").trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return "Untitled case · " + date;
+    const start = words.slice(0, 6).join(" ");
+    return (start.length > 48 ? start.slice(0, 47) : start) + (words.length > 6 || start.length > 48 ? "…" : "") + " · " + date;
+  }
+  // The Filters button shows how many of Show cases, Collection and Sort differ from their defaults.
+  function updateFilterSummary() {
+    const changed = [$("followupFilter")?.value !== "all", $("caseCollection")?.value !== "cases", $("caseSort")?.value !== "created"].filter(Boolean).length;
+    if ($("filterCount")) $("filterCount").textContent = changed ? ` (${changed})` : "";
+  }
   function history() {
     const query = $("search").value.trim().toLowerCase();
     const filter = $("followupFilter").value || "all";
-    const collection = ["archive","trash"].includes($("caseCollection")?.value) ? $("caseCollection").value : "cases";
+    const viewCollection = ["archive","trash"].includes($("caseCollection")?.value) ? $("caseCollection").value : "cases";
     const sort = $("caseSort")?.value || "created";
     const now = Date.now();
-    const matches = (state[collection] || []).filter(note => {
+    // "Search Archive and Trash too" widens a search to every collection; each result remembers where it lives.
+    const everywhere = !!query && !!$("searchEverywhere")?.checked;
+    const where = new Map();
+    for (const name of everywhere ? ["cases","archive","trash"] : [viewCollection]) for (const note of state[name] || []) where.set(note, name);
+    updateFilterSummary();
+    const matches = [...where.keys()].filter(note => {
       const status = note.toolkit?.status || "Open";
       return (!query || CaseNotes.searchText(note).toLowerCase().includes(query)) && (filter === "all" || filter === "overdue" && CaseToolkitCore.overdue(note, now) || filter === "soon" && CaseToolkitCore.dueSoon(note, now) || filter === "active" && status !== "Completed" || filter === "completed" && status === "Completed");
     }).sort((a,b) => Number(!!b.pinned)-Number(!!a.pinned) || (sort === "due" ? (Date.parse(a.toolkit?.due) || Infinity)-(Date.parse(b.toolkit?.due) || Infinity) : b[sort === "updated" ? "updated" : "created"]-a[sort === "updated" ? "updated" : "created"]));
-    $("caseCount").textContent = collection === "cases" ? `${state.cases.length} / 100` : `${state[collection].length} ${collection === "archive" ? "archived" : "in Trash"}`;
+    $("caseCount").textContent = viewCollection === "cases" ? `${state.cases.length} / 100` : `${state[viewCollection].length} ${viewCollection === "archive" ? "archived" : "in Trash"}`;
     $("historyList").replaceChildren(...matches.map(note => {
+      const collection = where.get(note);
       const button = document.createElement("button"); button.className = "case-item";
       button.setAttribute("aria-current", String(note.id === state.selected));
       button.disabled = copying;
-      const title = document.createElement("strong"); title.textContent = (note.id === CaseExample.ID ? "Sample · " : "") + (note.request || note.tag || "Untitled case");
+      const title = document.createElement("strong"); title.textContent = (note.id === CaseExample.ID ? "Sample · " : "") + caseListTitle(note);
       if (historyView === "list") button.title = title.textContent;
       const issue = document.createElement("span"); issue.textContent = query ? CaseNotes.excerpt(note,query) : note.issue || "No issue description yet";
       const meta = document.createElement("small"); meta.textContent = `${note.tag ? note.tag + " · " : ""}${historyView === "list" ? new Date(note.created).toLocaleDateString() : new Date(note.created).toLocaleString()}`;
       button.append(title, issue, meta);
+      if (collection !== viewCollection) {
+        const place = document.createElement("small"); place.className = "case-collection-badge";
+        place.textContent = collection === "archive" ? "In Archive" : collection === "trash" ? "In Trash" : "In Recent cases";
+        button.append(place);
+      }
       // Red when the follow-up is overdue, yellow when it is due within 4 hours.
       const followup = CaseToolkitCore.followupState(note, now);
       if (followup) { button.classList.toggle("followup-" + followup, true); button.title = [button.title, followup === "overdue" ? "Follow-up overdue" : "Follow-up due within 4 hours"].filter(Boolean).join(" · "); }
@@ -837,7 +891,8 @@
         render();
       }); return row;
     }));
-    if (!matches.length) $("historyList").textContent = query ? "No matching cases." : "No cases yet.";
+    assist?.refresh();
+    if (!matches.length) $("historyList").textContent = query ? (everywhere ? "No matching cases in any collection." : "No matching cases. Tick “Search Archive and Trash too” to look further.") : "No cases yet.";
   }
   function commitCaseChange(change, failure = "Could not save this change. Your saved notes were kept. Free browser storage or export a backup and retry.") {
     if (!writable || copying || !save()) return false;
@@ -1259,6 +1314,7 @@
     hiddenDraft = new Set(readHidden());
     renderFieldCustomizer();
     if (window.CopyRumble) $("copyRumbleToggle").checked = window.CopyRumble.enabled();
+    assist?.refreshOptions();
     $("fieldCustomizer").showModal();
     $("customizerStatus").textContent = "";
   });
@@ -1336,6 +1392,14 @@
   $("search").addEventListener("input", history);
   $("caseCollection")?.addEventListener("change", history);
   $("caseSort")?.addEventListener("change", history);
+  $("searchEverywhere")?.addEventListener("change", history);
+  $("toggleHistoryFilters")?.addEventListener("click", () => {
+    const open = $("historyFilters").hidden;
+    $("historyFilters").hidden = !open;
+    $("toggleHistoryFilters").setAttribute("aria-expanded", String(open));
+    try { localStorage.setItem("dell-support.case-filters-open", String(open)); } catch { /* Still works for this visit. */ }
+  });
+  try { if (localStorage.getItem("dell-support.case-filters-open") === "true") { $("historyFilters").hidden = false; $("toggleHistoryFilters").setAttribute("aria-expanded", "true"); } } catch { /* Closed by default. */ }
   $("followupFilter").addEventListener("change", history);
   setInterval(() => { if (!$("historyList").contains(document.activeElement)) history(); }, 60000);
   $("retrySave").addEventListener("click", save);
@@ -1416,7 +1480,8 @@
     const note = selected(); if (!note || !writable || copying) return;
     syncFormToNote(note);
     save(); // Copy remains available even if storage is full.
-    const now = Date.now(); const text = CaseNotes.copyText(note, now, state.fieldConfig);
+    // Only the selected day's notes; Copy case summary (in Case Summary) copies the whole case.
+    const now = Date.now(); const text = CaseNotes.dayCopyText(note, now, state.fieldConfig);
     copying = true; controls(); history();
     try {
       await navigator.clipboard.writeText(text);
@@ -1537,34 +1602,67 @@
     }
     if (!loadFailed) {
       $("lockNotice").hidden = false;
-      $("lockNotice").textContent = "Read-only while another tab is editing Case Notes. Close that tab to edit here.";
+      $("lockNotice").textContent = "Checking whether another tab is editing Case Notes…";
     }
     try {
-      await navigator.locks.request("dell-support.case-notes.editor", { ifAvailable: true }, async lock => {
-        if (lock === null) {
-          $("lockNotice").hidden = false;
-          $("lockNotice").textContent = "Read-only while another tab is editing Case Notes. Close that tab to edit here.";
-          return;
-        }
-        load();
-        if (loadFailed) return;
-        if(notesPopout?.caseId) {
-          if(!state.cases.some(note=>note.id===notesPopout.caseId)) {
-            state.selected=null;notesPopout.unavailable();render();
-            $("lockNotice").textContent="The requested case is unavailable. Return to the full workspace to choose a case.";
-            return;
-          }
-          state.selected=notesPopout.caseId;
-        }
-        writable = true; $("lockNotice").hidden = true; render();
-        openCaseFromLink();
-        openSettingsFromLink();
-        await new Promise(resolve => { release = resolve; });
+      await navigator.locks.request(lockName, { ifAvailable: true }, async lock => {
+        if (lock === null) { readOnlyForLock("Read-only while another tab is editing Case Notes. This tab becomes editable when that tab closes, or choose Take over editing here."); waitForLock(); return; }
+        await holdLock();
       });
-    } catch {
-      $("lockNotice").textContent = "Unable to acquire the editor lock. Reload to try again.";
-    }
+    } catch (error) { lockLost(error); }
   }
+  // Only one tab edits at a time. A read-only tab waits in line and becomes editable by itself when the other tab
+  // closes, or takes over straight away (the editing tab is asked to save first, then switches to read-only).
+  const lockName = "dell-support.case-notes.editor";
+  let lockWait = null, lockChannel = null;
+  try { lockChannel = new BroadcastChannel("dell-support.case-notes.lock"); lockChannel.onmessage = event => { if (event.data === "save-now" && writable) save(); }; } catch { /* Take over still works; the other tab's last autosave is used. */ }
+  function readOnlyForLock(text) {
+    $("lockNotice").hidden = false; $("lockNotice").textContent = text;
+    if ($("takeOverEditing")) $("takeOverEditing").hidden = false;
+  }
+  async function holdLock() {
+    if ($("takeOverEditing")) $("takeOverEditing").hidden = true;
+    load();
+    if (loadFailed) return;
+    if(notesPopout?.caseId) {
+      if(!state.cases.some(note=>note.id===notesPopout.caseId)) {
+        state.selected=null;notesPopout.unavailable();render();
+        $("lockNotice").textContent="The requested case is unavailable. Return to the full workspace to choose a case.";
+        return;
+      }
+      state.selected=notesPopout.caseId;
+    }
+    writable = true; $("lockNotice").hidden = true; render();
+    // A problem with a #case= or #settings link must not cost this tab its editing lock.
+    try { openCaseFromLink(); openSettingsFromLink(); } catch { /* The workspace opens as usual. */ }
+    await new Promise(resolve => { release = resolve; });
+  }
+  function waitForLock() {
+    if (lockWait || writable) return;
+    const wait = lockWait = new AbortController();
+    navigator.locks.request(lockName, { signal: wait.signal }, () => { lockWait = null; return holdLock(); })
+      // Aborted while still waiting means this tab is taking over instead; any other failure (including the lock
+      // being taken after it was granted) switches the tab to read-only.
+      .catch(error => { if (wait.signal.aborted) return; lockLost(error); });
+  }
+  // The lock was taken by another tab (or could not be requested): stop editing here and wait for it again.
+  function lockLost(error) {
+    const stolen = error?.name === "AbortError";
+    writable = false; release = null; controls(); render();
+    if (!stolen) { $("lockNotice").hidden = false; $("lockNotice").textContent = "Unable to acquire the editor lock. Reload to try again."; return; }
+    readOnlyForLock("Editing moved to another tab or window, so this tab is now read-only. It becomes editable again when that one closes, or choose Take over editing here.");
+    waitForLock();
+  }
+  $("takeOverEditing")?.addEventListener("click", async () => {
+    if (writable) return;
+    $("takeOverEditing").disabled = true;
+    lockChannel?.postMessage("save-now");
+    await new Promise(resolve => setTimeout(resolve, 400));
+    lockWait?.abort(); lockWait = null;
+    try { await navigator.locks.request(lockName, { steal: true }, holdLock); }
+    catch (error) { if (error?.name === "AbortError") lockLost(error); }
+    finally { $("takeOverEditing").disabled = false; }
+  });
   window.addEventListener("pageshow", event => { if (event.persisted) acquire(); });
   window.CaseMarkdown?.init({
     current: selected,
@@ -1592,6 +1690,31 @@
       tick(); history();
     },
     refreshEditors: () => { const note = selected(); if (!note) return; $("notes").value = note.notes; $("next").value = note.next; window.CaseMarkdown?.refresh(); }
+  });
+  assist = window.CaseNotesAssist?.init({
+    cases: () => state.cases,
+    allCases: () => ["cases","archive","trash"].flatMap(collection => (state[collection] || []).map(note => ({ note, collection }))),
+    selected,
+    ask: askChoice,
+    backup: scheduleBackup,
+    timerRunning: () => writable && state.cases.some(note => note.started !== null),
+    // Takes the away period off the running timer, which keeps running from now.
+    discardTime(from, to) {
+      const note = state.cases.find(item => item.started !== null); if (!note || !writable) return;
+      CaseNotes.stop(note, Math.max(note.started, from)); note.started = to; dirty = true; save(); tick();
+      $("copyStatus").textContent = "Away time removed from the timer.";
+    },
+    open(id, collection = "cases") {
+      const note = (state[collection] || []).find(item => item.id === id); if (!note) return;
+      if (collection !== "cases") { showStoredCase(note, collection); return; }
+      if (copying || (writable && !save())) return;
+      state.selected = id; if (writable) { dirty = true; save(); } render();
+    },
+    showFollowups(filter) {
+      $("caseCollection").value = "cases"; $("followupFilter").value = filter; $("search").value = "";
+      if ($("caseHistory").hidden) $("toggleHistory").click();
+      history(); $("historyList").scrollIntoView?.({ block: "nearest" });
+    }
   });
   window.LogHelper?.init({
     context: () => { const note=selected(); return {id:note?.id,os:note?.os,platform:note?.platform,symptom:note?.toolkit?.issueType}; }

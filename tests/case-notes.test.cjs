@@ -454,7 +454,7 @@ test('Recent cases switches between grid cards and a title-only list, and rememb
   assert.ok(h.get('historyList').classList.contains('history-compact'));
   assert.equal(h.get('historyViewList').attributes['aria-pressed'],'true');assert.equal(h.get('historyViewGrid').attributes['aria-pressed'],'false');
   assert.equal(h.ctx.localStorage.getItem('dell-support.case-history-view'),'list');
-  assert.equal(card().title,'Untitled case','the full title is a tooltip when the list truncates it');
+  assert.match(card().title,/^Untitled case · \w+ \d+/,'the full title (with its date) is a tooltip when the list truncates it');
   h.click('historyViewGrid');
   assert.equal(h.get('historyList').classList.contains('history-compact'),false);assert.equal(h.ctx.localStorage.getItem('dell-support.case-history-view'),'grid');
 });

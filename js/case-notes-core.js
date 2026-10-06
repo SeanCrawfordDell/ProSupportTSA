@@ -43,9 +43,8 @@ const CaseNotes = (() => {
     note.entries.push({id,created:now,updated:now,notes:"",next:""});
     selectEntry(note,id); note.updated = now;
   }
-  function exportField(note, field) {
+  function exportField(note, field, entries = entryList(note)) {
     if (!["notes","next"].includes(field)) return note[field] || "";
-    const entries = entryList(note);
     if (entries.length === 1) return entries[0][field];
     return entries.map(entry => "### " + new Date(entry.created).toLocaleString() + "\n\n" + (entry[field] || "(No content recorded)")).join("\n\n");
   }
@@ -92,13 +91,22 @@ const CaseNotes = (() => {
     }
     return plain;
   }
-  function copyText(note, now, fieldConfig = null) {
+  // The whole case: every field and every dated note (Copy case summary, email, escalation).
+  function copyText(note, now, fieldConfig = null, entries = entryList(note)) {
     const extra = Toolkit.extraText(note);
     const config = fieldConfig || { order: [...defaultFieldOrder], customFields: {} };
     const allFields = { ...fields, ...config.customFields };
     const orderedFields = config.order.filter(key => allFields[key]).concat(Object.keys(config.customFields).filter(key => !config.order.includes(key)));
-    return [...orderedFields.map(key => `${allFields[key] || key}:\n${plainImages(exportField(note,key))}`), ...(extra ? [extra] : []), `Time Spent:\n${duration(elapsed(note, now))}`].join("\n\n");
+    return [...orderedFields.map(key => `${allFields[key] || key}:\n${plainImages(exportField(note,key,entries))}`), ...(extra ? [extra] : []), `Time Spent:\n${duration(elapsed(note, now))}`].join("\n\n");
   }
+  // The dated notes from the same local calendar day as the selected note.
+  function dayEntries(note) {
+    const entries = entryList(note), active = entries.find(entry => entry.id === note.activeEntryId) || entries.at(-1);
+    const day = new Date(active.created).toDateString();
+    return entries.filter(entry => new Date(entry.created).toDateString() === day);
+  }
+  // Copy to Lightning: the case fields with only that day's notes and action plan.
+  const dayCopyText = (note, now, fieldConfig = null) => copyText(note, now, fieldConfig, dayEntries(note));
   function emailFile(note, now, content, token, fieldConfig = null) {
     if (!/^[a-zA-Z0-9-]+$/.test(token)) throw Error("Invalid email ID");
     const base64 = text => btoa(Array.from(new TextEncoder().encode(text), byte => String.fromCharCode(byte)).join(""));
@@ -374,6 +382,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, mergeFieldOrder, unhideableFields, visibleFieldIds, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
+  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, dayCopyText, dayEntries, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, mergeFieldOrder, unhideableFields, visibleFieldIds, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;
