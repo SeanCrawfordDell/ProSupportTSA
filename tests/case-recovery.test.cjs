@@ -81,3 +81,16 @@ test('screenshots are stored once per case and dropped when nothing references t
   for(let i=0;i<12;i++){const p=structuredClone(state);note.images['s'+i]={name:'S',data:'data:image/png;base64,'+'A'.repeat(200000)};note.notes+=`<img src="attachment:s${i}">`;C.syncEntry(note);C.checkpoint(state,p,3000+i*C.VERSION_INTERVAL);}
   assert.ok(JSON.stringify(state).length<12*200000*1.1,'history grows with screenshots, not screenshots times versions');
 });
+
+test('hidden fields and their acknowledgement are backed up, validated and cleared with other settings',()=>{
+ const S=require('../js/case-settings-core.js'),C=require('../js/case-notes-core.js');
+ const values=new Map([['dell-support.hidden-fields.v1','["tag"]'],['dell-support.hidden-fields-ack','true']]);
+ const captured=S.capture({getItem:key=>values.get(key)??null});
+ assert.deepEqual(captured.hiddenFields,['tag']);assert.equal(captured.hiddenFieldsAck,'true');
+ assert.deepEqual(S.capture({getItem:()=>null}).hiddenFields,[]);
+ const restored=S.validate({fieldConfig:C.empty().fieldConfig,preferences:captured},C.fields);
+ assert.equal(restored.values['dell-support.hidden-fields.v1'],'["tag"]');assert.equal(restored.values['dell-support.hidden-fields-ack'],'true');
+ for(const bad of [{hiddenFields:'tag'},{hiddenFields:[1]},{hiddenFields:['<x>']},{hiddenFieldsAck:'yes'}])
+  assert.throws(()=>S.validate({fieldConfig:C.empty().fieldConfig,preferences:bad},C.fields));
+ const cleared=S.clearValues();assert.equal(cleared['dell-support.hidden-fields.v1'],null);assert.ok(Object.hasOwn(cleared,'dell-support.hidden-fields-ack'));
+});

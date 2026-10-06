@@ -358,6 +358,12 @@ const CaseNotes = (() => {
     state.fieldConfig.order = newOrder;
     return state;
   }
+  // Fields outside Case Details (Triage OS/Solution and the two rich-text sections) can never be hidden.
+  const unhideableFields = ["os", "notes", "next"];
+  function visibleFieldIds(state, hidden) {
+    const hide = new Set(hidden);
+    return getEffectiveFields(state).filter(field => unhideableFields.includes(field.id) || !hide.has(field.id)).map(field => field.id);
+  }
   // Puts the Case Details fields in their new sequence while every other field keeps its slot in the saved order.
   function mergeFieldOrder(order, gridOrder) {
     const moved = new Set(gridOrder), queue = [...gridOrder];
@@ -368,6 +374,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, mergeFieldOrder, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
+  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, mergeFieldOrder, unhideableFields, visibleFieldIds, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;

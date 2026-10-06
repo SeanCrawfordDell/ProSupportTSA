@@ -20,25 +20,27 @@ function node(tag,props={}){
   prepend(child){n.children.unshift(child);child.parentElement=n;},
   remove(){n.parentElement?.children.splice(n.parentElement.children.indexOf(n),1);n.parentElement=null;},
   get nextSibling(){const p=n.parentElement;return p?p.children[p.children.indexOf(n)+1]??null:null;},
-  querySelector(sel){return sel===':scope > .field-grip'?n.children.find(c=>c.classes.has('field-grip'))??null:null;},
+  querySelector(sel){const cls={':scope > .field-grip':'field-grip',':scope > .field-show':'field-show'}[sel];return cls?n.children.find(c=>c.classes.has(cls))??null:null;},
+  append(...items){for(const item of items)n.insertBefore(item,null);},click(){n.listeners.click?.({target:n,preventDefault(){}});},
   querySelectorAll(){return n.children.filter(c=>['input','select','textarea'].includes(c.tag));},
   closest(sel){let c=n;while(c&&!(sel==='.field-grip'?c.classes.has('field-grip'):c.classes.has('field')))c=c.parentElement;return c??null;}};
  Object.defineProperty(n,'className',{set(v){n.classes=new Set(v.split(' '));}});
  return n;
 }
 let focused=null;
-function setup({canEdit=true,save=()=>true}={}){
+function setup({canEdit=true,save=()=>true,hidden=[],acknowledge=async()=>true}={}){
  const labels={tag:'Service Tag',platform:'System/Platform',issue:'Issue Description'};
  const grid=node('div'),toggle=node('button'),cancel=node('button'),status=node('p');
  for(const id of Object.keys(labels)){const label=node('label');label.classes.add('field');label.insertBefore(node('input',{id}),null);grid.insertBefore(label,null);}
  const other=node('div');grid.insertBefore(other,null);
  const ctx={window:{},document:{createElement:tag=>node(tag)}};
  vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-field-layout.js'),'utf8'),ctx);
- const L=ctx.window.CaseFieldLayout,saved=[];let allowed=canEdit;
- L.init({grid,toggle,cancel,status,canEdit:()=>allowed,fieldId:c=>c.children.find(x=>x.tag==='input')?.id??null,label:id=>labels[id],save:order=>{saved.push(order);return save(order);}});
+ const L=ctx.window.CaseFieldLayout,saved=[],savedHidden=[];let allowed=canEdit;
+ L.init({grid,toggle,cancel,status,canEdit:()=>allowed,fieldId:c=>c.children.find(x=>x.tag==='input')?.id??null,label:id=>labels[id],hidden:()=>hidden,canHide:()=>true,acknowledge,save:(order,hide)=>{saved.push(order);savedHidden.push(hide);return save(order);}});
  const order=()=>grid.children.filter(c=>c!==other).map(c=>c.children.find(x=>x.tag==='input').id);
  const key=k=>grid.listeners.keydown({key:k,target:focused,preventDefault(){}});
- return {L,grid,toggle,cancel,status,other,saved,order,key,deny(){allowed=false;L.refresh();}};
+ const box=id=>grid.children.find(c=>c.children.some(x=>x.id===id))?.children.find(c=>c.classes.has('field-show'))?.children[0];
+ return {L,grid,toggle,cancel,status,other,saved,savedHidden,order,key,box,item:id=>grid.children.find(c=>c.children.some(x=>x.id===id)),deny(){allowed=false;L.refresh();}};
 }
 
 test('unlock adds a grip per field, makes inputs inert and focuses the first grip',()=>{
@@ -59,7 +61,7 @@ test('Done saves the new grid order once and locks the layout',()=>{
  assert.equal(h.grid.children[0].children.some(c=>c.classes.has('field-grip')),false);assert.equal(h.grid.children[0].children.find(c=>c.tag==='input').inert,false);
 });
 test('Done without changes does not save',()=>{
- const h=setup();h.toggle.listeners.click();h.toggle.listeners.click();assert.equal(h.saved.length,0);assert.match(h.status.textContent,/unchanged/);
+ const h=setup();h.toggle.listeners.click();h.toggle.listeners.click();assert.equal(h.saved.length,0);assert.match(h.status.textContent,/Nothing changed/);
 });
 test('a failed save restores the previous order',()=>{
  const h=setup({save:()=>false});h.toggle.listeners.click();h.key('ArrowDown');h.toggle.listeners.click();
@@ -82,4 +84,35 @@ test('case-notes.html loads the layout script with the shared version tag and of
  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
  assert.match(html,/<script src="js\/case-field-layout\.js\?v=[^"]+" defer><\/script>\s*<script src="js\/case-notes\.js/);
  assert.match(html,/id="layoutToggle"[^>]*aria-pressed="false"/);assert.match(html,/id="layoutCancel"[^>]*hidden/);
+});
+
+test('visibleFieldIds hides Case Details fields but never OS/Solution, Notes or Action Plan',()=>{
+ const state=C.empty(),visible=C.visibleFieldIds(state,['tag','country','os','notes','next','unknown']);
+ assert.ok(!visible.includes('tag'));assert.ok(!visible.includes('country'));
+ for(const id of ['os','notes','next','platform','issue'])assert.ok(visible.includes(id),id);
+});
+
+test('Show checkboxes hide and unhide fields; Done saves order and hidden set together',async()=>{
+ let asked=0;const h=setup({hidden:['platform'],acknowledge:async()=>{asked++;return true;}});
+ assert.equal(h.item('platform').hidden,false);
+ h.toggle.listeners.click();
+ assert.equal(h.item('platform').hidden,false,'hidden fields reappear while unlocked');assert.ok(h.item('platform').classes.has('field-hidden-preview'));
+ assert.equal(h.box('platform').checked,false);assert.equal(h.box('tag').checked,true);
+ h.box('tag').checked=false;await h.box('tag').listeners.change();assert.equal(asked,1);assert.match(h.status.textContent,/Service Tag will be hidden/);
+ h.box('platform').checked=true;await h.box('platform').listeners.change();
+ h.toggle.listeners.click();
+ assert.deepEqual([...h.savedHidden[0]],['tag']);assert.equal(h.item('tag').hidden,true);assert.equal(h.item('platform').hidden,false);
+ assert.equal(h.box('tag'),undefined,'checkboxes are removed when locked');assert.match(h.status.textContent,/1 field hidden/);
+});
+test('declining the hide warning keeps the field shown',async()=>{
+ const h=setup({acknowledge:async()=>false});h.toggle.listeners.click();
+ h.box('tag').checked=false;await h.box('tag').listeners.change();
+ assert.equal(h.box('tag').checked,true);assert.equal(h.item('tag').classes.has('field-hidden-preview'),false);
+ h.toggle.listeners.click();assert.equal(h.saved.length,0);
+});
+test('Cancel restores the hidden set as well as the order',async()=>{
+ const h=setup({hidden:['platform']});h.toggle.listeners.click();
+ h.box('platform').checked=true;await h.box('platform').listeners.change();h.box('tag').checked=false;await h.box('tag').listeners.change();
+ h.cancel.listeners.click();
+ assert.equal(h.item('platform').hidden,true);assert.equal(h.item('tag').hidden,false);assert.equal(h.saved.length,0);
 });

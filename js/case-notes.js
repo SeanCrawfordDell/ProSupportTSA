@@ -896,6 +896,14 @@
       otherElements.forEach(element => {
         fieldGrid.appendChild(element);
       });
+      // Hidden fields stay in the grid with their values; they are only taken out of view.
+      const visible = new Set(CaseNotes.visibleFieldIds(state, readHidden()));
+      fieldContainers.forEach((container, id) => { container.hidden = !visible.has(id); });
+      const hiddenLabels = effectiveFields.filter(field => fieldContainers.has(field.id) && !visible.has(field.id)).map(field => field.label);
+      if ($("hiddenFieldsNote")) {
+        $("hiddenFieldsNote").hidden = !hiddenLabels.length;
+        $("hiddenFieldsText").textContent = hiddenLabels.length ? `Hidden in Case Details: ${hiddenLabels.join(", ")}.` : "";
+      }
       
       // Now populate values
       effectiveFields.forEach(({ id }) => {
@@ -1055,10 +1063,33 @@
     loadExampleBtn.addEventListener("click", () => loadExampleNote());
   }
   
+  // Fields a user chose to hide from Case Details. A browser preference (included in settings backups), not case data.
+  const hiddenKey = "dell-support.hidden-fields.v1", hiddenAckKey = "dell-support.hidden-fields-ack";
+  function readHidden() {
+    try { const value = JSON.parse(localStorage.getItem(hiddenKey) || "[]"); return Array.isArray(value) ? value.filter(id => typeof id === "string") : []; }
+    catch { return []; }
+  }
+  function writeHidden(ids) { if (ids.length) localStorage.setItem(hiddenKey, JSON.stringify(ids)); else localStorage.removeItem(hiddenKey); }
+  $("showHiddenFields")?.addEventListener("click", () => $("customizeFields").click());
+  window.addEventListener("storage", event => { if (event.key === hiddenKey) render(); });
   // Field customization. Changes are made to a draft and only reach case history on Save Configuration.
-  let fieldDraft = null;
+  let fieldDraft = null, hiddenDraft = null;
   const draftState = () => ({ fieldConfig: fieldDraft, cases: [], archive: [], trash: [], revisions: {} });
-  const draftChanged = () => fieldDraft && JSON.stringify(fieldDraft) !== JSON.stringify(state.fieldConfig);
+  const sameList = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+  const draftChanged = () => fieldDraft && (JSON.stringify(fieldDraft) !== JSON.stringify(state.fieldConfig) || !sameList(hiddenDraft, readHidden()));
+  async function acknowledgeHiding() {
+    let seen = false;
+    try { seen = localStorage.getItem(hiddenAckKey) === "true"; } catch { /* Ask again. */ }
+    if (seen) return true;
+    const ok = await askChoice({
+      title: "Before you hide a field",
+      message: "These fields are designed around case-notes best practices. By hiding a field, you acknowledge that its information is still needed and that you are choosing to record it a different way. Values already entered are kept, and you can show the field again at any time. This message appears only once.",
+      buttons: [{ label: "Cancel", value: false }, { label: "I understand, hide it", value: true, primary: true }]
+    });
+    if (!ok) return false;
+    try { localStorage.setItem(hiddenAckKey, "true"); } catch { /* Asked again next time. */ }
+    return true;
+  }
   function renderFieldCustomizer() {
     const orderList = $("fieldOrderList");
     orderList.replaceChildren();
@@ -1071,6 +1102,24 @@
       const name = document.createElement("span"); name.className = "field-name"; name.textContent = label;
       item.append(handle, name);
       if (CaseNotes.fields[id]) { const builtin = document.createElement("span"); builtin.className = "field-builtin"; builtin.textContent = "✓ Built-in"; item.append(builtin); }
+      if (!CaseNotes.unhideableFields.includes(id)) {
+        const isHidden = hiddenDraft.has(id);
+        item.classList.toggle("field-hidden", isHidden);
+        const visibility = document.createElement("button"); visibility.type = "button"; visibility.className = "button secondary field-visibility";
+        visibility.textContent = isHidden ? "Show" : "Hide"; visibility.dataset.visibilityFor = id;
+        visibility.setAttribute("aria-pressed", String(isHidden)); visibility.setAttribute("aria-label", `${isHidden ? "Show" : "Hide"} ${label}`);
+        visibility.addEventListener("click", async () => {
+          const hiding = !hiddenDraft.has(id);
+          if (hiding && !(await acknowledgeHiding())) { visibility.focus(); return; }
+          if (!hiddenDraft) return;
+          keepDraftOrder();
+          if (hiding) hiddenDraft.add(id); else hiddenDraft.delete(id);
+          renderFieldCustomizer();
+          $("fieldOrderList").querySelector?.(`[data-visibility-for="${id}"]`)?.focus();
+          $("customizerStatus").textContent = `"${label}" will be ${hiding ? "hidden" : "shown"} when you choose Save Configuration.`;
+        });
+        item.append(visibility);
+      }
       item.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("text/plain", id);
         item.classList.add("dragging");
@@ -1137,18 +1186,26 @@
     grid: $("caseDetailsGrid"), toggle: $("layoutToggle"), cancel: $("layoutCancel"), status: $("layoutStatus"),
     canEdit: () => !!selected() && writable && !copying,
     fieldId: child => { const input = child.querySelector?.("[id]"); return input && effectiveIds().has(input.id) ? input.id : null; },
+    hidden: () => readHidden(),
+    canHide: id => !CaseNotes.unhideableFields.includes(id),
+    acknowledge: () => acknowledgeHiding(),
     label: id => CaseNotes.getEffectiveFields(state).find(field => field.id === id)?.label || id,
     expand: () => { if ($("caseDetailsSection").classList.contains("collapsed")) $("caseDetailsToggle").click(); },
-    save: gridOrder => {
+    save: (gridOrder, hiddenIds) => {
       if (!writable || copying) return false;
+      const previousHidden = readHidden();
       try {
         if (!save()) return false;
         const candidate = JSON.parse(JSON.stringify(state));
         CaseNotes.reorderFields(candidate, CaseNotes.mergeFieldOrder(candidate.fieldConfig.order, gridOrder));
+        writeHidden(hiddenIds);
         writeFieldConfig(candidate);
         render();
         return true;
-      } catch { return false; }
+      } catch {
+        try { writeHidden(previousHidden); } catch { /* Storage is unavailable; the page still shows the previous layout. */ }
+        return false;
+      }
     }
   });
   // Keep any reordering made in the list when the draft is redrawn.
@@ -1159,7 +1216,7 @@
   function closeCustomizer() {
     keepDraftOrder();
     if (draftChanged() && !confirm("Discard your unsaved field changes?")) return;
-    fieldDraft = null;
+    fieldDraft = null; hiddenDraft = null;
     $("fieldCustomizer").close();
   }
   $("customizeFields").addEventListener("click", () => {
@@ -1167,6 +1224,7 @@
     window.SiteTopbar?.closeMenus();
     window.CaseFieldLayout?.discard();
     fieldDraft = JSON.parse(JSON.stringify(state.fieldConfig));
+    hiddenDraft = new Set(readHidden());
     renderFieldCustomizer();
     $("fieldCustomizer").showModal();
     $("customizerStatus").textContent = "";
@@ -1196,7 +1254,7 @@
   $("saveFieldConfig").addEventListener("click", async () => {
     if (!fieldDraft || !writable || copying) return;
     keepDraftOrder();
-    const draft = fieldDraft;
+    const draft = fieldDraft, hiddenIds = [...hiddenDraft];
     const removed = Object.keys(state.fieldConfig.customFields).filter(id => !Object.hasOwn(draft.customFields, id));
     if (removed.length) {
       const names = removed.map(id => `"${state.fieldConfig.customFields[id]}"`).join(", ");
@@ -1211,7 +1269,9 @@
       Object.entries(draft.customFields).forEach(([id, label]) => { if (!Object.hasOwn(candidate.fieldConfig.customFields, id)) CaseNotes.addCustomField(candidate, id, label); });
       CaseNotes.reorderFields(candidate, draft.order);
       writeFieldConfig(candidate);
-      fieldDraft = null;
+      const known = new Set(CaseNotes.getEffectiveFields(state).map(field => field.id));
+      writeHidden(hiddenIds.filter(id => known.has(id)));
+      fieldDraft = null; hiddenDraft = null;
       $("fieldCustomizer").close();
       render();
       $("copyStatus").textContent = "Field configuration saved.";
@@ -1221,13 +1281,14 @@
   });
   $("resetFields").addEventListener("click", async () => {
     if (!writable || copying) return;
-    if (confirm(`Reset field order and remove custom fields and their values from recent cases, Archive, Trash, and saved versions? This cannot be undone.`)) {
+    if (confirm(`Reset field order, show every hidden field, and remove custom fields and their values from recent cases, Archive, Trash, and saved versions? This cannot be undone.`)) {
       if (!save() || !writable || copying) return;
       await safetyBefore("field-reset");
       CaseNotes.resetCustomFields(state);
       dirty = true;
       if (!save()) return;
-      fieldDraft = null;
+      try { writeHidden([]); } catch { /* The order reset still applies. */ }
+      fieldDraft = null; hiddenDraft = null;
       $("fieldCustomizer").close();
       render();
       $("copyStatus").textContent = "Fields reset to default.";

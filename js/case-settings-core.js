@@ -5,9 +5,10 @@ const CaseSettings = (() => {
     floating: "dell-support.case-notes.action-dock-floating",
     historyCollapsed: "dell-support.case-history-collapsed",
     sections: "dell-support.case-notes-sections", pins: "dell-support.pinned-resources.v1",
-    retention: "dell-support.backup-retention-days"
+    retention: "dell-support.backup-retention-days",
+    hiddenFields: "dell-support.hidden-fields.v1", hiddenFieldsAck: "dell-support.hidden-fields-ack"
   };
-  const rawKeys = ["theme", "floating", "historyCollapsed", "retention"];
+  const rawKeys = ["theme", "floating", "historyCollapsed", "retention", "hiddenFieldsAck"];
   const toolboxKeys = ["dell-support.toolbox-links.v1", "dell-support.toolbox-appearance.v1"];
   // Left in storage by the removed note templates feature; erased with everything else on Start Fresh.
   const legacyKeys = ["dell-support.case-templates.v1"];
@@ -52,6 +53,8 @@ const CaseSettings = (() => {
         if (name === "sections" && (!object(value) || Object.keys(value).some(id => !["caseDetails","notes","actionPlan"].includes(id)) || Object.values(value).some(v => typeof v !== "boolean"))) bad();
         if (name === "retention" && ![null,"7","30","90","never"].includes(value)) bad();
         if (name === "pins" && (!Array.isArray(value) || value.some(id => typeof id !== "string"))) bad();
+        if (name === "hiddenFields" && (!Array.isArray(value) || value.length > 100 || value.some(id => typeof id !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(id)))) bad();
+        if (name === "hiddenFieldsAck" && ![null,"true"].includes(value)) bad();
         if (name === "aiTasks") {
           if (!object(value)) bad();
           for (const [id, task] of Object.entries(value)) {
@@ -71,7 +74,7 @@ const CaseSettings = (() => {
       const raw = storage.getItem(key);
       if (rawKeys.includes(name)) { result[name] = raw; continue; }
       // One damaged preference must not stop every backup: leave it out and let the caller report it.
-      try { result[name] = JSON.parse(raw || (name === "pins" ? "[]" : "{}")); }
+      try { result[name] = JSON.parse(raw || (["pins", "hiddenFields"].includes(name) ? "[]" : "{}")); }
       catch { skipped.push(name); }
     }
     return result;
