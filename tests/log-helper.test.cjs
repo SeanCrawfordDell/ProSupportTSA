@@ -1,7 +1,8 @@
 const test=require('node:test'),assert=require('node:assert/strict'),core=require('../js/log-helper-core.js');
-test('all supported solutions and symptoms produce explained, linked collection plans',()=>{
+test('all supported solutions and symptoms produce linked collection plans without "why" lines',()=>{
  for(const os of Object.keys(core.guides))for(const symptom of Object.keys(core.symptoms)){
-  const plan=core.plan({os,symptom});assert.ok(plan.items.length>=3);assert.ok(plan.items.some(item=>item.url.startsWith('https://')));assert.ok(plan.items.every(item=>item.title&&item.how&&item.why));assert.match(core.text(plan),/not yet collected/);
+  const plan=core.plan({os,symptom});assert.ok(plan.items.length>=2);assert.ok(plan.items.some(item=>item.url.startsWith('https://')));assert.ok(plan.items.every(item=>item.title&&item.how&&!('why' in item)));
+  assert.match(core.text(plan),/not yet collected/);assert.doesNotMatch(core.text(plan),/\nWhy: /);
  }
 });
 test('PowerEdge hardware collection is conditional and Windows scenarios choose targeted evidence',()=>{
@@ -10,9 +11,12 @@ test('PowerEdge hardware collection is conditional and Windows scenarios choose 
  assert.ok(core.plan({os:'Windows Server',symptom:'network'}).items.some(i=>i.title.includes('Packet Monitor')));
  assert.ok(!core.plan({os:'Redhat',symptom:'network'}).items.some(i=>i.title.includes('Packet Monitor')));
 });
-test('unavailable hosts defer host collection; unknown solutions use a safe fallback',()=>{
- const offline=core.plan({os:'Windows Server',symptom:'performance',reachable:false});assert.match(offline.items[1].how,/after access is restored/);assert.ok(!offline.items.some(i=>i.title==='Performance Monitor capture'));
- const unknown=core.plan({os:'Custom OS',symptom:'unsupported'});assert.equal(unknown.symptom,'general');assert.ok(unknown.items.some(i=>i.title==='Identify the affected product'));
+test('plans start with the OS guide, skip Windows host steps when unavailable, and fall back to General',()=>{
+ const plan=core.plan({os:'Windows Server',symptom:'performance'});assert.equal(plan.items[0].title,core.guides['Windows Server'][0]);
+ assert.ok(!plan.items.some(i=>i.title==='Incident context'),'no fixed incident-context step');
+ const offline=core.plan({os:'Windows Server',symptom:'performance',reachable:false});assert.ok(!offline.items.some(i=>i.title==='Performance Monitor capture'));
+ const unknown=core.plan({os:'Custom OS',symptom:'unsupported'});assert.equal(unknown.symptom,'general');
+ assert.deepEqual(unknown.items.map(i=>i.title),[core.specific.general[0]],'no OS guide, only the General step');
 });
 const vm=require('node:vm'),fs=require('node:fs');
 function ui({failCopy=false,symptom='network',shortcuts=[]}={}) {

@@ -8,7 +8,7 @@ window.LogHelper = (() => {
   const markup = `<div class="log-helper-heading"><h2 id="logHelperTitle">Which logs should I collect?</h2><button class="button secondary" id="closeLogHelper" type="button">Close</button></div>
 <p class="log-helper-dev-note" id="helperDevNote"><strong>In development.</strong> Double-check all suggestions and verify they are valid before using them.</p>
 <p id="helperContext"></p>
-<p>Recommendations only — nothing runs automatically. Review permissions, production impact, and approved storage before collection. Logs and dumps can contain sensitive customer data. Defer host commands if Windows is unavailable.</p>
+<p>Recommendations only — nothing runs automatically. Review permissions, production impact, and approved storage before collection. Logs and dumps can contain sensitive customer data.</p>
 <div class="field-grid">
 <label class="field">OS/Solution<select id="helperOS"></select></label>
 <label class="field">Issue type for this plan<select id="helperSymptom" aria-describedby="helperContext"></select></label>
@@ -36,8 +36,8 @@ window.LogHelper = (() => {
     function render() {
       activePlan=LogHelperCore.plan({os:$("helperOS").value,platform,symptom:$("helperSymptom").value,reachable:null});
       $("helperResults").replaceChildren(...activePlan.items.map(item=>{
-        const section=document.createElement("section"),heading=document.createElement("h3"),how=document.createElement("p"),why=document.createElement("p");
-        heading.textContent=item.title;how.textContent=item.how;why.textContent="Why: "+item.why;section.append(heading,how,why);
+        const section=document.createElement("section"),heading=document.createElement("h3"),how=document.createElement("p");
+        heading.textContent=item.title;how.textContent=item.how;section.append(heading,how);
         for(const [key,label] of [["where","Where"],["caution","Precautions"]]){
           if(item[key]){const detail=document.createElement("p");detail.textContent=label+": "+item[key];section.append(detail);}
         }
@@ -70,7 +70,7 @@ window.LogHelper = (() => {
       $("helperSymptom").value=Object.hasOwn(LogHelperCore.symptoms,context.symptom)?context.symptom:"general";
       $("helperContext").textContent=Object.hasOwn(LogHelperCore.symptoms,context.symptom)
         ? "Based on this case's Issue type: "+LogHelperCore.symptoms[context.symptom]+". Overrides below affect this plan only."
-        : "No matching built-in Issue type (custom or unspecified). Showing General investigation; choose a collection scenario below without changing your case.";
+        : "No matching built-in Issue type (custom or unspecified). Showing General Investigation; choose a collection scenario below without changing your case.";
       render();dialog.showModal();
     }
     $("openLogHelper").addEventListener("click",open);
