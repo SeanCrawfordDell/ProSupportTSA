@@ -65,36 +65,6 @@ window.CaseWorkflow=(()=>{
     });
     for(const id of ["os","platform","issue","request","caseIssueType"])$(id).addEventListener("change",refresh);
 
-  // Handle Systems Management specific logic
-  const osSelect=$("os");
-  const issueTypeSelect=$("caseIssueType");
-  const productAppLabel=$("productAppLabel");
-  const productAppSelect=$("productApp");
-
-  // Store original issue type options
-  const originalIssueOptions=issueTypeSelect.innerHTML;
-
-  osSelect.addEventListener("change",()=>{
-    if(osSelect.value==="Systems Management"){
-      // Change issue type to fix ME OMSA
-      issueTypeSelect.innerHTML='<option value="fix ME OMSA">fix ME OMSA</option>';
-      issueTypeSelect.value="fix ME OMSA";
-      // Show Product/Application dropdown
-      productAppLabel.hidden=false;
-    }else{
-      // Restore original issue type options
-      issueTypeSelect.innerHTML=originalIssueOptions;
-      issueTypeSelect.value="general";
-      // Hide Product/Application dropdown and clear value
-      productAppLabel.hidden=true;
-      productAppSelect.value="";
-      // Clear the productApp field in the data
-      if(api?.current()){
-        api.mutate(note=>{note.toolkit.productApp="";},false);
-      }
-    }
-    refresh();
-  });
   }
   return {init,refresh,setEditable(value){if($("workflowFields"))$("workflowFields").disabled=!value;}};
 })();
