@@ -1368,7 +1368,7 @@
     try {
       const token = crypto.randomUUID();
       sessionStorage.setItem("dell-support.escalation." + token, JSON.stringify(CaseNotes.escalation(note, Date.now(), state.fieldConfig)));
-      window.location.assign("escalation-quality.html#import=" + token);
+      window.location.assign("escalation-quality.html#import=" + token + "&case=" + encodeURIComponent(note.id));
     } catch {
       $("copyStatus").textContent = "Could not open the escalation. Check browser storage access and try again. Your note is still here.";
     }
@@ -1472,6 +1472,14 @@
   window.addEventListener("storage", event => {
     if (!writable && (event.key === key || event.key === null)) { load(); render(); }
   });
+  // Escalation Quality's Return to Case Notes link reopens the case it came from (case-notes.html#case=<id>).
+  function openCaseFromLink() {
+    const id = new URLSearchParams((window.location?.hash || "").slice(1)).get("case");
+    if (!id) return;
+    try { window.history.replaceState(null, "", window.location.pathname + window.location.search); } catch {}
+    if (!state.cases.some(note => note.id === id)) { $("copyStatus").textContent = "The case you returned from is no longer in Recent Cases. Choose a case from the list."; return; }
+    state.selected = id; dirty = true; save(); render();
+  }
   // Other pages' Settings menus link here (case-notes.html#backup-restore or #customize-fields).
   function openSettingsFromLink() {
     const target = {"#backup-restore":"openBackupRestore","#customize-fields":"customizeFields"}[window.location?.hash];
@@ -1509,6 +1517,7 @@
           state.selected=notesPopout.caseId;
         }
         writable = true; $("lockNotice").hidden = true; render();
+        openCaseFromLink();
         openSettingsFromLink();
         await new Promise(resolve => { release = resolve; });
       });

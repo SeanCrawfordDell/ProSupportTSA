@@ -394,8 +394,18 @@ try {
     populate(draft.fields); actions = draft.actions; checks = draft.checks; issueType = draft.issueType; byId("draftStatus").textContent = "Saved draft restored";
   }
 } catch { byId("draftStatus").textContent = "Saved draft could not be read. Changes may not persist in this browser."; }
+// Return to Case Notes reopens the case this escalation was started from, for as long as this tab is open.
+const returnCaseKey = "dell-support.escalation-return-case";
+function setReturnLink(caseId) {
+  const link = byId("returnToCaseNotes");
+  if (!link) return;
+  const valid = typeof caseId === "string" && /^[a-zA-Z0-9_-]{1,100}$/.test(caseId);
+  link.href = valid ? "case-notes.html#case=" + encodeURIComponent(caseId) : "case-notes.html";
+  link.title = valid ? "Go back to the case this escalation came from. The escalation draft stays saved here." : "Open Case Notes. The escalation draft stays saved here.";
+}
+try { setReturnLink(sessionStorage.getItem(returnCaseKey)); } catch { setReturnLink(null); }
 (() => {
-  const token = new URLSearchParams(location.hash.slice(1)).get("import");
+  const params = new URLSearchParams(location.hash.slice(1)), token = params.get("import");
   if (!token || !/^[a-zA-Z0-9-]+$/.test(token)) return;
   try {
     const key = "dell-support.escalation." + token, raw = sessionStorage.getItem(key);
@@ -409,6 +419,8 @@ try {
     // so no additional appending is needed here.
     renderActions();
     dirty = true;
+    const caseId = params.get("case");
+    if (caseId && /^[a-zA-Z0-9_-]{1,100}$/.test(caseId)) { try { sessionStorage.setItem(returnCaseKey, caseId); } catch {} setReturnLink(caseId); }
     if (saveDraft()) { sessionStorage.removeItem(key); history.replaceState(null,"",location.pathname+location.search); }
     document.dispatchEvent(new CustomEvent("escalationImported"));
   } catch { byId("draftStatus").textContent = "Case Notes import failed. Return to Case Notes and try again."; }
