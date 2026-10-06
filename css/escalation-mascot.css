@@ -17,4 +17,29 @@
 @keyframes esc-glow{0%{opacity:.45}50%{opacity:0}}
 @keyframes esc-shout{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(-4deg) scale(1.05)}}
 @keyframes esc-blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
-@media (prefers-reduced-motion:reduce){.esc-mascot{display:none}}
+/* Other Escalate to DE animations (see js/escalation-mascot.js). Same rules: fixed overlay, never blocks clicks. */
+.esc-fx{position:fixed;inset:0;z-index:1000;pointer-events:none;overflow:hidden}
+.esc-fx .fx-actor{position:absolute;left:0;top:0;will-change:transform}
+.esc-fx .fx-actor svg{display:block;width:100%;height:100%;overflow:visible}
+.esc-fx .fx-ropes{position:absolute;left:0;top:0;overflow:visible}
+.esc-fx .fx-bubble{position:absolute;left:0;top:0;opacity:0;will-change:transform}
+.esc-fx .fx-bubble span{display:block;padding:6px 12px;border-radius:14px;background:#fff;color:#b42318;border:2px solid #b42318;font:700 14px Inter,"Segoe UI",Arial,sans-serif;white-space:nowrap;box-shadow:0 6px 16px #0003;animation:esc-shout .7s ease-in-out infinite}
+.esc-fx .fx-laser{border-radius:3px;background:linear-gradient(90deg,#ff2b2b00,#ff3b3b 40%,#ffd0d0);box-shadow:0 0 8px 2px #ff2b2b99}
+.esc-fx .fx-smoke{border-radius:50%;background:#6b7280}
+.esc-fx .fx-spark{border-radius:50%;background:#fde68a;box-shadow:0 0 8px #facc15}
+.esc-fx .fx-streak{border-radius:8px;background:linear-gradient(90deg,#ffffff00,#93c5fdaa 60%,#ffffffee)}
+.esc-fx svg *{transform-box:fill-box}
+.esc-fx .fx-cape{transform-origin:100% 40%;animation:esc-cape .22s ease-in-out infinite alternate}
+.esc-fx .fx-speed path{stroke-dasharray:14 10;animation:esc-dash .3s linear infinite}
+.esc-fx .fx-thrust{transform-origin:50% 50%;animation:esc-thrust .12s ease-in-out infinite alternate}
+.esc-fx .fx-lights circle{fill:#facc15;animation:esc-lights .5s steps(1) infinite}
+.esc-fx .fx-lights circle:nth-child(even){fill:#f472b6;animation-delay:.25s}
+.esc-fx .fx-alien-arm{transform-origin:0% 100%;animation:esc-wave .45s ease-in-out infinite alternate}
+.esc-fx .fx-legs{transform-origin:50% 0%;animation:esc-kick .5s ease-in-out infinite alternate}
+@keyframes esc-cape{0%{transform:scaleY(1) skewY(0)}100%{transform:scaleY(.82) skewY(-4deg)}}
+@keyframes esc-dash{to{stroke-dashoffset:24}}
+@keyframes esc-thrust{0%{transform:scale(.8);opacity:.75}100%{transform:scale(1.25);opacity:1}}
+@keyframes esc-lights{0%{fill:#facc15}50%{fill:#475569}}
+@keyframes esc-wave{0%{transform:rotate(-25deg)}100%{transform:rotate(25deg)}}
+@keyframes esc-kick{0%{transform:rotate(-6deg)}100%{transform:rotate(8deg)}}
+@media (prefers-reduced-motion:reduce){.esc-mascot,.esc-fx{display:none}}
