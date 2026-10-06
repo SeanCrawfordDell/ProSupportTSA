@@ -834,9 +834,40 @@
   });
   const acquire = () => editorLock.acquire();
   window.addEventListener("pageshow", event => { if (event.persisted) acquire(); });
+  // Fields a Notes slash command can fill: the case details, then the triage and workflow fields.
+  function slashFields() {
+    const describe = (id, label, element) => ({ id, label, element, custom: Object.hasOwn(state.fieldConfig.customFields, id),
+      options: element?.tagName === "SELECT" ? Array.from(element.options).filter(option => !option.hasAttribute("data-legacy-option")).map(option => ({ value: option.value, text: option.textContent })) : undefined });
+    const fields = CaseNotes.getEffectiveFields(state).map(({ id, label }) => describe(id, label, $(id)));
+    fields.push(describe("caseIssueType", "Issue type", $("caseIssueType")));
+    if (!$("productAppLabel")?.hidden) fields.push(describe("productApp", "Product/Application", $("productApp")));
+    document.querySelectorAll("[data-workflow-field]").forEach(element => {
+      if (element.type === "checkbox") return;
+      fields.push(describe(element.dataset.workflowField, element.closest("label")?.firstChild?.textContent.trim() || element.dataset.workflowField, element));
+    });
+    return fields.filter(field => field.element);
+  }
+  const slash = {
+    commands: () => CaseSlash.commands(slashFields()),
+    // Fill the field through its own input and change events, so it saves like typing does.
+    apply(line) {
+      const parsed = CaseSlash.parseLine(line, slash.commands());
+      if (!parsed) return null;
+      const result = CaseSlash.resolveValue(parsed.cmd, parsed.value);
+      if (!result.ok) return { error: result.reason };
+      const element = parsed.cmd.field.element;
+      if (element.disabled) return { error: `${parsed.cmd.label} cannot be changed right now.` };
+      element.value = element.maxLength > 0 ? result.value.slice(0, element.maxLength) : result.value;
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+      const shown = result.text ?? element.value;
+      return { text: CaseSlash.plainText(parsed.cmd, shown), status: `${parsed.cmd.label} set to ${shown}.` };
+    }
+  };
   window.CaseMarkdown?.init({
     current: selected,
     canEdit: canEditEntry,
+    slash: typeof CaseSlash === "undefined" ? undefined : slash,
     update(field, value, images) {
       const note = selected();
       if (!note || !canEditEntry()) return;

@@ -17,7 +17,7 @@ test('Copy to Lightning text holds only the selected day; the full copy holds ev
 test('Case Notes copies the day for Lightning and offers Copy case summary for the whole case',()=>{
  const js=fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8');
  assert.match(/\$\("copyNote"\)\.addEventListener[\s\S]*?finally/.exec(js)[0],/CaseNotes\.dayCopyText\(/);
- const summary=/function renderCaseSummary[\s\S]*?\n  \}\n/.exec(js)[0];
+ const summary=/function renderCaseSummary[\s\S]*?\r?\n  \}\r?\n/.exec(js)[0];
  assert.match(summary,/Copy case summary/);assert.match(summary,/CaseNotes\.copyText\(current/);assert.ok(!/CaseNotes\.stop\(/.test(summary),'the summary copy leaves the timer alone');
 });
 

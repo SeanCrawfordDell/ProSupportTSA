@@ -149,6 +149,82 @@ window.CaseMarkdown = (() => {
     document.execCommand("insertHTML", false, html);
     saveEditor(field);
   }
+  // Slash commands in Notes: the line holding the caret, bounded by its block and any <br> around the caret.
+  const blockTags = /^(P|DIV|LI|H[1-6]|BLOCKQUOTE|PRE)$/;
+  function caretLine(editor) {
+    const selection = window.getSelection();
+    if (!selection.rangeCount || !selection.isCollapsed) return null;
+    const caret = selection.getRangeAt(0);
+    if (!editor.contains(caret.startContainer)) return null;
+    let block = caret.startContainer.nodeType === 1 ? caret.startContainer : caret.startContainer.parentElement;
+    while (block !== editor && !blockTags.test(block.tagName)) block = block.parentElement;
+    const line = document.createRange(); line.selectNodeContents(block);
+    for (const br of block.querySelectorAll("br")) {
+      if (caret.comparePoint(br.parentNode, Array.prototype.indexOf.call(br.parentNode.childNodes, br)) < 0) line.setStartAfter(br);
+      else { line.setEndBefore(br); break; }
+    }
+    const before = line.cloneRange(); before.setEnd(caret.startContainer, caret.startOffset);
+    const after = line.cloneRange(); after.setStart(caret.startContainer, caret.startOffset);
+    return { range: line, before: before.toString(), atEnd: !after.toString().trim() };
+  }
+  function bindSlash(editor) {
+    const hint = $("notesSlashHint"), message = text => { $("notesImageStatus").textContent = text; };
+    let matches = [], active = 0;
+    function hide() { matches = []; if (hint) hint.hidden = true; editor.removeAttribute("aria-activedescendant"); }
+    function show() {
+      const line = api.canEdit() && caretLine(editor);
+      matches = line && line.atEnd ? CaseSlash.suggest(line.before, api.slash.commands()) : [];
+      if (!hint || !matches.length) { hide(); return; }
+      active = Math.min(active, matches.length - 1);
+      hint.replaceChildren(...matches.map((item, index) => {
+        const option = document.createElement("div"), code = document.createElement("strong");
+        option.id = "notesSlashOption" + index; option.className = "slash-hint-option"; option.setAttribute("role", "option");
+        option.setAttribute("aria-selected", String(index === active));
+        code.textContent = "/" + item.code; option.append(code, item.label);
+        option.addEventListener("mousedown", event => { event.preventDefault(); active = index; complete(); });
+        return option;
+      }));
+      const caret = window.getSelection().getRangeAt(0).getBoundingClientRect(), box = editor.parentElement.getBoundingClientRect(), edge = editor.getBoundingClientRect();
+      const anchor = caret.height ? caret : edge;
+      hint.style.top = `${(caret.height ? anchor.bottom : edge.top + 30) - box.top + 4}px`;
+      hint.style.left = `${Math.max(0, Math.min(anchor.left - box.left, box.width - 280))}px`;
+      hint.hidden = false; editor.setAttribute("aria-activedescendant", "notesSlashOption" + active);
+      hint.children[active].scrollIntoView({ block: "nearest" });
+    }
+    // Replace the typed "/co" with the full code and a space, ready for the value.
+    function complete() {
+      const line = caretLine(editor), item = matches[active];
+      if (!line || !item) return;
+      const start = line.before.lastIndexOf("/"), selection = window.getSelection(), range = line.range;
+      range.setEnd(selection.getRangeAt(0).startContainer, selection.getRangeAt(0).startOffset);
+      selection.removeAllRanges(); selection.addRange(range);
+      document.execCommand("insertText", false, line.before.slice(0, start) + "/" + item.code + " ");
+      hide();
+    }
+    editor.addEventListener("keydown", event => {
+      if (!api.canEdit() || event.isComposing) return;
+      if (matches.length) {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault(); active = (active + (event.key === "ArrowDown" ? 1 : matches.length - 1)) % matches.length; show(); return;
+        }
+        if (event.key === "Escape") { event.preventDefault(); hide(); return; }
+        if (event.key === "Tab" || (event.key === "Enter" && !event.shiftKey)) { event.preventDefault(); complete(); return; }
+      }
+      if (event.key !== "Tab" && !(event.key === "Enter" && !event.shiftKey)) return;
+      if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+      const line = caretLine(editor);
+      if (!line || !line.atEnd) return;
+      const result = api.slash.apply(line.before);
+      if (!result) return;
+      if (result.error) { if (event.key === "Tab") event.preventDefault(); message(result.error); return; }
+      const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(line.range);
+      document.execCommand("insertText", false, result.text);
+      saveEditor("notes"); message(result.status);
+      if (event.key === "Tab") event.preventDefault();
+    });
+    editor.addEventListener("input", show);
+    editor.addEventListener("blur", hide);
+  }
   function init(options) {
     api = options;
     window.addEventListener("resize", () => fields.forEach(positionHandle));
@@ -175,6 +251,7 @@ window.CaseMarkdown = (() => {
         });
       });
       editor.addEventListener("input", () => saveEditor(field));
+      if (field === "notes" && api.slash) bindSlash(editor);
       editor.addEventListener("drop", event => { event.preventDefault(); $(field + "ImageStatus").textContent = "Paste screenshots with Ctrl+V / ⌘V."; });
       editor.addEventListener("paste", async event => {
         event.preventDefault();

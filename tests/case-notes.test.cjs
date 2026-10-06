@@ -40,7 +40,7 @@ test('timestamps survive closure, resume adds time, copy includes every field an
 });
 // Split-out Case Notes modules that case-notes.js expects to find on window (see case-notes.html).
 const pageModules=['case-dialogs.js','case-backup-ui.js','case-field-customizer.js','case-notes-lock.js','case-history-list.js'];
-function harness({writeError=false,copyError=false,locked=false,folder=null,aiIntegration=false,initial=null,hash=''}={}) {
+function harness({writeError=false,copyError=false,locked=false,folder=null,aiIntegration=false,initial=null,hash='',markdown=false}={}) {
   const elements={}, intervals=[], events={}, timeouts=new Map();let stored=initial, now=1000, timeoutId=0;
   const preferences = new Map();
   function element(){
@@ -106,6 +106,8 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
   }
   ctx.window.SiteTopbar={closed:0,closeMenus(){this.closed++;}};
   if(hash){ctx.window.location={hash,pathname:'/case-notes.html',search:''};ctx.window.history={replaceState(){ctx.window.location.hash='';}};}
+  // A CaseMarkdown stand-in that keeps the page callbacks, so tests can run Notes slash commands.
+  if(markdown){ctx.CaseSlash=require('../js/case-slash-core.js');ctx.window.CaseMarkdown={init(api){ctx.markdown=api;},refresh(){},setEditable(){}};ctx.document.querySelectorAll=()=>[];}
   if(aiIntegration){ctx.window.DevinConnection={createClient:()=>({})};ctx.window.DevinIntegration={init(api){ctx.ai=api;return {refresh(){}};}};}
   // The page modules load in the same shared context, in page order, before case-notes.js.
   vm.createContext(ctx);
@@ -501,4 +503,22 @@ test('the case list layout is backed up and validated with other settings',()=>{
   const captured=S.capture({getItem:k=>k==='dell-support.case-history-view'?'list':null});assert.equal(captured.historyView,'list');
   assert.equal(S.validate({fieldConfig:C.empty().fieldConfig,preferences:captured},C.fields).values['dell-support.case-history-view'],'list');
   assert.throws(()=>S.validate({fieldConfig:C.empty().fieldConfig,preferences:{historyView:'tiles'}},C.fields));
+});
+test('a Notes slash command fills in the case field and saves it like typing',()=>{
+  const h=harness({markdown:true});h.click('newNote');
+  // Field elements route their bubbling input event to the form, as the page does.
+  for(const id of ['tag','os']){const el=h.get(id);el.id=id;el.dispatchEvent=event=>{if(event.type==='input')h.get('noteForm').listeners.input({target:el});};}
+  h.get('os').tagName='SELECT';h.get('os').options=[['','Select OS/Solution'],['Redhat','Redhat'],['Ubuntu','Ubuntu'],['Windows Server','Windows Server']].map(([value,text])=>({value,textContent:text,hasAttribute:()=>false}));
+  const slash=h.ctx.markdown.slash;
+  assert.deepEqual({...slash.apply('/st abc12345')},{text:'Service Tag: ABC12345',status:'Service Tag set to ABC12345.'});
+  assert.equal(h.get('tag').value,'ABC12345');
+  assert.equal(slash.apply('/os win').text,'OS/Solution: Windows Server');
+  assert.match(slash.apply('/os e').error,/more than one OS\/Solution option: Redhat, Windows Server/);
+  assert.equal(h.get('os').value,'Windows Server','a rejected value leaves the field unchanged');
+  assert.equal(slash.apply('/zz something'),null,'unknown codes are left as typed');
+  assert.equal(slash.apply('just a note'),null);
+  h.intervals.find(i=>i.ms===10000).f();
+  const note=JSON.parse(h.stored()).cases.find(n=>n.id===JSON.parse(h.stored()).selected);
+  assert.equal(note.tag,'ABC12345');assert.equal(note.os,'Windows Server');
+  assert.ok(C.copyText(note,Date.now()).includes('Service Tag:\nABC12345'));
 });

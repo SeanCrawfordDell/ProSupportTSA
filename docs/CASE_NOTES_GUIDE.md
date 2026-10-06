@@ -107,6 +107,29 @@ Review customer information before sharing exports or copying notes into AI tool
 ## Keyboard access
 
 Use Tab and Shift+Tab to move among controls and Enter/Space to activate buttons. **Alt+Shift+F** opens the history panel and focuses search. Focus the toolbox launcher and use **Alt+Arrow keys** to move it. The toolbox includes **Log Collection Helper** by default, alongside Email to Case, Escalate to DE and Copy Notes; the same helper is also in the right-hand action bar and under Evidence. Closing the helper returns focus to the button that opened it (the toolbox launcher when opened from the toolbox). The helper is still in development: each time it opens, a warning asks you to double-check all suggestions and verify their validity before using them, and **I understand, continue** shows the plan (**Cancel** or Escape closes it). **Edit toolbox** lets you choose the launcher icon (toolbox, dancing paperclips, wizards, T-rex), resize the button from 40 to 120 px, size the icon from 40% to 140% of the button, hide the background circle, and turn the icon animation off; animation also stops when your system asks for reduced motion. Escape closes its menu. Field ordering has Move up/Move down buttons as an alternative to dragging. Screenshot resize handles support arrow keys.
+
+### Slash commands in Notes
+
+Fill in a case field without leaving Notes. On a line of its own, type a slash, a short code, a space and the value, then press **Enter** or **Tab**. For example, `/st abc1234` sets Service Tag to ABC1234. The line stays in your notes as `Service Tag: ABC1234`, and the field saves like a typed value. Enter also starts a new line. Tab keeps you on the same line.
+
+Type `/` at the start of a line to see the codes. Use the Up and Down arrows to choose one, Tab or Enter to insert it, and Escape to close the list.
+
+| Code | Field | Code | Field |
+|---|---|---|---|
+| `/st` | Service Tag (upper-cased) | `/sr` | Service Request Number |
+| `/pl` | System/Platform | `/os` | OS/Solution |
+| `/osv` | OS version / build | `/cc` | Customer Country |
+| `/sup` | OS Support Entitlement Verification | `/log` | Log Location |
+| `/iss` | Issue Description | `/it` | Issue type |
+| `/prod` | Product/Application (Systems Management only) | `/sev` | Service Impact |
+| `/chg` | Recent change | `/fix` | Resolution / workaround |
+| `/ver` | Verification test and observed result | `/prev` | Prevention / monitoring plan |
+| `/rep` | Related / repeat case | `/kb` | Editable knowledge draft |
+
+- **Custom fields** use their field ID as the code, for example `/asset`. A custom field whose ID matches a code in the table gets no command.
+- **Dropdown fields** accept part of an option: `/os win` selects Windows Server, and `/cc us` selects United States. If the text matches more than one option, or none, the field is left unchanged and the line under Notes lists the choices.
+- **Replacing a value:** a command replaces the field's current value.
+- **Where commands work:** only in Notes, and only while the case can be edited.
 # Optional Devin CLI connection
 
 On your first full Case Notes visit, an introduction explains optional Devin

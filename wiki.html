@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Step-by-step guides, screenshots, and reference for the Dell Pro-Support Technical Support Assistant: Case Notes, DE Escalation Request, and Support Trends.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
-  <script src="js/theme.js?v=20261006-sample-tour"></script>
+  <script src="js/theme.js?v=20261006-slash-commands"></script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
   <title>ProSupportTSA Wiki</title>
-  <link rel="stylesheet" href="css/wiki.css?v=20261006-sample-tour">
-  <script src="js/wiki.js?v=20261006-sample-tour" defer></script>
+  <link rel="stylesheet" href="css/wiki.css?v=20261006-slash-commands">
+  <script src="js/wiki.js?v=20261006-slash-commands" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#wikiMain">Skip to content</a>
@@ -259,6 +259,7 @@
   <ul>
     <li><strong>Formatting toolbar:</strong> Bold, Italic, Underline, Bullets, Numbered list, Link, and Clear formatting.</li>
     <li><strong>Screenshots:</strong> paste with <kbd>Ctrl</kbd> <kbd>V</kbd> (<kbd>⌘</kbd> <kbd>V</kbd> on Mac). Click an image, then drag its bottom-right corner to resize it. With a resize handle focused, use the arrow keys.</li>
+    <li><strong>Slash commands:</strong> type <code>/st abc1234</code> on its own line and press <kbd>Enter</kbd> to fill in Service Tag without leaving Notes. Every case field has a code; type <code>/</code> to see them. See <a href="#slash-commands">Slash commands in Notes</a>.</li>
     <li><strong>Collapsible sections:</strong> Case Details, Notes, and Action Plan / Next Steps each collapse with their arrow. The state is remembered.</li>
     <li><strong>Jump to Notes</strong> (<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>J</kbd>) scrolls to the editor. If you mostly write notes, <a href="#customize">Customize Site Options</a> can show Notes and Action Plan above the workflow and Case Details.</li>
     <li><strong>Pop out ↗</strong> opens a compact window with the editor so you can write beside a customer call. Only one window edits at a time; <strong>Return to case</strong> saves before returning. If your browser blocks the pop-up, you are offered a compact view in the same tab.</li>
@@ -277,6 +278,162 @@
     </tbody>
   </table>
   <div class="callout tip"><span class="callout-title">Make outcomes easy to find</span><p>Start each outcome with the word “Result:” or “Observed”. The score and the escalation readiness check both look for a recorded outcome next to each step.</p></div>
+</article>
+
+<article class="doc-page" id="slash-commands" data-title="Slash commands in Notes" data-group="Case Notes">
+  <h1>Slash commands in Notes</h1>
+  <p class="page-meta">Fill in case fields without leaving the editor</p>
+  <p class="lead">Type a short command such as <code>/st abc1234</code> on its own line in Notes and press <kbd>Enter</kbd>. The Service Tag field is filled in, and the line stays in your notes as <code>Service Tag: ABC1234</code>. Use it to capture details while you talk to the customer, without moving between fields.</p>
+
+  <figure class="shot"><img src="docs/wiki-images/11b-slash-command-list.png" alt="Typing a slash at the start of a line in Notes opens a list of commands such as /st Service Tag and /sr Service Request Number" loading="lazy"><figcaption>Type <code>/</code> at the start of a line to see the commands. Keep typing to narrow the list.</figcaption></figure>
+
+  <h2>Try it in 30 seconds</h2>
+  <ol class="steps">
+    <li>Open any case (or <strong>Tutorial &amp; examples → Load Example</strong>) and click at the end of the <strong>Notes</strong> editor.</li>
+    <li>On a new line, type <code>/st abc1234</code> and press <kbd>Enter</kbd>.</li>
+    <li>Look at <strong>Service Tag</strong> in Case Details: it now shows <strong>ABC1234</strong>. In Notes, the line reads <strong>Service Tag: ABC1234</strong>, and a new line is ready for you.</li>
+    <li>Type <code>/os win</code> and press <kbd>Tab</kbd>. <strong>OS/Solution</strong> changes to <strong>Windows Server</strong>, and the cursor stays at the end of that line.</li>
+    <li>Open the <strong>Case Summary</strong> tab. Both values are listed with the case details.</li>
+  </ol>
+  <figure class="shot"><img src="docs/wiki-images/11c-slash-command-result.png" alt="Service Tag, System/Platform and Service Request Number filled in above the Notes editor, whose lines read Service Tag: ABC1234, Service Request Number: 123456789, System/Platform: PowerEdge R750 and OS/Solution: Windows Server" loading="lazy"><figcaption>After <code>/st</code>, <code>/sr</code>, <code>/pl</code> and <code>/os</code>, the fields are filled in, each note line keeps a readable record, and the last result is confirmed under the editor.</figcaption></figure>
+
+  <h2>How it works</h2>
+  <p>When you press <kbd>Enter</kbd> or <kbd>Tab</kbd>, Case Notes looks at the line the cursor is on:</p>
+  <ol class="steps">
+    <li><strong>Is it a command?</strong> It must start with <code>/</code>, then a known code, a space, and a value. The cursor must be at the end of the line. Anything else is ordinary text, and the key works as usual.</li>
+    <li><strong>Is the value valid?</strong> Text fields accept anything. Dropdown fields must match one of their options (see <a href="#slash-dropdowns">Dropdown fields</a>). If the value is not valid, nothing changes and the reason appears under Notes.</li>
+    <li><strong>Fill in the field.</strong> The value goes into the field exactly as if you had typed it there. It autosaves, starts the timer if it was stopped, and shows in Case Summary, Copy to Lightning, email, the escalation handoff, and the quality score.</li>
+    <li><strong>Rewrite the line.</strong> The command is replaced with <em>Field label: value</em>, so the note still reads well for the next person. <kbd>Ctrl</kbd> <kbd>Z</kbd> brings back the typed command, but the field keeps its new value.</li>
+  </ol>
+  <div class="callout note"><span class="callout-title">A command replaces the field</span><p>Running <code>/st</code> again replaces the Service Tag rather than adding to it. The same is true for long fields such as Issue Description and Recent change. Type the full text you want, or edit the field directly.</p></div>
+
+  <h2>Command reference</h2>
+  <p>Codes ignore capital letters: <code>/ST</code>, <code>/St</code> and <code>/st</code> are the same. Every Case Details field has a code. Most workflow fields have one too.</p>
+  <table>
+    <thead><tr><th>Code</th><th>Field</th><th>Where the field is</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><code>/st</code></td><td>Service Tag (always saved in capitals)</td><td>Case Details</td><td><code>/st abc1234</code></td></tr>
+      <tr><td><code>/sr</code></td><td>Service Request Number</td><td>Case Details</td><td><code>/sr 123456789</code></td></tr>
+      <tr><td><code>/pl</code></td><td>System/Platform</td><td>Case Details</td><td><code>/pl PowerEdge R750</code></td></tr>
+      <tr><td><code>/osv</code></td><td>OS version / build</td><td>Case Details</td><td><code>/osv Windows Server 2022, build 20348.2340</code></td></tr>
+      <tr><td><code>/cc</code></td><td>Customer Country (dropdown)</td><td>Case Details</td><td><code>/cc us</code></td></tr>
+      <tr><td><code>/sup</code></td><td>OS Support Entitlement Verification (dropdown)</td><td>Case Details</td><td><code>/sup oem</code></td></tr>
+      <tr><td><code>/log</code></td><td>Log Location</td><td>Case Details</td><td><code>/log \\fileshare\sr-123456789\</code></td></tr>
+      <tr><td><code>/iss</code></td><td>Issue Description</td><td>Case Details</td><td><code>/iss VMs lose network for 30–90 seconds, 3–5 times a day</code></td></tr>
+      <tr><td><code>/os</code></td><td>OS/Solution (dropdown)</td><td>Workflow · Triage</td><td><code>/os win</code></td></tr>
+      <tr><td><code>/it</code></td><td>Issue type (dropdown)</td><td>Workflow · Triage</td><td><code>/it hyper</code></td></tr>
+      <tr><td><code>/prod</code></td><td>Product/Application (dropdown; only when OS/Solution is Systems Management)</td><td>Workflow · Triage</td><td><code>/prod omsa</code></td></tr>
+      <tr><td><code>/sev</code></td><td>Service Impact (dropdown)</td><td>Workflow · Triage</td><td><code>/sev degraded</code></td></tr>
+      <tr><td><code>/chg</code></td><td>Recent change</td><td>Workflow · Triage</td><td><code>/chg NIC driver updated to 226.0.145.0 on 10/2</code></td></tr>
+      <tr><td><code>/fix</code></td><td>Resolution / workaround</td><td>Workflow · Verify resolution</td><td><code>/fix Rolled NIC driver back to 225.0.4.0</code></td></tr>
+      <tr><td><code>/ver</code></td><td>Verification test and observed result</td><td>Workflow · Verify resolution</td><td><code>/ver 60 min continuous ping, no drops. Result: no Event ID 27</code></td></tr>
+      <tr><td><code>/prev</code></td><td>Prevention / monitoring plan</td><td>Workflow · Verify resolution</td><td><code>/prev Pause driver updates until vendor fix; customer monitors for 7 days</code></td></tr>
+      <tr><td><code>/rep</code></td><td>Related / repeat case</td><td>Workflow · Verify resolution</td><td><code>/rep 123400001</code></td></tr>
+      <tr><td><code>/kb</code></td><td>Editable knowledge draft</td><td>Workflow · Knowledge draft</td><td><code>/kb Hyper-V VM drops after NIC driver 226.x</code></td></tr>
+    </tbody>
+  </table>
+  <p>Notes and Action Plan / Next Steps have no code, and the <strong>Customer confirmed</strong> checkbox has no code either. Use the field itself for those.</p>
+
+  <h2 id="slash-dropdowns">Dropdown fields accept part of an option</h2>
+  <p>You don’t need to type the whole option. Case Notes looks for a match in this order and stops at the first step that finds <strong>exactly one</strong> option:</p>
+  <ol class="steps">
+    <li><strong>The whole option</strong>, ignoring capitals: <code>/os ubuntu</code>. For Customer Country, the two-letter code also counts: <code>/cc gb</code>.</li>
+    <li><strong>The start of an option:</strong> <code>/os win</code> → Windows Server.</li>
+    <li><strong>Any part of an option:</strong> <code>/os stack</code> → Azure Stack Hub.</li>
+  </ol>
+  <p>If the text matches more than one option, nothing changes and the message under Notes lists the matches so you can add a word. If it matches none, the message lists every option.</p>
+  <table>
+    <thead><tr><th>You type</th><th>Result</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><code>/os win</code></td><td>Windows Server</td><td>Only one option starts with “win”.</td></tr>
+      <tr><td><code>/os esx</code></td><td>ESX</td><td>Matches a whole option.</td></tr>
+      <tr><td><code>/os azure</code></td><td>Not set: matches Azure Local and Azure Stack Hub</td><td>Type more: <code>/os azure l</code> or <code>/os stack</code>.</td></tr>
+      <tr><td><code>/os rhel</code></td><td>Not set: not an option</td><td>The option is spelled <strong>Redhat</strong>. Use <code>/os red</code>.</td></tr>
+      <tr><td><code>/cc us</code></td><td>United States</td><td>The country code matches.</td></tr>
+      <tr><td><code>/cc united</code></td><td>Not set: matches United States, United Kingdom, United Arab Emirates</td><td>Use the code (<code>/cc gb</code>) or more words.</td></tr>
+      <tr><td><code>/sup no</code></td><td>No Software Support</td><td>Only one option starts with “no”.</td></tr>
+      <tr><td><code>/sup support</code></td><td>Not set: matches three options</td><td>Use <code>/sup oem</code>, <code>/sup prosupport</code>, <code>/sup solution</code> or <code>/sup no</code>.</td></tr>
+      <tr><td><code>/sev degraded</code></td><td>Service degraded</td><td>Matches part of one option.</td></tr>
+      <tr><td><code>/it hyper</code></td><td>Hyper-V / virtual machines</td><td>Only one issue type starts with “hyper”.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warning"><span class="callout-title">Set OS/Solution before Issue type</span><p>The Issue type list depends on OS/Solution. Changing OS/Solution can reset Issue type to that OS’s default. Run <code>/os</code> first, then <code>/it</code>. Product/Application is only available while OS/Solution is Systems Management.</p></div>
+
+  <h2>Custom fields</h2>
+  <p>Fields you add in <a href="#customize">Customize Site Options</a> get a command automatically: a slash followed by the field’s ID in lower case. A custom field with the ID <strong>Asset</strong> uses <code>/asset 4471</code>. Type <code>/</code> to see the codes your custom fields were given. If a custom field’s ID matches a code in the table above, for example a custom field named <strong>st</strong>, that field gets no command and the built-in one wins.</p>
+
+  <h2>Rules to remember</h2>
+  <ul>
+    <li><strong>One command per line, at the start of the line.</strong> <code>Called customer /st abc1234</code> is just text.</li>
+    <li><strong>The cursor must be at the end of the line</strong> when you press <kbd>Enter</kbd> or <kbd>Tab</kbd>. Commands don’t run when you press <kbd>Shift</kbd>+<kbd>Enter</kbd>, <kbd>Ctrl</kbd>, or <kbd>Alt</kbd>.</li>
+    <li><strong>Pasting doesn’t run commands.</strong> After pasting a command line, click at its end and press <kbd>Enter</kbd>.</li>
+    <li><strong>Notes only.</strong> Commands work in the Notes editor, including the Pop out window. They don’t work in Action Plan / Next Steps or in a case that is read-only (another tab is editing, or Case Summary is open).</li>
+    <li><strong>Values that are too long are cut</strong> to the field’s limit (for example 250 characters for OS version / build).</li>
+    <li><strong>Hidden fields still work.</strong> A field hidden from Case Details is filled in and keeps its value; you just don’t see it on the page.</li>
+  </ul>
+
+  <h2>Training exercises</h2>
+  <p>Practise on a sample case so your own cases are untouched: choose <strong>Tutorial &amp; examples → Load Example</strong>, then <strong>+ New note</strong> to get an empty dated note. Do each exercise, predict the result, then open the answer.</p>
+
+  <h3>Exercise 1: Your first command</h3>
+  <p>On a new line in Notes, type the line below and press <kbd>Enter</kbd>.</p>
+  <pre><code>/st tsa0001</code></pre>
+  <details class="faq"><summary>Show the expected result</summary><p>Service Tag shows <strong>TSA0001</strong> (capitals are added for you), the line reads <strong>Service Tag: TSA0001</strong>, and the cursor moves to a new empty line. The message under Notes says “Service Tag set to TSA0001.”</p></details>
+
+  <h3>Exercise 2: Enter or Tab</h3>
+  <p>Type <code>/sr 123456789</code> and press <kbd>Tab</kbd>. Then type <code>/pl PowerEdge R760</code> and press <kbd>Enter</kbd>.</p>
+  <details class="faq"><summary>Show the expected result</summary><p>Both fields are filled in. After <kbd>Tab</kbd> the cursor stays at the end of “Service Request Number: 123456789”, and focus stays in Notes. Press <kbd>Enter</kbd> to start the next line. After <kbd>Enter</kbd> on the second command, a new line is started for you.</p></details>
+
+  <h3>Exercise 3: Use the list instead of memorising codes</h3>
+  <p>On a new line type only <code>/s</code>. Use <kbd>↓</kbd> to highlight <strong>/sev Service Impact</strong>, press <kbd>Tab</kbd>, type <code>unavailable</code>, and press <kbd>Enter</kbd>.</p>
+  <details class="faq"><summary>Show the expected result</summary><p>The list shows the codes that start with “s”. Choosing one completes the line to <code>/sev </code>, ready for a value. Service Impact under Workflow · Triage becomes <strong>Service unavailable</strong>. Press <kbd>Esc</kbd> any time to close the list without choosing.</p></details>
+
+  <h3>Exercise 4: Dropdown matching</h3>
+  <p>Predict which of these set a value and which show a message. Then try them, one per line, each followed by <kbd>Enter</kbd>.</p>
+  <pre><code>/os azure
+/os stack
+/cc united
+/cc gb
+/sup oem</code></pre>
+  <details class="faq"><summary>Show the expected result</summary><p><code>/os azure</code> matches two options and changes nothing. <code>/os stack</code> sets Azure Stack Hub. <code>/cc united</code> matches three countries and changes nothing. <code>/cc gb</code> sets United Kingdom. <code>/sup oem</code> sets OEM OS. A line that didn’t run stays as you typed it: correct it, click at its end, and press <kbd>Enter</kbd> again.</p></details>
+
+  <h3>Exercise 5: Order matters</h3>
+  <p>Type <code>/it hyper</code>, then <code>/os sys</code>, pressing <kbd>Enter</kbd> after each. Look at Issue type. Now run <code>/os win</code> and then <code>/it hyper</code> again.</p>
+  <details class="faq"><summary>Show the expected result</summary><p>Choosing Systems Management changes the Issue type list, so the Hyper-V issue type is replaced. Once OS/Solution is Windows Server, <code>/it hyper</code> sets Hyper-V / virtual machines and it stays. Always set OS/Solution first.</p></details>
+
+  <h3>Exercise 6: Capture a whole first call</h3>
+  <p>Type this triage, line by line, as if the customer were giving you the details. Press <kbd>Enter</kbd> after each line.</p>
+  <pre><code>Customer reports VMs on host HV-NODE-02 lose network for 30–90 seconds, 3–5 times a day.
+/st tsa0001
+/sr 123456789
+/pl PowerEdge R750
+/os win
+/osv Windows Server 2022, build 20348.2340
+/it hyper
+/sev degraded
+/chg NIC driver updated from 225.0.4.0 to 226.0.145.0 two days before the first drop
+/log \\fileshare\sr-123456789\</code></pre>
+  <details class="faq"><summary>Show the expected result</summary><p>The first line stays as plain text. Every command line becomes a labelled line, for example “OS version / build: Windows Server 2022, build 20348.2340”. Case Details and Triage are filled in without leaving Notes. Open <strong>Case Summary</strong> to check the details, and look at the <a href="#quality">quality score</a>: it rises as fields are filled in.</p></details>
+
+  <h3>Check yourself</h3>
+  <ul>
+    <li>Can you fill in Service Tag, SR, and OS/Solution without touching the mouse?</li>
+    <li>Do you know what happens if you run <code>/st</code> on a case that already has a Service Tag? (It is replaced.)</li>
+    <li>Can you explain why <code>Spoke to customer /st abc1234</code> did nothing? (The command must start the line.)</li>
+  </ul>
+
+  <h2>If a command doesn’t run</h2>
+  <table>
+    <thead><tr><th>What you see</th><th>Likely cause</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>Enter just made a new line; the field didn’t change.</td><td>The line isn’t a command: the code is unknown, the value is missing, there is text before the <code>/</code>, or the cursor wasn’t at the end of the line.</td><td>Type <code>/</code> to check the code, put the command on its own line, click at the end, and press <kbd>Enter</kbd> again.</td></tr>
+      <tr><td>“… matches more than one … option: …”</td><td>The value fits several dropdown options.</td><td>Add a word or type more of the option, for example <code>/os azure l</code>.</td></tr>
+      <tr><td>“… is not a … option. Choose from: …”</td><td>The value doesn’t match any option.</td><td>Use the option’s own wording from the list shown.</td></tr>
+      <tr><td>“… cannot be changed right now.”</td><td>The field is turned off, for example while editing is locked.</td><td>Make sure this tab is the one editing, then try again.</td></tr>
+      <tr><td>The list doesn’t appear when you type <code>/</code>.</td><td>The <code>/</code> isn’t at the start of the line, or the case is read-only.</td><td>Start a new line. If the case is read-only, see <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
+      <tr><td><code>/prod</code> isn’t listed.</td><td>Product/Application only applies to Systems Management.</td><td>Run <code>/os sys</code> first.</td></tr>
+    </tbody>
+  </table>
 </article>
 
 <article class="doc-page" id="workflow" data-title="Case workflow" data-group="Case Notes">
@@ -851,12 +1008,16 @@
     <li><strong>Tutorial Demo</strong> has 22 steps. Seven core steps run first, then “More features” if you want them. Your own draft is restored afterwards.</li>
   </ul>
 
-  <h2>A suggested 30-minute learning path</h2>
+  <h2>Case Notes: slash command practice</h2>
+  <p><a href="#slash-commands">Slash commands in Notes</a> ends with six short exercises, each with an answer to check yourself against. Start with a sample case and a new dated note so your own cases are untouched.</p>
+
+  <h2>A suggested 35-minute learning path</h2>
   <table>
     <thead><tr><th>Time</th><th>Do this</th><th>Read</th></tr></thead>
     <tbody>
       <tr><td>5 min</td><td>Load the samples and run the Case Notes tour.</td><td><a href="#quick-start">Quick start</a></td></tr>
       <tr><td>5 min</td><td>Click each date tab and Case Summary; edit a note.</td><td><a href="#notes">Dated notes</a></td></tr>
+      <tr><td>5 min</td><td>In a new dated note, fill in the case details with <code>/st</code>, <code>/sr</code> and <code>/os</code>, then check Case Summary.</td><td><a href="#slash-commands">Slash commands</a></td></tr>
       <tr><td>5 min</td><td>Walk the four workflow stages; open the log helper.</td><td><a href="#workflow">Case workflow</a></td></tr>
       <tr><td>5 min</td><td>Remove a step’s “Result:” and watch the score change.</td><td><a href="#quality">Note quality score</a></td></tr>
       <tr><td>5 min</td><td>Mark a red case’s follow-up done; escalate the main sample, then load the weak example.</td><td><a href="#toolkit">Follow-ups</a>, <a href="#escalation">Escalation</a></td></tr>
@@ -895,7 +1056,7 @@
   <ol class="steps">
     <li>+ New Case. Fill in all case details and check the format of the Service Tag, SR, and Log Location.</li>
     <li>Triage: set OS/Solution, Issue type, Service Impact, and Recent change.</li>
-    <li>Write the first dated note: customer description, scope, and what you checked with results.</li>
+    <li>Write the first dated note: customer description, scope, and what you checked with results. While on the call, capture details as you hear them with <a href="#slash-commands">slash commands</a> such as <code>/st</code>, <code>/sr</code> and <code>/chg</code>.</li>
     <li>Evidence: open the log collection helper (and verify what it suggests) and decide what to request. Set a follow-up for when the customer should respond.</li>
   </ol>
 
@@ -963,6 +1124,8 @@
   <details class="faq"><summary>Where did Apply template go?</summary><p>The templates feature was removed. The Issue type list still drives the evidence checklist and the log plan, and older cases and backups keep working.</p></details>
   <details class="faq"><summary>Can I hide fields I never use?</summary><p>Yes. Use <strong>Unlock layout</strong> in Case Details or <strong>Hide</strong> in Customize Site Options. Hidden fields keep their values and still appear in exports and the score.</p></details>
   <details class="faq"><summary>Does the timer run while I am away?</summary><p>It runs while tracking is on. Use <strong>Stop Tracking</strong> when you step away, or turn on the 15-minute away prompt in Customize Site Options (Chrome and Edge).</p></details>
+  <details class="faq"><summary>Can I fill in case fields from the Notes editor?</summary><p>Yes. Type a slash command on its own line, for example <code>/st abc1234</code> or <code>/os win</code>, and press <kbd>Enter</kbd> or <kbd>Tab</kbd>. Type <code>/</code> to see every code. See <a href="#slash-commands">Slash commands in Notes</a>.</p></details>
+  <details class="faq"><summary>I typed /st in Notes and nothing happened.</summary><p>The command must be on its own line, with a value after the code, and the cursor at the end of the line when you press <kbd>Enter</kbd>. For dropdown fields, read the message under Notes: the value may match more than one option or none. See <a href="#slash-commands">If a command doesn’t run</a>.</p></details>
   <details class="faq"><summary>Can I undo a bad edit?</summary><p>Use <strong>Version History</strong> (up to ten saved versions per case) or restore a backup.</p></details>
   <details class="faq"><summary>How do I recover a deleted case?</summary><p>Open <strong>Filters</strong>, set <strong>Collection</strong> to <strong>Trash</strong>, open the case, and choose <strong>Restore</strong> (unless you permanently deleted it).</p></details>
 
@@ -1003,6 +1166,7 @@
       <tr><td>The Restore list is empty.</td><td>No backups of that type yet.</td><td>Select <strong>Back Up Now</strong>.</td></tr>
       <tr><td>Pop out did nothing.</td><td>The browser blocked the pop-up.</td><td>Allow pop-ups for the site, or use the offered same-tab compact view.</td></tr>
       <tr><td>Pasting a screenshot does nothing.</td><td>Focus is not in the Notes or Action Plan editor.</td><td>Click inside the editor, then paste with <kbd>Ctrl</kbd> <kbd>V</kbd>.</td></tr>
+      <tr><td>A slash command such as <code>/st abc1234</code> stays as typed.</td><td>It isn’t on its own line, the cursor isn’t at the end of the line, or the code is unknown. For dropdowns, the value matches several options or none.</td><td>Read the message under Notes and see <a href="#slash-commands">Slash commands in Notes</a>.</td></tr>
       <tr><td>A field is missing from Case Details.</td><td>It was hidden.</td><td>Select <strong>Show or hide fields</strong> under Case Details and choose <strong>Show</strong>.</td></tr>
       <tr><td>The fields will not accept typing.</td><td>Unlock layout is on.</td><td>Choose <strong>Done</strong> or <strong>Cancel</strong>.</td></tr>
       <tr><td>Mark verified and completed is disabled.</td><td>Something is still missing.</td><td>Read “Still to record: …” under the fields. It needs a fix, verification, prevention plan, and customer confirmation.</td></tr>
@@ -1032,6 +1196,8 @@
       <tr><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd></td><td>Case Notes</td><td>Start a new case.</td></tr>
       <tr><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd></td><td>Case Notes</td><td>Jump to Notes.</td></tr>
       <tr><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></td><td>Case Notes</td><td>Opens Recent cases and focuses search.</td></tr>
+      <tr><td><kbd>/</kbd> at the start of a line</td><td>Notes editor</td><td>Lists the <a href="#slash-commands">slash commands</a>. <kbd>↑</kbd> <kbd>↓</kbd> choose, <kbd>Tab</kbd> or <kbd>Enter</kbd> insert, <kbd>Esc</kbd> closes.</td></tr>
+      <tr><td><kbd>Enter</kbd> or <kbd>Tab</kbd> after <code>/code value</code></td><td>Notes editor</td><td>Fills in that case field and rewrites the line as “Field: value”.</td></tr>
       <tr><td><kbd>Alt</kbd> + arrow keys</td><td>Toolbox launcher</td><td>Moves the toolbox.</td></tr>
       <tr><td><kbd>Enter</kbd></td><td>Toolbox launcher</td><td>Opens quick actions.</td></tr>
       <tr><td><kbd>Esc</kbd></td><td>Menus, dialogs, tours</td><td>Closes them.</td></tr>
@@ -1080,6 +1246,7 @@
     <dt>Pop out</dt><dd>A compact window for the notes editor.</dd>
     <dt>Sample case</dt><dd>A labelled practice case added by Load Example. Not counted in Support Trends.</dd>
     <dt>Service Tag</dt><dd>The identifier on a Dell system. The tools expect 5–10 letters and digits.</dd>
+    <dt>Slash command</dt><dd>A line in Notes such as <code>/st abc1234</code> that fills in a case field when you press Enter or Tab. See <a href="#slash-commands">Slash commands in Notes</a>.</dd>
     <dt>SR</dt><dd>Service Request. The tools expect a number of six or more digits.</dd>
     <dt>Trash</dt><dd>Where deleted cases wait until you restore or permanently delete them.</dd>
     <dt>TSR</dt><dd>Technical Support Report: a hardware and configuration collection exported from iDRAC.</dd>
