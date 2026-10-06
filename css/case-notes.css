@@ -229,8 +229,9 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 #copyNote { --action-accent:#387fac; }
 .copy-actions [data-toolkit="customer"] { --action-accent:#657f94; }
 .copy-actions [data-toolkit="summary"] { --action-accent:#77779f; }
+#railLogHelper { --action-accent:#5f8a72; }
 #toggleActionDock { --action-accent:#747f8c; }
-.copy-actions :is(#emailNote,#escalateNote,#copyNote,[data-toolkit="customer"],[data-toolkit="summary"],#toggleActionDock) {
+.copy-actions :is(#emailNote,#escalateNote,#copyNote,[data-toolkit="customer"],[data-toolkit="summary"],#railLogHelper,#toggleActionDock) {
   box-sizing:border-box;
   min-height:44px;
   padding:10px 14px;
@@ -245,14 +246,14 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
   color:var(--ink);
   transition:background .15s,border-color .15s;
 }
-[data-theme="dark"] .copy-actions :is(#emailNote,#escalateNote,#copyNote,[data-toolkit="customer"],[data-toolkit="summary"],#toggleActionDock) {
+[data-theme="dark"] .copy-actions :is(#emailNote,#escalateNote,#copyNote,[data-toolkit="customer"],[data-toolkit="summary"],#railLogHelper,#toggleActionDock) {
   background:color-mix(in srgb,var(--action-accent) 25%,var(--panel-bg));
 }
-.copy-actions :is(#emailNote,#escalateNote,#copyNote,[data-toolkit="customer"],[data-toolkit="summary"],#toggleActionDock):hover:not(:disabled) {
+.copy-actions :is(#emailNote,#escalateNote,#copyNote,[data-toolkit="customer"],[data-toolkit="summary"],#railLogHelper,#toggleActionDock):hover:not(:disabled) {
   background:color-mix(in srgb,var(--action-accent) 34%,var(--panel-bg));
   border-color:var(--action-accent);
 }
-.copy-actions :is(#emailNote,#escalateNote,#copyNote,[data-toolkit="customer"],[data-toolkit="summary"],#toggleActionDock):focus-visible {
+.copy-actions :is(#emailNote,#escalateNote,#copyNote,[data-toolkit="customer"],[data-toolkit="summary"],#railLogHelper,#toggleActionDock):focus-visible {
   outline:2px solid var(--blue);
   outline-offset:3px;
 }
