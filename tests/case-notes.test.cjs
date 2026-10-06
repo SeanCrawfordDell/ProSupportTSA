@@ -38,8 +38,10 @@ test('timestamps survive closure, resume adds time, copy includes every field an
   assert.ok(text.includes('First line\nSecond line'));assert.ok(text.endsWith('00:00:15'));
   assert.throws(()=>C.parse('{bad'));assert.throws(()=>C.parse('{"version":2}'));
 });
+// Split-out Case Notes modules that case-notes.js expects to find on window (see case-notes.html).
+const pageModules=['case-dialogs.js','case-backup-ui.js','case-field-customizer.js','case-notes-lock.js','case-history-list.js'];
 function harness({writeError=false,copyError=false,locked=false,folder=null,aiIntegration=false,initial=null,hash=''}={}) {
-  const elements={}, intervals=[], events={};let stored=initial, now=1000;
+  const elements={}, intervals=[], events={}, timeouts=new Map();let stored=initial, now=1000, timeoutId=0;
   const preferences = new Map();
   function element(){
     const classes = new Set();
@@ -78,7 +80,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
     }
   }
   get('fields').querySelector=sel=>sel==='.field-grid'?fieldGrid:null;
-  const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../js/devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f},dispatchEvent(event){events[event.type]?.(event);}},Event,localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,optionsOrCallback,maybeCallback){const callback=typeof optionsOrCallback==='function'?optionsOrCallback:maybeCallback;if(locked)return new Promise(()=>{});return callback({});}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
+  const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../js/devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){const previous=events[k];events[k]=event=>{previous?.(event);return f(event);};}},window:{addEventListener(k,f){events[k]=f},dispatchEvent(event){events[event.type]?.(event);}},Event,localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,optionsOrCallback,maybeCallback){const callback=typeof optionsOrCallback==='function'?optionsOrCallback:maybeCallback;if(locked)return new Promise(()=>{});return callback({});}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},setTimeout(f,ms){timeouts.set(++timeoutId,{f,ms});return timeoutId},clearTimeout(id){timeouts.delete(id)},Promise,console};
   ctx.CaseSettings = require('../js/case-settings-core.js');
   ctx.CaseToolkitCore = require('../js/case-toolkit-core.js');
   ctx.CaseBackup = require('../js/case-backup-core.js');
@@ -105,15 +107,18 @@ function harness({writeError=false,copyError=false,locked=false,folder=null,aiIn
   ctx.window.SiteTopbar={closed:0,closeMenus(){this.closed++;}};
   if(hash){ctx.window.location={hash,pathname:'/case-notes.html',search:''};ctx.window.history={replaceState(){ctx.window.location.hash='';}};}
   if(aiIntegration){ctx.window.DevinConnection={createClient:()=>({})};ctx.window.DevinIntegration={init(api){ctx.ai=api;return {refresh(){}};}};}
-  vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8'),ctx);
-  return {get,events,intervals,ctx,setTime:n=>now=n,stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
+  // The page modules load in the same shared context, in page order, before case-notes.js.
+  vm.createContext(ctx);
+  for(const file of pageModules)vm.runInContext(fs.readFileSync(require.resolve('../js/'+file),'utf8'),ctx);
+  vm.runInContext(fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8'),ctx);
+  return {get,events,intervals,ctx,setTime:n=>now=n,runTimeouts(){for(const [id,t] of [...timeouts]){timeouts.delete(id);t.f();}},stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
 }
 test('Customize Site Options opens the customizer from the shared Settings menu without changing case data',()=>{
   const h=harness();const before=h.stored();
   h.click('customizeFields');assert.equal(h.get('fieldCustomizer').open,true);
   assert.equal(h.ctx.window.SiteTopbar.closed,1,'the shared Settings menu is closed');assert.equal(h.stored(),before);
 });
-test('Load Example adds a separate sample case with three dated notes and keeps the current case',()=>{
+test('Load Example adds ten sample cases, opens the main one with three dated notes, and keeps the current case',()=>{
   const h=harness();h.setTime(Date.parse('2026-10-04T15:00:00'));h.click('newNote');h.edit('tag','MINE123');
   const mine=JSON.parse(h.stored()).selected;
   h.click('loadExampleNote');
@@ -125,10 +130,17 @@ test('Load Example adds a separate sample case with three dated notes and keeps 
   assert.match(h.get('historyList').children.find(row=>row.children[0].children[0].textContent.startsWith('Sample')).children[0].children[0].textContent,/^Sample · /);
   const sample=saved.cases.find(n=>n.id===h.ctx.CaseExample.ID);
   assert.equal(sample.entries.length,3);assert.equal(new Set(sample.entries.map(e=>new Date(e.created).toDateString())).size,3);
-  assert.match(h.get('copyStatus').textContent,/Sample case loaded/);
+  assert.match(h.get('copyStatus').textContent,/10 sample cases loaded/);
+  assert.deepEqual(saved.cases.filter(n=>h.ctx.CaseExample.isSample(n.id)).map(n=>n.id).sort(),[...h.ctx.CaseExample.IDS].sort());
+  const rows=h.get('historyList').children.filter(row=>row.children[0].children[0].textContent.startsWith('Sample · '));
+  assert.equal(rows.length,10,'every sample is labelled');
+  assert.equal(rows.filter(row=>row.children[0].classList.contains('followup-overdue')).length,2);
+  assert.equal(rows.filter(row=>row.children[0].classList.contains('followup-soon')).length,3);
   let asked=0;h.ctx.confirm=()=>{asked++;return false;};h.click('loadExampleNote');
-  assert.equal(asked,1,'reloading asks before resetting the sample');
-  assert.equal(JSON.parse(h.stored()).cases.filter(n=>n.id===h.ctx.CaseExample.ID).length,1,'never duplicated');
+  assert.equal(asked,1,'reloading asks before resetting the samples');
+  h.ctx.confirm=()=>true;h.click('loadExampleNote');saved=JSON.parse(h.stored());
+  assert.equal(saved.cases.length,11,'resetting replaces the samples instead of adding more');
+  assert.ok(h.ctx.CaseExample.IDS.every(id=>saved.cases.filter(n=>n.id===id).length===1),'never duplicated');
 });
 test('the tour opens the sample case and returns to the case that was open',()=>{
   const h=harness();h.setTime(Date.parse('2026-10-04T15:00:00'));h.click('newNote');const mine=JSON.parse(h.stored()).selected;
@@ -385,7 +397,7 @@ test('read-only tabs can browse every dated entry and summary without writing st
  assert.equal(h.stored(),initial);assert.equal(h.get('fields').disabled,true);assert.equal(h.get('newCaseEntry').disabled,true);
 });
 test('moving a case to Trash reports on the page',()=>{
-  const h=harness();h.click('newNote');h.edit('tag','ABC1234');
+  const h=harness();h.click('newNote');h.edit('tag','ABC1234');h.runTimeouts();
   h.get('historyList').children[0].children[1].listeners.click();
   assert.equal(h.get('pageStatus').hidden,false);assert.match(h.get('pageStatus').textContent,/ABC1234 moved to Trash/);
 });
@@ -414,11 +426,14 @@ test('one damaged saved preference is skipped and named instead of stopping the 
   assert.equal('sections' in captured,false);assert.equal(JSON.stringify(captured).includes('skipped'),false);
   assert.throws(()=>S.validate({fieldConfig:C.empty().fieldConfig,preferences:{aiTasks:{t:{label:'x'.repeat(81),instruction:'y'}}}},C.fields),/Invalid settings backup/);
 });
-test('Load Example never archives a real case when Recent cases is full',()=>{
-  const state=C.empty();for(let i=0;i<100;i++)C.create(state,'case'+i,1000+i);state.cases.forEach(n=>C.stop(n,5000));
-  const h=harness({initial:JSON.stringify(state)});const before=h.stored();
-  h.click('loadExampleNote');
-  assert.equal(h.stored(),before);assert.match(h.get('pageStatus').textContent,/Recent cases is full/);
+test('Load Example never archives a real case to make room for the ten samples',()=>{
+  for(const [own,remove] of [[100,10],[91,1],[90,0]]){
+    const state=C.empty();for(let i=0;i<own;i++)C.create(state,'case'+i,1000+i);state.cases.forEach(n=>C.stop(n,5000));
+    const h=harness({initial:JSON.stringify(state)});h.setTime(Date.parse('2026-10-04T15:00:00'));const before=h.stored();
+    h.click('loadExampleNote');
+    if(remove){assert.equal(h.stored(),before,own+' cases: nothing changes');assert.match(h.get('pageStatus').textContent,new RegExp(`the samples need 10\\. Archive or delete ${remove} of your cases`));}
+    else{const saved=JSON.parse(h.stored());assert.equal(saved.cases.length,100);assert.equal(saved.archive.length,0,'room for exactly ten: nothing archived');}
+  }
 });
 
 test('hiding a field warns once, waits for Save Configuration, and stores a browser preference',async()=>{
@@ -457,6 +472,24 @@ test('Recent cases switches between grid cards and a title-only list, and rememb
   assert.match(card().title,/^Untitled case · \w+ \d+/,'the full title (with its date) is a tooltip when the list truncates it');
   h.click('historyViewGrid');
   assert.equal(h.get('historyList').classList.contains('history-compact'),false);assert.equal(h.ctx.localStorage.getItem('dell-support.case-history-view'),'grid');
+});
+test('typing in a case redraws Recent cases once the typing pauses, not on every keystroke',()=>{
+  const h=harness();h.click('newNote');
+  const title=()=>h.get('historyList').children[0].children[0].children[0].textContent;
+  assert.match(title(),/^Untitled case/);
+  h.edit('tag','ABC');h.edit('tag','ABC1234');
+  assert.match(title(),/^Untitled case/,'the list waits for a pause');
+  h.runTimeouts();
+  assert.equal(title(),'ABC1234');
+  h.edit('tag','XYZ');h.click('newNote');
+  assert.equal(JSON.parse(h.stored()).cases.length,2);h.runTimeouts();
+  assert.ok(h.get('historyList').children.some(row=>row.children[0].children[0].textContent==='XYZ'),'an immediate redraw replaces the pending one');
+});
+test('case-notes.html loads every split-out Case Notes module before case-notes.js',()=>{
+  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+  const position=file=>html.indexOf(`<script src="js/${file}?v=`);
+  for(const file of pageModules){assert.ok(position(file)>0,file+' is loaded');assert.ok(position(file)<position('case-notes.js'),file+' loads before case-notes.js');}
+  assert.deepEqual([...pageModules].sort((a,b)=>position(a)-position(b)),pageModules,'the test harness loads them in page order');
 });
 test('List view hides everything but the case title',()=>{
   const css=fs.readFileSync(require.resolve('../css/case-notes.css'),'utf8');

@@ -64,13 +64,14 @@ window.CaseNotesAssist = (() => {
     notify(overdue, soon);
   }
   function notificationsAllowed() { return read(keys.notify) === "true" && typeof Notification !== "undefined" && Notification.permission === "granted"; }
-  // Each case is announced once per due time and state (due soon, then overdue).
+  // Each case is announced once per due time and state (due soon, then overdue). Sample cases are never announced.
   function notify(overdue, soon) {
     if (!notificationsAllowed()) return;
     let sent = {};
     try { sent = JSON.parse(read(keys.notified) || "{}") || {}; } catch { sent = {}; }
     const live = {};
     for (const [list, label] of [[overdue, "overdue"], [soon, "soon"]]) for (const note of list) {
+      if (api.isSample?.(note.id)) continue;
       const id = `${note.id}|${note.toolkit.due}|${label}`;
       live[id] = true;
       if (sent[id]) continue;
@@ -138,10 +139,11 @@ window.CaseNotesAssist = (() => {
   }
 
   // Warn when the Service Request number is already used by another case, in any collection.
-  function checkDuplicate() {
+  // typed: the field's value while typing (its input event runs before the case itself is updated).
+  function checkDuplicate(typed) {
     const note = api.selected(), box = $("requestDuplicate");
     if (!box) return;
-    const request = (note?.request || "").replace(/\s+/g, "").toLowerCase();
+    const request = (note ? typed ?? note.request ?? "" : "").replace(/\s+/g, "").toLowerCase();
     const match = request && api.allCases().find(item => item.note.id !== note.id && (item.note.request || "").replace(/\s+/g, "").toLowerCase() === request);
     box.hidden = !match;
     if (!match) return;
@@ -189,7 +191,7 @@ window.CaseNotesAssist = (() => {
       const { overdue } = followupCounts();
       api.showFollowups(overdue.length ? "overdue" : "soon");
     });
-    $("request")?.addEventListener("input", checkDuplicate);
+    $("request")?.addEventListener("input", event => checkDuplicate(event.target.value));
     initOptions();
     if (read(keys.notesFirst) === "true") setNotesFirst(true);
     if (read(keys.idle) === "true") startIdle();

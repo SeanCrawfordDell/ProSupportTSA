@@ -33,6 +33,17 @@ Both rule-based scorers measure content rather than presence and length. `CaseRu
 - Escalation weak phrases (`see above`, `latest`, `n/a`, `ok`, ...) block only fields under 25 characters, matched as a prefix or whole word. Severity (2), Service Impact (2) and Affected Systems / Users (3) are required and also scored inside Specificity (13 points remain for text detail). Recent changes is required and accepts a plain "None" / "No known changes" (`noChanges` in app.js). Service Tag, Service Request Number and Expected behavior were removed from Escalation Quality; Reproducibility is now 10 for detailed steps + up to 5 numbered steps (or 15 for a detailed timeline when not reproducible).
 - Case Notes details apply format checks (Service Tag 5–10 alphanumerics, Service Request 6+ digits, OS version contains a digit, Log Location is a link or path) worth half credit on mismatch; Issue Description is no longer counted there. Triage (6) is its own row and accepts impact / change written in the Issue text; owner and date in the Action Plan count for Next steps. Prompt labels from the removed note templates (still present in older notes) followed by an answer of three characters or fewer are dropped by `clean()`. Troubleshooting and Next steps score every dated entry together.
 - Handoff (`CaseNotes.escalation`): `workflow.recentChange` → `changes`, `workflow.severity` → `production` (the escalation Service Impact field, which keeps the `production` id and offers the same options as the Triage Service Impact field; Unspecified → blank, and saved drafts holding the former Production down / Production degraded values are normalized to Service unavailable / Service degraded), `evidence` is "Yes" when a Log Location is set or an evidence checkbox is ticked, and `results` stays empty so outcomes are recorded on the escalation page.
+## Case Notes page scripts
+
+`js/case-notes.js` owns the page state (load, save, render, the editor, dated notes, copying, the timer) and wires up the page modules below. Each module receives a small `page` object of getters and callbacks from `case-notes.js` instead of sharing its variables, because the case history object is replaced on restore and field changes. `case-notes.html` must load them before `case-notes.js` (tested in `tests/case-notes.test.cjs`, whose harness loads them the same way).
+
+- `case-dialogs.js`: the shared confirmation dialog (`CaseDialogs.askChoice`).
+- `case-backup-ui.js`: Backup & Restore dialogs, automatic backups, restore and Start Fresh.
+- `case-field-customizer.js`: Customize Site Options (custom fields, field order, hidden fields, Unlock layout, the Copy to Lightning effect toggle).
+- `case-history-list.js`: Recent cases (Grid/List, search, filters, follow-up colors, card actions).
+- `case-notes-lock.js`: one editing tab at a time (Web Locks), waiting in line and Take over.
+- `case-notes-assist.js`: shortcuts, follow-up alerts, away-time prompt, duplicate Service Request warning, Notes first.
+
 ## Releasing Case Notes changes
 
 Every local script and stylesheet in `case-notes.html` carries the same `?v=` tag. When you change any of them, update the tag on every one (for example `?v=20261004-golive` to today's date and a short label) in a single replace. A browser holding an older cached core module next to a newer page script can reject newer saved data and lock editing, so mixed tags are not allowed. `tests/golive-hardening.test.cjs` enforces this.

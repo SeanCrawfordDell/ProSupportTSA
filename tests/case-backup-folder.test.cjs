@@ -142,8 +142,9 @@ test('summary reports totals including screenshots and the last backup time', as
 test('every control the backup code looks up exists in case-notes.html, and every dialog has a title and close path', () => {
   const fs = require('node:fs');
   const html = fs.readFileSync(require.resolve('../case-notes.html'), 'utf8');
-  const js = fs.readFileSync(require.resolve('../js/case-notes.js'), 'utf8');
-  const block = js.slice(js.indexOf('// ---- Backup & Restore'), js.indexOf('const actionDockPreferenceKey'));
+  // Backup & Restore (and its confirmation dialog) live in their own files.
+  const block = ['../js/case-backup-ui.js', '../js/case-dialogs.js'].map(file => fs.readFileSync(require.resolve(file), 'utf8')).join('\n');
+  assert.ok(block.length > 10000, 'the backup UI code was found');
   const ids = new Set([...block.matchAll(/\$\("([A-Za-z]+)"\)/g)].map(m => m[1]));
   ids.delete('pageStatus'); ids.delete('openBackupRestore'); // the Settings menu entry is rendered by the shared top bar
   assert.match(fs.readFileSync(require.resolve('../js/site-topbar.js'), 'utf8'), /"openBackupRestore", "Backup &amp; Restore", "backup-restore"/);

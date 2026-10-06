@@ -21,9 +21,20 @@ window.GuidedTour = (() => {
         }
       }
     }
+    // A wrapper with display:contents (such as an action group in the slim action bar) has no box of its own, so it is
+    // measured as the area its children cover, and scrolled into view through its first child that has a box.
+    const hasBox=element=>window.getComputedStyle?.(element).display!=="contents";
+    function box(element){
+      if(hasBox(element))return element.getBoundingClientRect();
+      const rects=[...element.children].map(box).filter(r=>r.width||r.height);
+      if(!rects.length)return element.getBoundingClientRect();
+      const left=Math.min(...rects.map(r=>r.left)),top=Math.min(...rects.map(r=>r.top)),right=Math.max(...rects.map(r=>r.right)),bottom=Math.max(...rects.map(r=>r.bottom));
+      return {left,top,right,bottom,width:right-left,height:bottom-top};
+    }
+    const scrollTarget=element=>hasBox(element)?element:[...element.children].map(scrollTarget).find(child=>child?.getClientRects().length)||null;
     function position(){
       if(!active || !target)return;
-      const rect=target.getBoundingClientRect(),gap=8,margin=16,distance=18;
+      const rect=box(target),gap=8,margin=16,distance=18;
       const viewportWidth=window.innerWidth,viewportHeight=window.innerHeight;
       const sideSpace=Math.max(rect.left-margin-distance,viewportWidth-margin-distance-rect.right);
       const width=Math.min(sideSpace>=320?Math.min(380,sideSpace):380,viewportWidth-margin*2);
@@ -69,7 +80,7 @@ window.GuidedTour = (() => {
       $("demoNext").textContent=offerMore()?`More features (${extra.length}) →`:index===steps.length-1?finishLabel:"Next →";
       $("skipDemo").textContent=offerMore()?"Done":"Skip tour";
       dialog.scrollTop=0;
-      target.scrollIntoView({block:"start",behavior:"instant"});
+      (scrollTarget(target)||target).scrollIntoView({block:"start",behavior:"instant"});
       position();requestAnimationFrame(position);
     }
     function open(){

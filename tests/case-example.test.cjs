@@ -44,3 +44,28 @@ test('sample case works without a screenshot and fills custom fields',()=>{
   assert.deepEqual(parsed.images,{});assert.equal(parsed.customerContact,'');
   assert.ok(!/<img|attachment:/.test(parsed.entries[1].notes),'no dangling screenshot reference');
 });
+test('Load Example builds ten valid sample cases: 2 overdue, 3 due within 4 hours and 5 later',()=>{
+  const states=(cases,now)=>cases.map(note=>Toolkit.followupState(note,now)||'later');
+  // Includes just after midnight, late evening and the US daylight-saving changes.
+  for(const at of ['2026-10-04T15:00:00','2026-10-04T00:05:00','2026-10-04T23:50:00','2026-11-01T01:30:00','2026-03-08T01:30:00']){
+    const now=Date.parse(at),state=Notes.empty();state.cases=Example.buildAll({now,image});state.selected=Example.ID;
+    const cases=Notes.parse(JSON.stringify(state)).cases;
+    assert.equal(cases.length,10,at);assert.deepEqual(cases.map(n=>n.id).sort(),[...Example.IDS].sort(),at);
+    const count=states(cases,now).reduce((all,s)=>({...all,[s]:(all[s]||0)+1}),{});
+    assert.deepEqual(count,{overdue:2,soon:3,later:5},at);
+    assert.equal(Toolkit.followupState(cases.find(n=>n.id===Example.ID),now),'','the main sample follow-up is tomorrow');
+    assert.equal(new Set(cases.map(n=>n.request.replace(/\s+/g,''))).size,10,at+' no duplicate SR numbers');
+    for(const note of cases){
+      assert.equal(note.started,null);assert.ok(note.created<=now && note.updated<=now,note.id+' no future times');
+      assert.ok(Notes.entryList(note).every(e=>e.created<=now && Notes.plainText(e.notes).trim() && Notes.plainText(e.next).trim()),note.id+' has notes and next steps');
+      assert.notEqual(note.toolkit.status,'Completed');assert.ok(note.toolkit.owner);
+      assert.equal(Rubric.score(note).rating,'Strong',note.id+' models a strong case note');
+    }
+  }
+  assert.ok(Example.IDS.every(Example.isSample));assert.equal(Example.isSample('3f2a9c1e-real-case'),false);
+});
+test('Support Trends leaves every sample case out',()=>{
+  const fs=require('node:fs'),js=fs.readFileSync(require.resolve('../js/support-trends.js'),'utf8');
+  const isSample=eval(/const isSample=(id=>[^;]+);/.exec(js)[1]);
+  assert.ok(Example.IDS.every(isSample));assert.equal(isSample(crypto.randomUUID()),false);assert.equal(isSample('example-case-x'),false);
+});

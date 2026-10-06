@@ -33,14 +33,14 @@ function dom(){
  const document={title:'Case Notes · Dell Pro-Support',getElementById:get,querySelector:()=>null,createElement:()=>el(),addEventListener(k,f){listeners[k]=f;}};
  return {get,document,listeners};
 }
-function load({cases=[],all,notification,idle,storage={}}={}){
+function load({cases=[],all,notification,idle,storage={},isSample}={}){
  const d=dom(),store=new Map(Object.entries(storage)),sent=[],asked=[],opened=[];
  const ctx={window:{},document:d.document,CaseToolkitCore:T,localStorage:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)},AbortController,
   ...(notification?{Notification:Object.assign(function(title,options){sent.push({title,...options});this.close=()=>{};},notification)}:{}),
   ...(idle?{IdleDetector:idle}:{})};
  vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-notes-assist.js'),'utf8'),ctx);
  let discarded=null,running=true,answer='discard';
- const a=ctx.window.CaseNotesAssist.init({cases:()=>cases,allCases:()=>all||cases.map(note=>({note,collection:'cases'})),selected:()=>cases[0],
+ const a=ctx.window.CaseNotesAssist.init({cases:()=>cases,isSample,allCases:()=>all||cases.map(note=>({note,collection:'cases'})),selected:()=>cases[0],
   ask:async q=>{asked.push(q);return answer;},backup(){},timerRunning:()=>running,discardTime:(f,t)=>discarded=[f,t],open:(id,c)=>opened.push([id,c]),showFollowups:f=>opened.push(['filter',f])});
  return {a,d,ctx,store,sent,asked,opened,get:d.get,discarded:()=>discarded,setRunning:v=>running=v,setAnswer:v=>answer=v};
 }
@@ -61,12 +61,19 @@ test('desktop notifications are opt-in and announce each follow-up state once',(
  assert.deepEqual(on.sent.map(n=>n.title),['Follow-up overdue: 111111','Follow-up due soon: A case']);
  on.a.refresh();assert.equal(on.sent.length,2,'not repeated on the next refresh');
 });
+test('sample cases count in the header but never send desktop notifications',()=>{
+ const cases=[withDue('example-case-2',-60000),withDue('mine',-60000,{request:'222222'})];
+ const h=load({cases,isSample:id=>id.startsWith('example-case'),notification:{permission:'granted'},storage:{'dell-support.followup-notify':'true'}});
+ assert.equal(h.get('followupAlert').textContent,'2 overdue');
+ assert.deepEqual(h.sent.map(n=>n.title),['Follow-up overdue: 222222']);
+});
 test('a duplicate Service Request number is flagged with a link to the other case',()=>{
  const mine={id:'m',created:1,request:'1234 5678'},other={id:'o',created:2,request:'12345678'};
  const h=load({cases:[mine],all:[{note:mine,collection:'cases'},{note:other,collection:'archive'}]});
  h.a.refresh();assert.equal(h.get('requestDuplicate').hidden,false);assert.match(h.get('requestDuplicateText').textContent,/already used by another case \(Archive/);
  h.get('openDuplicate').onclick();assert.deepEqual(h.opened.at(-1),['o','archive']);
  mine.request='999';h.a.refresh();assert.equal(h.get('requestDuplicate').hidden,true);
+ h.get('request').listeners.input({target:{value:'1234 5678'}});assert.equal(h.get('requestDuplicate').hidden,false,'flagged while typing, before the case itself is updated');
 });
 test('Alt+Shift shortcuts press the matching buttons, except while a dialog is open',()=>{
  const h=load();let prevented=0;const key=code=>h.d.listeners.keydown({altKey:true,shiftKey:true,code,preventDefault(){prevented++;}});
@@ -101,9 +108,9 @@ test('new preferences are backed up and validated',()=>{
  assert.throws(()=>S.validate({fieldConfig:C.empty().fieldConfig,preferences:{idlePrompt:'maybe'}},C.fields));
 });
 test('a read-only tab waits for the editor lock and can take over editing',()=>{
- const js=fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8'),html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+ const js=fs.readFileSync(require.resolve('../js/case-notes-lock.js'),'utf8'),html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
  assert.match(html,/id="takeOverEditing" type="button" hidden>Take over editing here</);
- assert.match(js,/navigator\.locks\.request\(lockName, \{ signal: wait\.signal \}/,'waits in line instead of giving up');
+ assert.match(js,/navigator\.locks\.request\(lockName, \{ signal: controller\.signal \}/,'waits in line instead of giving up');
  assert.match(js,/navigator\.locks\.request\(lockName, \{ steal: true \}/,'Take over editing steals the lock');
  assert.match(js,/postMessage\("save-now"\)/,'the editing tab is asked to save first');
 });
