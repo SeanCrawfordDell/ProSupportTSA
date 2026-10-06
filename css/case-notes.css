@@ -230,7 +230,7 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .workspace-title .eyebrow { margin:0!important; flex-shrink:0; }
 .workspace-title .eyebrow { flex-basis:100%; }
 .workspace-title #newNote { margin:0; padding:7px 12px; font-size:12px; white-space:nowrap; }
-.workspace-title :is([data-toolkit="followup"], #caseVersions, #printCase) { margin:0; padding:7px 12px; font-size:12px; white-space:nowrap; }
+.workspace-title :is([data-toolkit="followup"], #caseVersions, #printCase, #jumpToNotes) { margin:0; padding:7px 12px; font-size:12px; white-space:nowrap; }
 @media(max-width:500px) { .workspace-title { flex-wrap:wrap; gap:6px; } }
 
 /* A restrained shared treatment keeps action colors distinct without solid neon fills. */
@@ -419,8 +419,10 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .backup-dialog #closeBackupRestore { margin:12px 10px 0; }
 @media (max-width:520px) { .backup-actions .button, .backup-row .button { flex:1 1 100%; } }
 /* Copy to Lightning shake (js/copy-rumble.js). Only the top bar and main content move, so fixed overlays stay put. */
-.customizer-check { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-weight:600; cursor:pointer; }
-.customizer-check input { width:18px; height:18px; margin:0; }
+.customizer-check { display:flex; align-items:flex-start; gap:10px; margin-bottom:12px; font-weight:600; line-height:1.4; cursor:pointer; }
+/* flex:none keeps every box the same size when its label wraps onto two lines. */
+.customizer-check input { flex:none; width:18px; height:18px; margin:1px 0 0; }
+.customizer-check small { display:block; margin-top:2px; color:var(--muted); font-size:12px; font-weight:400; }
 .copy-rumble { animation:copy-rumble 1s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes copy-rumble {
   0%,100% { transform:translate(0,0) rotate(0); }
@@ -454,3 +456,64 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .followup-done-row { grid-column:1 / -1; display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
 .followup-done-row .toolkit-help { margin:0; }
 .case-item:is(.followup-overdue,.followup-soon)[aria-current="true"] { outline:2px solid var(--blue); outline-offset:1px; }
+.case-summary-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; }
+.case-summary-heading h3 { margin:0; }
+#caseSummaryCopyStatus { min-height:1.2em; margin:6px 0 0; color:var(--muted); font-size:13px; }
+/* Action bar: Copy to Lightning is the one solid main action and comes first; Escalate keeps its red; the rest are neutral. */
+#copyNote { order:-3; } #escalateNote { order:-2; } #emailNote { order:-1; }
+#emailNote, .copy-actions [data-toolkit="customer"], .copy-actions [data-toolkit="summary"], #railLogHelper, #toggleActionDock, #toggleAiTools { --action-accent:#7b8794; }
+.copy-actions #copyNote, [data-theme="dark"] .copy-actions #copyNote { background:var(--blue); border-color:var(--blue); color:#fff; }
+.copy-actions #copyNote:hover:not(:disabled), [data-theme="dark"] .copy-actions #copyNote:hover:not(:disabled) { background:color-mix(in srgb,var(--blue) 82%,#000); border-color:var(--blue); }
+[data-theme="dark"] .copy-actions #copyNote { color:#04121f; }
+.copy-actions #copyNote:disabled { opacity:.55; }
+/* The AI tools open on demand in the slim bar and are always shown in the wide side rail. */
+#toggleAiTools[aria-expanded="true"] span { display:inline-block; transform:rotate(180deg); }
+@media (min-width:1500px) and (min-height:780px) {
+  .case-work-area.action-rail #toggleAiTools { display:none; }
+}
+@media(max-width:1499px), (max-height:779px) {
+  .copy-actions { padding:10px 14px; margin:10px 0 16px; row-gap:8px; }
+  .copy-actions .note-actions, .copy-actions .toolkit-nav { display:contents; }
+  .copy-actions:not(.right-rail) { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .copy-actions:not(.right-rail) :is(#emailNote,#escalateNote,#copyNote,[data-toolkit="customer"],[data-toolkit="summary"],#railLogHelper,#toggleActionDock,#toggleAiTools) { min-height:36px; padding:6px 12px; font-size:13px; line-height:20px; }
+  .copy-actions:not(.right-rail) > #copyStatus, .copy-actions:not(.right-rail) > .devin-copy { flex:1 1 100%; order:10; }
+  .copy-actions:not(.right-rail) > .devin-copy { order:11; }
+  .copy-actions:not(.right-rail) > .devin-copy:not([hidden]) { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; margin-top:4px; padding-top:10px; }
+  .copy-actions:not(.right-rail) > .devin-copy > .field { flex:1 1 240px; margin:0; }
+  .copy-actions:not(.right-rail) > .devin-copy > .button { flex:0 0 auto; width:auto; margin:0; min-height:36px; padding:6px 12px; font-size:13px; }
+  .copy-actions:not(.right-rail) > .devin-copy > :is(p, div) { flex:1 1 100%; }
+}
+/* A slimmer page header so the case workspace starts higher on laptop screens. */
+#main > .hero { margin-bottom:12px; }
+#main > .hero h1 { font-size:26px; margin:0; }
+#main > .hero .eyebrow, #main > .hero h1 + p { display:none; }
+#backupWarningBanner { padding:8px 14px; margin-bottom:10px; font-size:13px; }
+#backupWarningBanner .button { min-height:32px; padding:5px 12px; }
+/* Recent cases: search options and the collapsible Filters group. */
+.history-search-options { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 10px; margin:6px 0 10px; }
+.history-check { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer; }
+.history-check input { margin:0; width:15px; height:15px; }
+#toggleHistoryFilters { min-height:30px; padding:4px 10px; font-size:12px; }
+#toggleHistoryFilters[aria-expanded="true"] > span[aria-hidden] { display:inline-block; transform:rotate(180deg); }
+.history-filters { margin-bottom:12px; }
+.history-filters .history-filter { margin-top:0; }
+.case-item .case-collection-badge { margin-top:4px; font-weight:700; color:var(--blue); }
+/* Touch screens get larger targets for the small toolbar, card and tab buttons. */
+@media (pointer:coarse) {
+  .case-row-actions button, .history-view-option, #toggleHistoryFilters, .case-entry-tab, .delete-case,
+  .md-toolbar button, .rich-toolbar button, .copy-actions .button { min-height:40px; min-width:40px; }
+}
+.take-over-editing { margin:-6px 0 14px; }
+/* Follow-up alert pill in the header, duplicate SR warning, shortcut list. */
+#main > .hero { align-items:center; }
+.followup-pill { padding:6px 12px; border:1px solid #e3a008; border-radius:999px; background:#fffaeb; color:#7a4a05; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.followup-pill.overdue { border-color:#d92d20; background:#fef3f2; color:#b42318; }
+[data-theme="dark"] .followup-pill { background:#3a2d0b; color:#fdd77a; border-color:#fdb022; }
+[data-theme="dark"] .followup-pill.overdue { background:#3a1414; color:#fda29b; border-color:#f97066; }
+.field-warning { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin-top:6px; padding:6px 10px; border-left:4px solid #e3a008; border-radius:4px; background:#fffaeb; color:#7a4a05; font-size:12px; font-weight:400; }
+.field-warning[hidden] { display:none; }
+[data-theme="dark"] .field-warning { background:#3a2d0b; color:#fdd77a; }
+.field-warning .button { min-height:28px; padding:3px 10px; font-size:12px; }
+.shortcut-list { margin:0 0 8px; padding-left:18px; line-height:1.9; font-size:13px; }
+.shortcut-list kbd { padding:1px 6px; border:1px solid var(--line); border-radius:4px; background:var(--input-bg); font-family:inherit; font-size:12px; }
+.customizer-check[hidden] { display:none; }

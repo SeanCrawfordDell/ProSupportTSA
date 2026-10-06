@@ -29,7 +29,7 @@ test('reduced motion keeps the sound but skips the shake',()=>{
 test('Copy to Lightning plays the effect and Customize Site Options has the toggle',()=>{
  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8'),notes=fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8');
  assert.match(html,/<h2 id="customizerTitle">Customize Site Options<\/h2>/);
- assert.match(html,/<input type="checkbox" id="copyRumbleToggle" checked> Shake the screen and play a sound/);
+ assert.match(html,/<input type="checkbox" id="copyRumbleToggle" checked><span>Shake the screen and play a sound/);
  assert.match(html,/<script src="js\/copy-rumble\.js\?v=[^"]+" defer><\/script>/);
  assert.match(/\$\("copyNote"\)\.addEventListener[\s\S]*?finally/.exec(notes)[0],/writeText[\s\S]*CopyRumble\?\.play\(\)/,'plays only after a successful copy');
 });

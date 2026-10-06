@@ -14,7 +14,7 @@ Date tabs use the entry's creation date in your local timezone. Multiple entries
 
 **Case Summary** shows the shared case details once, followed by all dated notes and action plans from oldest to newest. Each dated section can be collapsed. This is a formatted review of the recorded content, not an AI-generated summary. Select a date tab to resume editing.
 
-Copy to Lightning, HTML email, print/PDF, escalation handoff, and AI review include the complete dated history. The Pop out window retains the date tabs and Case Summary. An in-progress screenshot paste or AI reply remains tied to its source entry.
+**Copy to Lightning copies only the selected day**: every case field, plus the notes and action plan from the dated notes created on the same day as the selected one, and the tracked time. To copy the whole case, open **Case Summary** and choose **Copy case summary**, which copies every field and every dated note without changing the timer. HTML email, print/PDF, escalation handoff, and AI review include the complete dated history. The Pop out window retains the date tabs and Case Summary. An in-progress screenshot paste or AI reply remains tied to its source entry.
 
 Existing notes migrate intact into one entry using the original case creation date. Previously combined notes are not automatically split into inferred days. History backups now use version 3 and preserve all entries, screenshots, and the selected entry. Versions 1 and 2 remain importable. Older copies of the app cannot open version 3 backups, so use the current app for restore.
 
@@ -34,12 +34,20 @@ Folder backups contain customer information and are not encrypted by this app: u
 - **Version History** keeps up to ten previous saved content versions per case. Preview before restoring; restoring also retains the current content as a version. These are saved snapshots, not a record of every keystroke.
 - Archive, Trash, and versions share browser storage. They do not provide unlimited capacity. Export backups regularly, especially when using screenshots. Clearing site data removes all browser-local collections.
 
+## Layout on laptop screens
+
+On screens narrower than 1500px or shorter than 780px, the action bar is one slim row above the workspace: **Copy to Lightning** (the solid blue main action) first, then Escalate to DE, Email to Case, Customer Update, Handoff Summary and Log Collection Helper. The AI tools (Ask AI to, Copy to AI, Send to Devin, AI Settings) open from **AI tools**; the choice is remembered. On wider screens the bar is a side rail with everything shown. **Jump to Notes** in the Case Workspace bar scrolls to the notes editor.
+
+## Editing in more than one tab
+
+Only one tab edits Case Notes at a time; others are read-only. A read-only tab becomes editable by itself when the editing tab closes. **Take over editing here** switches straight away: the other tab is asked to save first, then becomes read-only and waits its turn.
+
 ## Finding and organizing cases
 
 Use **+ New Note** beneath **Case Workspace** to start another case. When no case
 is open, use **Start New Note** in the empty workspace.
 
-Search includes case fields, note content, next steps, custom fields, and support-toolkit text. Matching excerpts appear in results. Search applies to the selected collection and follow-up filter. Pin important recent cases; pinned cases appear first. Sort the rest by creation time, last edit, or follow-up due date. Use **Grid** and **List** under the Recent cases heading to switch between the full case cards (the default) and a compact list that shows only case titles; pin, archive and delete are on the cards in Grid view. The choice is remembered and included in settings backups.
+Search includes case fields, note content, next steps, custom fields, and support-toolkit text. Matching excerpts appear in results. Search applies to the selected collection and follow-up filter; tick **Search Archive and Trash too** to search every collection (results outside the current one are labelled In Archive or In Trash). **Filters** holds Show cases, Collection and Sort, and shows how many differ from the defaults. A case with no SR number or Service Tag is named from the start of its issue description and its date. If a Service Request number is already used by another case, a warning under the field links to that case. Pin important recent cases; pinned cases appear first. Sort the rest by creation time, last edit, or follow-up due date. Use **Grid** and **List** under the Recent cases heading to switch between the full case cards (the default) and a compact list that shows only case titles; pin, archive and delete are on the cards in Grid view. The choice is remembered and included in settings backups.
 
 ## Restoring settings and notes
 
@@ -61,6 +69,17 @@ In **Customize Site Options**, choose **Hide** beside a Case Details field, then
 
 Choose **Unlock layout** in the Case Details heading to reorder fields without opening Customize Site Options. While the layout is unlocked, fields cannot be edited. Drag a field by any part of its outlined box, or focus its ⋮⋮ grip and use the arrow keys. **Done** saves the order for every case; **Cancel** or Escape puts it back. Switching case, opening Customize Site Options, or losing edit access locks the layout and discards unsaved moves. The saved order is the same one Customize Site Options edits, so it is included in case-history backups.
 
+### Site options
+
+**Customize Site Options → Site Effects and Options** also has:
+
+- **Show Notes and Action Plan above Case workflow and Case Details**, for people who mostly write notes.
+- **Ask whether to keep the time when I come back after 15 minutes away.** With the browser's permission it notices when the computer has been idle for 15 minutes or locked; if the case timer was running, it asks whether to keep that time or remove it. (Available in Chrome and Edge.)
+- **Desktop notification** for follow-ups, described under Follow-ups.
+- A list of **keyboard shortcuts**: Alt+Shift+C Copy to Lightning, Alt+Shift+N add a dated note, Alt+Shift+K new case, Alt+Shift+J jump to Notes, Alt+Shift+F search cases (Option+Shift on a Mac).
+
+These choices are included in settings backups.
+
 ### Copy to Lightning shake and sound
 
 When **Copy to Lightning** copies successfully, the page shakes for about a second and a soft, quiet camera-shutter click plays so you know the copy worked (phones that support it also give a short buzz). To turn it off, open **Customize Site Options** and clear **Shake the screen and play a sound when Copy to Lightning succeeds** under *Site Effects*; the change applies right away and is included in settings backups. If your system asks for reduced motion, the screen does not shake.
@@ -76,6 +95,8 @@ When you have done the follow-up, choose **Mark follow-up done** in the follow-u
 - **Case is complete** clears the due date and sets the status to Completed.
 
 Each follow-up marked done is recorded with the case (the tracker shows the last one), and the record is kept in history backups.
+
+The page header shows a pill such as **1 overdue · 2 due within 4 hours** (select it to filter Recent cases), and the browser tab title starts with the count, for example "(3) Case Notes". In **Customize Site Options** you can also turn on a desktop notification when a follow-up is due within 4 hours and again when it is overdue; the browser asks for permission first, and notifications appear while Case Notes is open in a tab.
 
 ## Sharing and printing
 
