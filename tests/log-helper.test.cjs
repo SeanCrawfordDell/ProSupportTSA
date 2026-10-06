@@ -15,14 +15,15 @@ test('unavailable hosts defer host collection; unknown solutions use a safe fall
  const unknown=core.plan({os:'Custom OS',symptom:'unsupported'});assert.equal(unknown.symptom,'general');assert.ok(unknown.items.some(i=>i.title==='Identify the affected product'));
 });
 const vm=require('node:vm'),fs=require('node:fs');
-function ui({failCopy=false,symptom='network'}={}) {
- const elements={}, node=()=>({value:'',textContent:'',innerHTML:'',children:[],listeners:{},options:[],attributes:{},setAttribute(k,v){this.attributes[k]=v},append(...items){this.children.push(...items)},replaceChildren(...items){this.children=items},addEventListener(k,f){this.listeners[k]=f},showModal(){this.open=true},close(){this.open=false;this.listeners.close?.()},focus(){},select(){}}),get=id=>elements[id]??=node();
+function ui({failCopy=false,symptom='network',shortcuts=[]}={}) {
+ let focused=null;
+ const elements={}, node=()=>({value:'',textContent:'',innerHTML:'',children:[],listeners:{},options:[],attributes:{},setAttribute(k,v){this.attributes[k]=v},append(...items){this.children.push(...items)},replaceChildren(...items){this.children=items},addEventListener(k,f){this.listeners[k]=f},showModal(){this.open=true},close(){this.open=false;this.listeners.close?.()},focus(){focused=this},select(){},dataset:{}}),get=id=>elements[id]??=node();
  get('os').options=[{value:'Windows Server',textContent:'Windows Server'}];
  let copied='';const window={};
  const body={append(item){elements[item.id]=item;}};
- vm.runInNewContext(fs.readFileSync(require.resolve('../js/log-helper.js'),'utf8'),{window,document:{body,getElementById:get,createElement:node},LogHelperCore:core,navigator:{clipboard:{async writeText(text){if(failCopy)throw Error();copied=text}}}});
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/log-helper.js'),'utf8'),{window,document:{body,getElementById:get,createElement:node,querySelectorAll:sel=>sel==='[data-log-helper]'?shortcuts.map(get):[]},LogHelperCore:core,navigator:{clipboard:{async writeText(text){if(failCopy)throw Error();copied=text}}}});
  window.LogHelper.init({context:()=>({id:'one',os:'Windows Server',platform:'PowerEdge R750',symptom})});
- return {get,window,click:id=>get(id).listeners.click(),copied:()=>copied};
+ return {get,window,click:id=>get(id).listeners.click(),press:id=>get(id).listeners.click({currentTarget:get(id)}),copied:()=>copied,focused:()=>focused};
 }
 test('helper builds its own dialog and prefills OS and issue type from the page',()=>{
  const h=ui();
@@ -98,4 +99,20 @@ test('Case Notes and Escalation Quality share one helper with identical behavior
  }
  const markup=ui().window.LogHelper.markup;
  assert.ok(!/helperAdd|helperCopy/.test(markup));
+});
+test('data-log-helper shortcuts open the same dialog and return focus to the opener or its named target',()=>{
+ const h=ui({shortcuts:['railLogHelper','ringLogs']});h.get('ringLogs').dataset.logHelperReturn='toolboxLauncher';
+ h.press('railLogHelper');assert.equal(h.get('logHelperDialog').open,true);assert.equal(h.get('helperSymptom').value,'network');
+ h.click('closeLogHelper');assert.equal(h.focused(),h.get('railLogHelper'));
+ h.press('ringLogs');assert.equal(h.get('logHelperDialog').open,true);h.click('closeLogHelper');assert.equal(h.focused(),h.get('toolboxLauncher'));
+ h.click('openLogHelper');h.click('closeLogHelper');assert.equal(h.focused(),h.get('openLogHelper'));
+});
+test('Case Notes offers Log Collection Helper in the toolbox and the action rail',()=>{
+ const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+ const radial=/<div class="toolbox-radial"[\s\S]*?<\/div>/.exec(html)[0];
+ assert.match(radial,/<button type="button" data-toolbox-action="logs" data-log-helper data-log-helper-return="toolboxLauncher"[^>]*>Log Collection Helper<\/button>/);
+ const rail=/<nav class="toolkit-nav"[\s\S]*?<\/nav>/.exec(html)[0];
+ assert.match(rail,/id="railLogHelper" data-log-helper[^>]*disabled>Log Collection Helper<\/button>/);
+ const notes=fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8');
+ assert.match(notes,/logs:'openLogHelper'/);assert.match(notes,/railLogHelper"\)\.disabled = \$\("openLogHelper"\)\.matches/);
 });

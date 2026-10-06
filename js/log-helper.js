@@ -2,6 +2,7 @@
 // Shared "Which logs should I collect?" dialog for Case Notes and Escalation Quality.
 // The dialog markup lives here, so both pages always show the same helper. A page only needs
 // an #openLogHelper button and an #os select, then calls LogHelper.init({context}).
+// Any other element with data-log-helper also opens it; data-log-helper-return names the element that gets focus back.
 window.LogHelper = (() => {
   const markup = `<div class="log-helper-heading"><h2 id="logHelperTitle">Which logs should I collect?</h2><button class="button secondary" id="closeLogHelper" type="button">Close</button></div>
 <p id="helperContext"></p>
@@ -44,7 +45,9 @@ window.LogHelper = (() => {
       }));
       $("helperStatus").textContent="";
     }
-    $("openLogHelper").addEventListener("click",()=>{
+    let opener=null;
+    function open(event){
+      opener=event?.currentTarget || $("openLogHelper");
       const context=api.context();
       $("helperOS").replaceChildren(...[...$("os").options].map(item=>{const option=document.createElement("option");option.value=item.value;option.textContent=item.textContent;return option;}));
       $("helperOS").value=context.os || "";platform=context.platform || "";
@@ -54,11 +57,16 @@ window.LogHelper = (() => {
         ? "Based on this case's Issue type: "+LogHelperCore.symptoms[context.symptom]+". Overrides below affect this plan only."
         : "No matching built-in Issue type (custom or unspecified). Showing General investigation; choose a collection scenario below without changing your case.";
       render();dialog.showModal();
-    });
+    }
+    $("openLogHelper").addEventListener("click",open);
+    document.querySelectorAll?.("[data-log-helper]").forEach(button=>button.addEventListener("click",open));
     for(const id of ["helperOS","helperSymptom"]) $(id).addEventListener("change",render);
     $("closeLogHelper").addEventListener("click",()=>dialog.close());
     $("closeLogHelperBottom").addEventListener("click",()=>dialog.close());
-    dialog.addEventListener("close",()=>$("openLogHelper").focus());
+    dialog.addEventListener("close",()=>{
+      const target=(opener?.dataset?.logHelperReturn && $(opener.dataset.logHelperReturn)) || opener || $("openLogHelper");
+      opener=null;target.focus();
+    });
   }
   return {init,markup};
 })();

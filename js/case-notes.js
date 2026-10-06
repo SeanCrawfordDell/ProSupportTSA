@@ -32,6 +32,7 @@
     copyDevin: "Copy the selected AI prompt with the current case context.",
     toggleActionDock: "Keep the action dock in place instead of floating while you scroll.",
     openLogHelper: "Get a collection plan based on the selected OS and issue.",
+    railLogHelper: "Get a collection plan based on the selected OS and issue.",
     toolboxLauncher: "Open the draggable quick-action toolbox."
   };
   const toolkitTooltips = {
@@ -831,6 +832,8 @@
     $("stopTimer").disabled = !writable || copying || !selected() || selected().started === null;
     window.CaseMarkdown?.setEditable(canEditEntry());
     window.CaseToolkit?.setEditable(canEditEntry());
+    // The rail shortcut follows the Evidence-panel button, which is disabled together with the workflow fields.
+    if ($("railLogHelper")) $("railLogHelper").disabled = $("openLogHelper").matches?.(":disabled") ?? true;
     if($("newCaseEntry"))$("newCaseEntry").disabled=!selected() || !writable || copying;
     $("caseEntryTabs")?.querySelectorAll("button").forEach(button=>{button.disabled=copying;});
     notesPopout?.refresh();
@@ -1371,17 +1374,19 @@
       toolbox.style.left = `${place(rect.left, window.innerWidth)}px`;
       toolbox.style.top = `${place(rect.top, window.innerHeight)}px`;
       toolbox.querySelectorAll('[data-toolbox-action]').forEach(button => {
-        button.disabled = $({email:'emailNote',escalate:'escalateNote',copy:'copyNote'}[button.dataset.toolboxAction]).disabled;
+        button.disabled = $(toolboxTargets[button.dataset.toolboxAction]).matches(':disabled');
       });
     }
   };
+  // Each quick action follows the enabled state of the matching page button. Log Collection Helper opens the dialog itself (data-log-helper); the others press their button.
+  const toolboxTargets = {email:'emailNote',escalate:'escalateNote',copy:'copyNote',logs:'openLogHelper'};
   toolboxLauncher?.addEventListener("pointerdown", event => { toolboxStart = { x:event.clientX, y:event.clientY, left:toolbox.offsetLeft, top:toolbox.offsetTop }; toolboxMoved = false; toolboxLauncher.setPointerCapture(event.pointerId); });
   toolboxLauncher?.addEventListener("pointermove", event => { if (!toolboxStart) return; const dx=event.clientX-toolboxStart.x, dy=event.clientY-toolboxStart.y; if (Math.abs(dx)+Math.abs(dy)>5) { toolboxMoved=true; toolbox.style.right="auto"; toolbox.style.bottom="auto"; toolbox.style.left=`${Math.max(8,Math.min(window.innerWidth-toolbox.offsetWidth-8,toolboxStart.left+dx))}px`; toolbox.style.top=`${Math.max(8,Math.min(window.innerHeight-toolbox.offsetWidth-8,toolboxStart.top+dy))}px`; } });
   toolboxLauncher?.addEventListener('pointerup', event => { if (!toolboxStart) return; toolboxLauncher.releasePointerCapture(event.pointerId); toolboxStart=null; });
   toolboxLauncher?.addEventListener('pointercancel', () => { toolboxStart=null; toolboxMoved=false; });
   toolboxLauncher?.addEventListener('click', () => { if (toolboxMoved) { toolboxMoved=false; return; } setToolboxOpen(!toolbox.classList.contains('is-open')); });
   toolbox?.addEventListener('keydown', event => { if (event.key === 'Escape') { setToolboxOpen(false); toolboxLauncher.focus(); } });
-  toolbox?.addEventListener('click', event => { const action=event.target.closest('[data-toolbox-action]')?.dataset.toolboxAction; if (!action) return; const target={email:'emailNote',escalate:'escalateNote',copy:'copyNote'}[action]; if (!$(target).disabled) $(target).click(); setToolboxOpen(false); });
+  toolbox?.addEventListener('click', event => { const action=event.target.closest('[data-toolbox-action]')?.dataset.toolboxAction; if (!action) return; const target=$(toolboxTargets[action]); setToolboxOpen(false); if (action !== 'logs' && !target.matches(':disabled')) target.click(); });
   toolboxLauncher?.setAttribute("aria-description", "Press Enter to open quick actions. Hold Alt and press arrow keys to move the toolbox.");
   toolboxLauncher?.addEventListener("keydown", event => {
     const direction = {ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[event.key];
