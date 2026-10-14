@@ -344,12 +344,17 @@
     }
   }
   function load() {
-    try { state = CaseNotes.parse(localStorage.getItem(key)); savedState = JSON.parse(JSON.stringify(state)); loadFailed = false; }
-    catch {
-      loadFailed = true;
-      $("lockNotice").hidden = false;
-      $("lockNotice").textContent = "Case history could not be read. Editing is disabled to protect stored notes. Reload to try again.";
-    }
+    let raw;
+    try { raw = localStorage.getItem(key); } catch (error) { failLoad(error, undefined); return; }
+    try { state = CaseNotes.parse(raw); savedState = JSON.parse(JSON.stringify(state)); loadFailed = false; window.CaseRecovery?.hide(); }
+    catch (error) { failLoad(error, raw); }
+  }
+  // Stored history that cannot be read stays untouched; case-recovery.js offers a copy, repair, or a fresh start.
+  function failLoad(error, raw) {
+    loadFailed = true;
+    $("lockNotice").hidden = false;
+    $("lockNotice").textContent = "Case history could not be read. Editing is disabled to protect stored notes.";
+    window.CaseRecovery?.show(error, raw);
   }
 
   function commitCaseChange(change, failure = "Could not save this change. Your saved notes were kept. Free browser storage or export a backup and retry.") {
@@ -834,6 +839,7 @@
   });
   const acquire = () => editorLock.acquire();
   window.addEventListener("pageshow", event => { if (event.persisted) acquire(); });
+  window.CaseRecovery?.init({ key, reopen(message) { acquire(); report(message, "recoveryStatus"); } });
   // Fields a Notes slash command can fill: the case details, then the triage and workflow fields.
   function slashFields() {
     const describe = (id, label, element) => ({ id, label, element, custom: Object.hasOwn(state.fieldConfig.customFields, id),

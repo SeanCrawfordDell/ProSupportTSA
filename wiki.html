@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Step-by-step guides, screenshots, and reference for the Dell Pro-Support Technical Support Assistant: Case Notes, DE Escalation Request, and Support Trends.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
-  <script src="js/theme.js?v=20261006-log-helper-pass1"></script>
+  <script src="js/theme.js?v=20261014-history-recovery"></script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
   <title>ProSupportTSA Wiki</title>
-  <link rel="stylesheet" href="css/wiki.css?v=20261006-log-helper-pass1">
-  <script src="js/wiki.js?v=20261006-log-helper-pass1" defer></script>
+  <link rel="stylesheet" href="css/wiki.css?v=20261014-history-recovery">
+  <script src="js/wiki.js?v=20261014-history-recovery" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#wikiMain">Skip to content</a>
@@ -1154,7 +1154,7 @@
     <tbody>
       <tr><td>“Read-only while another tab is editing Case Notes.”</td><td>Another tab or window has the editing lock.</td><td>Close the other tab (including a Pop out window); this tab becomes editable by itself. Or choose <strong>Take over editing here</strong>.</td></tr>
       <tr><td>“Editing moved to another tab or window, so this tab is now read-only.”</td><td>You (or another tab) took over editing.</td><td>Wait for that tab to close, or choose <strong>Take over editing here</strong>.</td></tr>
-      <tr><td>“Case history could not be read. Editing is disabled…”</td><td>Stored data could not be parsed.</td><td>Reload. If it persists, restore a backup (<a href="#backup">Backup and recovery</a>).</td></tr>
+      <tr><td>“Case history could not be read. Editing is disabled…” with a <strong>Case history needs attention</strong> panel</td><td>Part of the history saved in this browser does not pass its checks, often because it was saved by an older or newer version.</td><td>Read the reason in the panel. Choose <strong>Repair and continue</strong> to keep every case that is still valid; a copy of the original is downloaded first, and you confirm before anything changes. If repair is not offered, reload with <kbd>Ctrl</kbd> <kbd>F5</kbd>, restore a backup (<a href="#backup">Backup and recovery</a>), or choose <strong>Start fresh</strong>.</td></tr>
       <tr><td>“Read-only: this browser cannot protect notes against simultaneous editing.”</td><td>The page is not on HTTPS or localhost, or the browser lacks Web Locks.</td><td>Open the site over HTTPS in a current Edge or Chrome.</td></tr>
       <tr><td>The Retry save button appears.</td><td>The browser refused to write storage (full or blocked).</td><td>Select <strong>Retry save</strong>. If it keeps failing, free space by archiving or deleting old cases and screenshots, then back up.</td></tr>
       <tr><td>“Not backed up yet”</td><td>No backup folder is chosen.</td><td>Choose <strong>Choose Backup Folder</strong> (Chrome or Edge), or use <strong>Download a copy instead</strong>.</td></tr>

@@ -34,6 +34,16 @@ Folder backups contain customer information and are not encrypted by this app: u
 - **Version History** keeps up to ten previous saved content versions per case. Preview before restoring; restoring also retains the current content as a version. These are saved snapshots, not a record of every keystroke.
 - Archive, Trash, and versions share browser storage. They do not provide unlimited capacity. Export backups regularly, especially when using screenshots. Clearing site data removes all browser-local collections.
 
+### If case history cannot be read
+
+If the history saved in this browser does not pass its checks, Case Notes stays read-only so nothing overwrites it, and a **Case history needs attention** panel explains why. Nothing has been deleted.
+
+- **Repair and continue** keeps every case that is still valid and lists anything it must leave out. A copy of the original is downloaded first (`case-notes-history-copy-<date>.json`), and nothing changes until you choose **Confirm repair**.
+- **Download a copy** saves the stored history as a file without changing anything.
+- **Start fresh** empties the history after downloading a copy and asking you to confirm.
+
+If the panel says the history was saved by a newer version, reload with Ctrl+F5 first. If it says the browser is blocking site storage, allow cookies and site data for the site and reload.
+
 ## Layout on laptop screens
 
 On screens narrower than 1500px or shorter than 780px, the action bar is one slim row above the workspace: **Copy to Lightning** (the solid blue main action) first, then Escalate to DE, Email to Case, Customer Update, Handoff Summary and Log Collection Helper. The AI tools (Ask AI to, Copy to AI, Send to Devin, AI Settings) open from **AI tools**; the choice is remembered. On wider screens the bar is a side rail with everything shown. **Jump to Notes** in the Case Workspace bar scrolls to the notes editor.

@@ -43,6 +43,16 @@ Both rule-based scorers measure content rather than presence and length. `CaseRu
 - `case-history-list.js`: Recent cases (Grid/List, search, filters, follow-up colors, card actions).
 - `case-notes-lock.js`: one editing tab at a time (Web Locks), waiting in line and Take over.
 - `case-notes-assist.js`: shortcuts, follow-up alerts, away-time prompt, duplicate Service Request warning, Notes first.
+- `case-recovery.js`: the panel shown when saved history cannot be read (download a copy, repair, start fresh).
+
+## Changing what Case Notes saves
+
+People keep their case history in the browser for months, so every version must read what every earlier version saved. `CaseNotes.parse` rejects the whole history if any part fails validation, and the page then stays read-only, so one strict new rule can lock everyone out. In October 2026, a required toolkit field added without a default locked out every history saved before October 5.
+
+- **New fields need a default, not only a check.** Add them to the defaults (`CaseToolkitCore.defaults`, `CaseWorkflowCore` defaults, or the optional-field list in `CaseNotes.parse`). Missing fields are filled in from the defaults before validation.
+- **Never tighten a rule for data people already have.** If an old value is no longer allowed, convert it in `parse` instead of rejecting it.
+- **When the saved format changes, add a fixture:** `node scripts/make-history-fixture.cjs js tests/fixtures/history/<date>-<short-sha>.json`. `tests/history-compatibility.test.cjs` loads every fixture, one per format since the first release, each written by that release's own code.
+- **If loading still fails,** `CaseNotes.repair` keeps every case that is valid on its own, and `case-recovery.js` lets the user download a copy and repair or start fresh. It never changes anything until the user confirms a second time.
 
 ## Releasing Case Notes changes
 

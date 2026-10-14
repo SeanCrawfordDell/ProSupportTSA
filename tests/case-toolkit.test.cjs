@@ -47,3 +47,17 @@ test('issueTypesFor gives Systems Management only fix ME OMSA and every other OS
  for(const os of ['','Windows Server','Redhat'])assert.deepEqual(T.issueTypesFor(os),Object.keys(T.issueTypes).filter(id=>id!=='fix ME OMSA'));
  assert.equal(T.defaultIssueType('Systems Management'),'fix ME OMSA');assert.equal(T.defaultIssueType('ESX'),'general');
 });
+test('history saved before newer toolkit and workflow fields existed still loads',()=>{
+ const state=C.empty();C.create(state,'old',Date.parse('2026-09-20T10:00:00'));
+ const note=state.cases[0];
+ // A September save: no productApp in the toolkit, and a workflow saved before repeatOf and knowledge.
+ note.toolkit=T.defaults();delete note.toolkit.productApp;
+ note.toolkit.workflow={recentChange:'',severity:'Unspecified',results:{},fix:'',verification:'',confirmed:false,prevention:''};
+ state.version=2;
+ const loaded=C.parse(JSON.stringify(state));
+ assert.equal(loaded.cases.length,1);
+ assert.equal(loaded.cases[0].toolkit.productApp,'');
+ assert.equal(loaded.cases[0].toolkit.workflow.knowledge,'');
+ // Damaged data is still refused.
+ note.toolkit.status='Nonsense';assert.throws(()=>C.parse(JSON.stringify(state)),/toolkit/);
+});
