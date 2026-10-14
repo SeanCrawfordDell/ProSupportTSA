@@ -1,0 +1,294 @@
+{
+ "writtenBy": "2026-10-03-37de435",
+ "features": [
+  "toolkit",
+  "workflow",
+  "custom field",
+  "dated notes",
+  "saved version",
+  "archive",
+  "trash"
+ ],
+ "history": {
+  "version": 3,
+  "selected": "case-b",
+  "cases": [
+   {
+    "toolkit": {
+     "issueType": "general",
+     "impact": "",
+     "questions": "",
+     "owner": "",
+     "due": "",
+     "status": "Open",
+     "checks": {},
+     "timeline": [],
+     "timelineAction": "",
+     "timelineResult": "",
+     "customerDraft": "",
+     "summaryDraft": ""
+    },
+    "id": "case-b",
+    "created": 1789117200000,
+    "updated": 1789117200000,
+    "elapsed": 86400000,
+    "started": null,
+    "lastSession": 86400000,
+    "tag": "BBB2002",
+    "platform": "PowerEdge R750",
+    "request": "100000002",
+    "os": "Windows Server",
+    "osVersion": "",
+    "country": "",
+    "supportType": "",
+    "logLocation": "",
+    "issue": "Server restarts unexpectedly",
+    "notes": "<p>Reviewed the System log. Observed Event ID 41.</p><p>Edited later.</p>",
+    "next": "",
+    "activeEntryId": "initial-case-b",
+    "entries": [
+     {
+      "id": "initial-case-b",
+      "created": 1789117200000,
+      "updated": 1789117200000,
+      "notes": "",
+      "next": ""
+     }
+    ],
+    "siteName": ""
+   },
+   {
+    "toolkit": {
+     "issueType": "network",
+     "impact": "",
+     "questions": "",
+     "owner": "Customer",
+     "due": "2026-09-21T15:00:00.000Z",
+     "status": "Waiting on customer",
+     "checks": {},
+     "timeline": [
+      {
+       "id": "t1",
+       "at": 1789117200000,
+       "action": "Requested a TSR",
+       "result": "Customer agreed"
+      }
+     ],
+     "timelineAction": "",
+     "timelineResult": "",
+     "customerDraft": "",
+     "summaryDraft": "",
+     "workflow": {
+      "recentChange": "NIC driver updated",
+      "severity": "Unspecified",
+      "results": {},
+      "fix": "Rolled the driver back",
+      "verification": "",
+      "confirmed": false,
+      "prevention": "",
+      "repeatOf": "",
+      "knowledge": ""
+     }
+    },
+    "id": "case-a",
+    "created": 1789030800000,
+    "updated": 1789203600000,
+    "elapsed": 86400000,
+    "started": null,
+    "lastSession": 86400000,
+    "tag": "AAA1001",
+    "platform": "PowerEdge R750",
+    "request": "100000001",
+    "os": "Windows Server",
+    "osVersion": "",
+    "country": "",
+    "supportType": "",
+    "logLocation": "",
+    "issue": "VMs lose network for 30-90 seconds",
+    "notes": "<p>Day two: driver rolled back. Result: no drops for 60 minutes.</p>",
+    "next": "",
+    "activeEntryId": "day-two",
+    "entries": [
+     {
+      "id": "initial-case-a",
+      "created": 1789030800000,
+      "updated": 1789030800000,
+      "notes": "<p>Spoke with the customer. Result: drops reproduced.</p>",
+      "next": "<p>Customer to collect a TSR. Owner: customer. Due: tomorrow.</p>"
+     },
+     {
+      "id": "day-two",
+      "created": 1789203600000,
+      "updated": 1789203600000,
+      "notes": "<p>Day two: driver rolled back. Result: no drops for 60 minutes.</p>",
+      "next": ""
+     }
+    ],
+    "siteName": "Lab 2"
+   }
+  ],
+  "archive": [
+   {
+    "toolkit": {
+     "issueType": "general",
+     "impact": "",
+     "questions": "",
+     "owner": "",
+     "due": "",
+     "status": "Open",
+     "checks": {},
+     "timeline": [],
+     "timelineAction": "",
+     "timelineResult": "",
+     "customerDraft": "",
+     "summaryDraft": ""
+    },
+    "id": "case-c",
+    "created": 1789203600000,
+    "updated": 1789203600000,
+    "elapsed": 86400000,
+    "started": null,
+    "lastSession": 86400000,
+    "tag": "CCC3003",
+    "platform": "PowerEdge R750",
+    "request": "100000003",
+    "os": "Windows Server",
+    "osVersion": "",
+    "country": "",
+    "supportType": "",
+    "logLocation": "",
+    "issue": "Archived example",
+    "notes": "<p>Old case.</p>",
+    "next": "",
+    "activeEntryId": "initial-case-c",
+    "entries": [
+     {
+      "id": "initial-case-c",
+      "created": 1789203600000,
+      "updated": 1789203600000,
+      "notes": "",
+      "next": ""
+     }
+    ],
+    "siteName": ""
+   }
+  ],
+  "trash": [
+   {
+    "toolkit": {
+     "issueType": "general",
+     "impact": "",
+     "questions": "",
+     "owner": "",
+     "due": "",
+     "status": "Open",
+     "checks": {},
+     "timeline": [],
+     "timelineAction": "",
+     "timelineResult": "",
+     "customerDraft": "",
+     "summaryDraft": ""
+    },
+    "id": "case-d",
+    "created": 1789290000000,
+    "updated": 1789290000000,
+    "elapsed": 172800000,
+    "started": null,
+    "lastSession": 172800000,
+    "tag": "DDD4004",
+    "platform": "PowerEdge R750",
+    "request": "100000004",
+    "os": "Windows Server",
+    "osVersion": "",
+    "country": "",
+    "supportType": "",
+    "logLocation": "",
+    "issue": "Deleted example",
+    "notes": "<p>Deleted case.</p>",
+    "next": "",
+    "activeEntryId": "initial-case-d",
+    "entries": [
+     {
+      "id": "initial-case-d",
+      "created": 1789290000000,
+      "updated": 1789290000000,
+      "notes": "",
+      "next": ""
+     }
+    ],
+    "siteName": "",
+    "deletedAt": 1789462800000
+   }
+  ],
+  "revisions": {
+   "case-b": [
+    {
+     "savedAt": 1789290000000,
+     "note": {
+      "toolkit": {
+       "issueType": "general",
+       "impact": "",
+       "questions": "",
+       "owner": "",
+       "due": "",
+       "status": "Open",
+       "checks": {},
+       "timeline": [],
+       "timelineAction": "",
+       "timelineResult": "",
+       "customerDraft": "",
+       "summaryDraft": ""
+      },
+      "id": "case-b",
+      "created": 1789117200000,
+      "updated": 1789117200000,
+      "elapsed": 86400000,
+      "started": null,
+      "lastSession": 86400000,
+      "tag": "BBB2002",
+      "platform": "PowerEdge R750",
+      "request": "100000002",
+      "os": "Windows Server",
+      "osVersion": "",
+      "country": "",
+      "supportType": "",
+      "logLocation": "",
+      "issue": "Server restarts unexpectedly",
+      "notes": "<p>Reviewed the System log. Observed Event ID 41.</p>",
+      "next": "",
+      "activeEntryId": "initial-case-b",
+      "entries": [
+       {
+        "id": "initial-case-b",
+        "created": 1789117200000,
+        "updated": 1789117200000,
+        "notes": "",
+        "next": ""
+       }
+      ],
+      "siteName": ""
+     }
+    }
+   ]
+  },
+  "fieldConfig": {
+   "order": [
+    "tag",
+    "platform",
+    "request",
+    "os",
+    "osVersion",
+    "country",
+    "supportType",
+    "logLocation",
+    "issue",
+    "notes",
+    "next",
+    "siteName"
+   ],
+   "customFields": {
+    "siteName": "Site name"
+   }
+  }
+ }
+}

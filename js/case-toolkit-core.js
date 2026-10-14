@@ -29,6 +29,10 @@ const CaseToolkitCore = (() => {
   function defaults() { return { issueType:"general", impact:"", questions:"", owner:"", due:"", status:"Open", checks:{}, timeline:[], timelineAction:"", timelineResult:"", customerDraft:"", summaryDraft:"", productApp:"" }; }
   function ensure(note) {
     if (!note.toolkit) note.toolkit = defaults();
+    // Cases saved before a field was added get its default, so older history still loads.
+    else if (typeof note.toolkit === "object" && !Array.isArray(note.toolkit)) {
+      for (const [key, value] of Object.entries(defaults())) if (!Object.hasOwn(note.toolkit, key)) note.toolkit[key] = value;
+    }
     return note.toolkit;
   }
   function validate(note) {

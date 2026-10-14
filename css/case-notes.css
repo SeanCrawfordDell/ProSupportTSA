@@ -522,3 +522,11 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .shortcut-list { margin:0 0 8px; padding-left:18px; line-height:1.9; font-size:13px; }
 .shortcut-list kbd { padding:1px 6px; border:1px solid var(--line); border-radius:4px; background:var(--input-bg); font-family:inherit; font-size:12px; }
 .customizer-check[hidden] { display:none; }
+/* Shown when saved case history cannot be read: explains why and offers repair, a copy, or a fresh start. */
+.recovery-panel { margin:12px 0; padding:16px 18px; border:1px solid #e3a008; border-left:6px solid #e3a008; border-radius:10px; background:var(--panel-bg); color:var(--ink); }
+.recovery-panel h2 { margin:0 0 8px; font-size:17px; }
+.recovery-panel p, .recovery-panel li { font-size:14px; line-height:1.5; margin:6px 0; }
+.recovery-panel ul { margin:6px 0; padding-left:20px; }
+.recovery-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+.recovery-confirm { margin-top:12px; padding:12px; border:1px solid var(--line); border-radius:8px; }
+.recovery-panel[hidden], .recovery-confirm[hidden] { display:none; }
