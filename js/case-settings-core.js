@@ -21,7 +21,7 @@ const CaseSettings = (() => {
     config = JSON.parse(JSON.stringify(config));
     const notesCore = typeof module !== "undefined" ? require("./case-notes-core.js") : CaseNotes;
     notesCore.migrateLegacyFieldConfig(config.fieldConfig);
-    const reserved = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt", "entries", "activeEntryId"]);
+    const reserved = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt", "entries", "activeEntryId", "quick"]);
     const customFields = {};
     for (const [id, label] of Object.entries(config.fieldConfig.customFields)) {
       // Older versions allowed long labels; keep those backups restorable.

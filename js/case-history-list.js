@@ -73,6 +73,7 @@ window.CaseHistoryList = (() => {
         const issue = document.createElement("span"); issue.textContent = query ? CaseNotes.excerpt(note,query) : note.issue || "No issue description yet";
         const meta = document.createElement("small"); meta.textContent = `${note.tag ? note.tag + " · " : ""}${historyView === "list" ? new Date(note.created).toLocaleDateString() : new Date(note.created).toLocaleString()}`;
         button.append(title, issue, meta);
+        if (note.quick === true) { const quick = document.createElement("small"); quick.className = "quick-badge"; quick.textContent = "Quick note"; button.append(quick); }
         if (collection !== viewCollection) {
           const place = document.createElement("small"); place.className = "case-collection-badge";
           place.textContent = collection === "archive" ? "In Archive" : collection === "trash" ? "In Trash" : "In Recent cases";

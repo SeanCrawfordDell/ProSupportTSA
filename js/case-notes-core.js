@@ -9,7 +9,7 @@ const CaseNotes = (() => {
   const legacySupportTypes = { "OEM": "OEM OS", "PSP": "ProSupport Plus Bring Your own License", "No OS Support": "No Software Support" };
   const normalizeSupportType = value => Object.hasOwn(legacySupportTypes, value) ? legacySupportTypes[value] : value;
   // Case properties a custom field ID may not take. case-settings-core.js keeps a copy (a test checks they match).
-  const reservedFieldIds = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt", "entries", "activeEntryId"]);
+  const reservedFieldIds = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt", "entries", "activeEntryId", "quick"]);
   const imageDataPattern = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
   const empty = () => ({ version: 3, selected: null, cases: [], archive: [], trash: [], revisions: {}, fieldConfig: { order: [...defaultFieldOrder], customFields: {} } });
   function migrateEntries(note) {
@@ -59,14 +59,20 @@ const CaseNotes = (() => {
     state.cases.forEach(item => { if (item.started !== null) stop(item, now); });
     note.started = now;
   }
-  function create(state, id, now) {
+  function create(state, id, now, opts = {}) {
     state.cases.forEach(item => { if (item.started !== null) stop(item, now); });
     const fieldConfig = state.fieldConfig || { order: [...defaultFieldOrder], customFields: {} };
     const allFields = { ...fields, ...fieldConfig.customFields };
     const note = { toolkit: Toolkit.defaults(), id, created: now, updated: now, elapsed: 0, started: now, lastSession: 0, ...Object.fromEntries(Object.keys(allFields).map(key => [key, ""])) };
+    if (opts.quick) note.quick = true;
     migrateEntries(note);
     state.cases.unshift(note); trimWorkingList(state, now); state.selected = id;
     return note;
+  }
+  const quickFieldIds = ["request", "tag", "notes", "next"];
+  function setQuick(note, quick, now) {
+    note.quick = !!quick;
+    note.updated = now;
   }
   function duration(ms) {
     const seconds = Math.floor(ms / 1000);
@@ -283,6 +289,7 @@ const CaseNotes = (() => {
         }
         // Older saved cases predate per-session tracking.
         if (!Object.hasOwn(note, "lastSession")) note.lastSession = 0;
+        if (Object.hasOwn(note, "quick") && typeof note.quick !== "boolean") throw Error("Invalid case");
       }
       if (!note || typeof note.id !== "string" || ids.has(note.id) || ![note.created, note.updated, note.elapsed, note.lastSession].every(n => Number.isFinite(n) && n >= 0) || !(note.started === null || (Number.isFinite(note.started) && note.started >= 0)) || !Object.keys(allFields).every(key => typeof note[key] === "string")) throw Error("Invalid case");
       if (inputVersion === 2 && !Object.hasOwn(note,"entries")) migrateEntries(note);
@@ -427,6 +434,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, dayCopyText, dayEntries, emailFile, backup, escalation, parse, repair, addCustomField, removeCustomField, resetCustomFields, reorderFields, mergeFieldOrder, unhideableFields, visibleFieldIds, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
+  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, quickFieldIds, setQuick, duration, plainText: plainImages, copyText, dayCopyText, dayEntries, emailFile, backup, escalation, parse, repair, addCustomField, removeCustomField, resetCustomFields, reorderFields, mergeFieldOrder, unhideableFields, visibleFieldIds, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;

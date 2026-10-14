@@ -13,6 +13,7 @@
   if (caseWorkArea?.prepend && actionDock) caseWorkArea.prepend(actionDock);
   const buttonTooltips = {
     newNote: "Start a new case with its first dated note and begin time tracking.",
+    newQuickNote: "Start a slim case note for a case someone else opened. You can show the full case later for DE escalation.",
     loadExampleNote: "Load a sample case note you can safely explore.",
     openTraining: "Tutorial Demo and Load Example.",
     openSettingsMenu: "Settings: customize case fields, back up and restore.",
@@ -376,7 +377,7 @@
   function controls() {
     ["caseVersions","printCase"].forEach(id => { if ($(id)) $(id).disabled = !selected() || copying; });
     $("fields").disabled = !writable || copying;
-    $("newNote").disabled = $("startNote").disabled = $("loadExampleNote").disabled = $("customizeFields").disabled = !writable || copying;
+    $("newNote").disabled = $("startNote").disabled = $("newQuickNote").disabled = $("startQuickNote").disabled = $("expandQuick").disabled = $("collapseQuick").disabled = $("loadExampleNote").disabled = $("customizeFields").disabled = !writable || copying;
     $("emailNote").disabled = $("copyNote").disabled = $("escalateNote").disabled = $("copyDevin").disabled = !writable || copying;
     $("devinTask").disabled = !writable || copying;
     $("stopTimer").disabled = !writable || copying || !selected() || selected().started === null;
@@ -447,9 +448,12 @@
         fieldGrid.appendChild(element);
       });
       // Hidden fields stay in the grid with their values; they are only taken out of view.
-      const visible = new Set(CaseNotes.visibleFieldIds(state, readHidden()));
+      const quick = note.quick === true;
+      const visible = new Set(quick ? CaseNotes.quickFieldIds : CaseNotes.visibleFieldIds(state, readHidden()));
       fieldContainers.forEach((container, id) => { container.hidden = !visible.has(id); });
-      const hiddenLabels = effectiveFields.filter(field => fieldContainers.has(field.id) && !visible.has(field.id)).map(field => field.label);
+      const hiddenLabels = quick ? [] : effectiveFields.filter(field => fieldContainers.has(field.id) && !visible.has(field.id)).map(field => field.label);
+      ["workflow", "noteRubric", "layoutToggle"].forEach(id => { if ($(id)) $(id).hidden = quick; });
+      $("quickBanner").hidden = !quick; $("fullBanner").hidden = note.quick !== false;
       if ($("hiddenFieldsNote")) {
         $("hiddenFieldsNote").hidden = !hiddenLabels.length;
         $("hiddenFieldsText").textContent = hiddenLabels.length ? `Hidden in Case Details: ${hiddenLabels.join(", ")}.` : "";
@@ -481,13 +485,22 @@
     window.CaseToolkit?.refresh();
     window.CaseRubric?.refresh();
   }
-  function newNote() {
+  function newNote(quick = false) {
     if (!writable || copying || !save()) return;
     summaryCaseId=null;
-    CaseNotes.create(state, crypto.randomUUID(), Date.now()); dirty = true; save(); render();
+    CaseNotes.create(state, crypto.randomUUID(), Date.now(), {quick: quick === true}); dirty = true; save(); render();
     $("copyStatus").textContent = "";
-    $("tag").focus();
+    (quick === true ? $("request") : $("tag")).focus();
   }
+  function setQuickMode(quick) {
+    const id = selected()?.id; if (!id || !writable || copying || !save()) return;
+    commitCaseChange(candidate => CaseNotes.setQuick(candidate.cases.find(item => item.id === id), quick, Date.now()));
+    (quick ? $("notesRich") : $("workflow")).scrollIntoView?.({block:"nearest"});
+  }
+  $("newQuickNote").addEventListener("click", () => newNote(true));
+  $("startQuickNote").addEventListener("click", () => newNote(true));
+  $("expandQuick").addEventListener("click", () => setQuickMode(false));
+  $("collapseQuick").addEventListener("click", () => setQuickMode(true));
   $("closeCaseRecovery")?.addEventListener("click", () => $("caseRecovery").close());
   $("caseVersions")?.addEventListener("click", () => {
     if (!selected() || (writable && !save())) return;
@@ -534,8 +547,8 @@
     CaseNotes.stop(note, now); note.updated = now; dirty = true;
     save(); tick();
   });
-  $("newNote").addEventListener("click", newNote);
-  $("startNote").addEventListener("click", newNote);
+  $("newNote").addEventListener("click", () => newNote());
+  $("startNote").addEventListener("click", () => newNote());
   
   // A small mock FLEP screenshot for the sample case. Returns null where canvas is unavailable.
   function exampleScreenshot() {

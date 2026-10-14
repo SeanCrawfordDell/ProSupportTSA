@@ -90,12 +90,13 @@
 <label class="field">Sort by<select id="caseSort"><option value="created">Newest created</option><option value="updated">Recently edited</option><option value="due">Follow-up due</option></select></label>
 <p class="history-help">Pinned cases first. Older cases move to Archive after 100 recent cases. Trash is kept until you permanently delete it.</p></div><div id="historyList"></div></aside>
       <section class="panel editor">
-        <div id="welcome"><div class="empty-icon">✎</div><h2>A clear record starts here</h2><p>Start a case, then add a dated note for each day of work.</p><button class="button primary" id="startNote" disabled>Start New Case</button></div>
+        <div id="welcome"><div class="empty-icon">✎</div><h2>A clear record starts here</h2><p>Start a case, then add a dated note for each day of work.</p><button class="button primary" id="startNote" disabled>Start New Case</button> <button class="button secondary" id="startQuickNote" disabled title="Slim view for adding notes to a case someone else opened.">Start New Case Note</button></div>
         <div id="noteEditor" hidden>
           <div class="editor-heading">
             <div class="workspace-title">
               <p class="eyebrow">CASE WORKSPACE</p>
               <button class="button primary" id="newNote" type="button" disabled>+ New Case</button>
+              <button class="button secondary" id="newQuickNote" type="button" disabled>+ New Case Note</button>
               <span id="saveStatus" role="status">Saved</span>
               <button class="button secondary" type="button" data-toolkit="followup" aria-haspopup="dialog" aria-controls="toolkitDialog" title="Set a follow-up owner, due date, and status for this case." disabled>Set follow-up</button>
               <button class="button secondary" id="caseVersions" type="button">Version History</button>
@@ -109,6 +110,8 @@
               <button class="timer-info" type="button" aria-label="How time tracking works" title="Time tracking starts automatically when notes are started or modified. Copy to Lightning stops the timer. You can also use Stop Tracking.">ⓘ</button>
             </div>
           </div>
+          <p class="notice quick-banner" id="quickBanner" hidden><span class="quick-badge">Quick note</span> Slim view for a case opened by someone else. <button class="button secondary" id="expandQuick" type="button" title="Show every case field, the workflow and the rubric. Nothing you entered is lost.">Show full case (DE escalation)</button></p>
+          <p class="notice quick-banner" id="fullBanner" hidden>This case started as a quick note. <button class="button secondary" id="collapseQuick" type="button">Switch back to quick view</button></p>
           <details id="workflow" class="case-workflow" open>
             <summary>Case workflow</summary>
             <nav id="workflowTabs" aria-label="Case workflow stages">
