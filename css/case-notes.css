@@ -229,7 +229,7 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .workspace-title { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0; }
 .workspace-title .eyebrow { margin:0!important; flex-shrink:0; }
 .workspace-title .eyebrow { flex-basis:100%; }
-.workspace-title #newNote { margin:0; padding:7px 12px; font-size:12px; white-space:nowrap; }
+.workspace-title :is(#newNote, #newQuickNote) { margin:0; padding:7px 12px; font-size:12px; white-space:nowrap; }
 .workspace-title :is([data-toolkit="followup"], #caseVersions, #printCase, #jumpToNotes) { margin:0; padding:7px 12px; font-size:12px; white-space:nowrap; }
 @media(max-width:500px) { .workspace-title { flex-wrap:wrap; gap:6px; } }
 
@@ -530,3 +530,6 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .recovery-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
 .recovery-confirm { margin-top:12px; padding:12px; border:1px solid var(--line); border-radius:8px; }
 .recovery-panel[hidden], .recovery-confirm[hidden] { display:none; }
+
+.quick-badge{display:inline-block;padding:.1rem .5rem;border-radius:999px;background:#0b6bcb;color:#fff;font-size:.75rem;font-weight:600}
+.quick-banner{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
