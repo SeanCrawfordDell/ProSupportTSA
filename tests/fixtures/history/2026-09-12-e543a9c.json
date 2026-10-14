@@ -1,0 +1,74 @@
+{
+ "writtenBy": "2026-09-12-e543a9c",
+ "features": [],
+ "history": {
+  "version": 1,
+  "selected": "case-d",
+  "cases": [
+   {
+    "id": "case-d",
+    "created": 1789290000000,
+    "updated": 1789290000000,
+    "elapsed": 0,
+    "started": 1789290000000,
+    "tag": "DDD4004",
+    "request": "100000004",
+    "os": "Windows Server",
+    "country": "",
+    "supportType": "",
+    "logLocation": "",
+    "issue": "Deleted example",
+    "notes": "<p>Deleted case.</p>",
+    "next": ""
+   },
+   {
+    "id": "case-c",
+    "created": 1789203600000,
+    "updated": 1789203600000,
+    "elapsed": 86400000,
+    "started": null,
+    "tag": "CCC3003",
+    "request": "100000003",
+    "os": "Windows Server",
+    "country": "",
+    "supportType": "",
+    "logLocation": "",
+    "issue": "Archived example",
+    "notes": "<p>Old case.</p>",
+    "next": ""
+   },
+   {
+    "id": "case-b",
+    "created": 1789117200000,
+    "updated": 1789117200000,
+    "elapsed": 86400000,
+    "started": null,
+    "tag": "BBB2002",
+    "request": "100000002",
+    "os": "Windows Server",
+    "country": "",
+    "supportType": "",
+    "logLocation": "",
+    "issue": "Server restarts unexpectedly",
+    "notes": "<p>Reviewed the System log. Observed Event ID 41.</p>",
+    "next": ""
+   },
+   {
+    "id": "case-a",
+    "created": 1789030800000,
+    "updated": 1789030800000,
+    "elapsed": 86400000,
+    "started": null,
+    "tag": "AAA1001",
+    "request": "100000001",
+    "os": "Windows Server",
+    "country": "",
+    "supportType": "",
+    "logLocation": "",
+    "issue": "VMs lose network for 30-90 seconds",
+    "notes": "<p>Spoke with the customer. Result: drops reproduced.</p>",
+    "next": "<p>Customer to collect a TSR. Owner: customer. Due: tomorrow.</p>"
+   }
+  ]
+ }
+}

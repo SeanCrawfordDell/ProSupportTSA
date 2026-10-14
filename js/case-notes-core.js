@@ -330,6 +330,51 @@ const CaseNotes = (() => {
     state.cases.sort((a, b) => b.created - a.created);
     return state;
   }
+  // Salvages a history that parse() rejects. Every case, archived case, case in Trash and saved version that is valid
+  // on its own is kept; everything else is listed in setAside (with the reason) so the caller can keep a copy.
+  // Returns null when the text is not a history this version understands: not JSON, or saved by a newer version.
+  function repair(raw, now) {
+    let data;
+    try { data = JSON.parse(raw); } catch { return null; }
+    if (!data || typeof data !== "object" || Array.isArray(data) || ![1, 2, 3].includes(data.version)) return null;
+    const version = data.version, setAside = [], why = error => error?.message || "Invalid data";
+    const name = item => [item?.request && "SR " + item.request, item?.tag].filter(v => typeof v === "string" && v).join(" · ") || (typeof item?.id === "string" ? item.id : "Unnamed case");
+    let fieldConfig = data.fieldConfig;
+    if (version !== 1 && fieldConfig !== undefined) {
+      try { parse(JSON.stringify({ version, cases: [], selected: null, fieldConfig }), true); }
+      catch (error) { setAside.push({ where: "Case Details field settings", reason: why(error), data: fieldConfig }); fieldConfig = undefined; }
+    }
+    const base = () => fieldConfig === undefined ? { version, selected: null } : { version, selected: null, fieldConfig };
+    const check = item => { try { return parse(JSON.stringify({ ...base(), cases: [item] }), true).cases[0]; } catch (error) { return error; } };
+    const ids = new Set(), kept = { cases: [], archive: [], trash: [] };
+    const where = { cases: "Recent case", archive: "Archived case", trash: "Case in Trash" };
+    for (const collection of ["cases", "archive", "trash"]) {
+      const items = data[collection] ?? [];
+      if (!Array.isArray(items)) { setAside.push({ where: where[collection] + "s", reason: "Not a list", data: items }); continue; }
+      for (const item of items) {
+        const result = check(item);
+        if (result instanceof Error) setAside.push({ where: where[collection], name: name(item), reason: why(result), data: item });
+        else if (ids.has(result.id)) setAside.push({ where: where[collection], name: name(item), reason: "Duplicate case ID", data: item });
+        else { ids.add(result.id); kept[collection].push(item); }
+      }
+    }
+    // Only one case can be timing, and Recent cases holds 100; older extras move to the Archive.
+    kept.cases.sort((a, b) => b.created - a.created);
+    let timing = false;
+    for (const item of kept.cases) { if (item.started === null) continue; if (timing) stop(item, now); timing = true; }
+    kept.archive.unshift(...kept.cases.splice(100));
+    const revisions = {};
+    if (data.revisions !== undefined && (!data.revisions || typeof data.revisions !== "object" || Array.isArray(data.revisions))) setAside.push({ where: "Saved versions", reason: "Invalid versions", data: data.revisions });
+    else for (const [id, versions] of Object.entries(data.revisions || {})) {
+      const good = Array.isArray(versions) && ids.has(id) ? versions.filter(v => v && Number.isFinite(v.savedAt) && v.note?.id === id && !(check(v.note) instanceof Error)).slice(-10) : [];
+      if (good.length) revisions[id] = good;
+      if (!Array.isArray(versions) || good.length < versions.length) setAside.push({ where: "Saved versions", name: id, reason: ids.has(id) ? "Invalid version" : "Case not found", data: versions });
+    }
+    const selected = kept.cases.some(item => item.id === data.selected) ? data.selected : kept.cases[0]?.id ?? null;
+    const candidate = { ...data, ...base(), selected, cases: kept.cases, archive: kept.archive, trash: kept.trash, revisions };
+    if (fieldConfig === undefined) delete candidate.fieldConfig;
+    try { return { state: parse(JSON.stringify(candidate)), setAside, kept: ids.size }; } catch { return null; }
+  }
   function addCustomField(state, fieldId, fieldLabel) {
     if (typeof fieldLabel !== "string" || !fieldLabel.trim() || fieldLabel.length > 120) throw Error("Field labels must contain 1–120 characters.");
     if (!/^[a-zA-Z0-9_-]+$/.test(fieldId)) throw Error("Invalid field ID");
@@ -382,6 +427,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, dayCopyText, dayEntries, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, mergeFieldOrder, unhideableFields, visibleFieldIds, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
+  return { migrateLegacyFieldConfig, reservedFieldIds, imageDataPattern, fields, defaultFieldOrder, supportTypes, normalizeSupportType, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, dayCopyText, dayEntries, emailFile, backup, escalation, parse, repair, addCustomField, removeCustomField, resetCustomFields, reorderFields, mergeFieldOrder, unhideableFields, visibleFieldIds, getEffectiveFields, move, checkpoint, versionSnapshot, pruneImages, VERSION_INTERVAL, searchText, excerpt, trimWorkingList, syncEntry, entryList, selectEntry, addEntry, exportField };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;
