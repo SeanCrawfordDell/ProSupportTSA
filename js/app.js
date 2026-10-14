@@ -261,11 +261,85 @@ function reviewData() {
 }
 function formatEscalation(form) {
   if (!hasContent(form)) return "";
-  const order = ["platform", "os", "osVersion", "supportType", "country", "timezone", "severity", "production", "affected", "problem", "impact", "timeline", "errors", "reproducible", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "logReason", "collectionPlan", "changes", "sourceNote"];
-  const sections = order.filter(id => form[id] && (id !== "logReason" || form.evidence === "No") && (id !== "logLocation" || hasLogs(form)) && (id !== "reproduction" || isReproducible(form))).map(id => `${labels[id].toUpperCase()}:\n${form[id]}`);
-  const title=caseTitle(form);
-  if(title)sections.unshift("CASE TITLE:\n"+title);
-  return sections.join("\n\n");
+  const title = caseTitle(form);
+  let output = "";
+
+  // ==CASE TITLE==
+  if (title) {
+    output += `==CASE TITLE==\n${title}\n\n`;
+  }
+
+  // ==ENVIRONMENT==
+  output += `==ENVIRONMENT==\n`;
+  output += `SYSTEM/PLATFORM:  OS/SOLUTION:     OS VERSION / BUILD:\n`;
+  output += `${form.platform || ""}    ${form.os || ""}    ${form.osVersion || ""}\n\n`;
+
+  // ===IMPACT===
+  output += `===IMPACT===\n`;
+  output += `SEVERITY: ${form.severity || ""}  SERVICE IMPACT: ${form.production || ""}  AFFECTED SYSTEMS / USERS:${form.affected || ""}\n\n`;
+  if (form.impact) {
+    output += `${form.impact}\n\n`;
+  }
+
+  // ==PROBLEM STATEMENT==
+  if (form.problem) {
+    output += `==PROBLEM STATEMENT==\n${form.problem}\n\n`;
+  }
+
+  // ==DETAILS==
+  output += `==DETAILS==\n`;
+
+  // TIMELINE AND FREQUENCY
+  if (form.timeline) {
+    output += `TIMELINE AND FREQUENCY:\n${form.timeline}\n\n`;
+  }
+
+  // EXACT ERRORS AND TIMESTAMPS
+  if (form.errors) {
+    output += `EXACT ERRORS AND TIMESTAMPS:\n${form.errors}\n\n`;
+  }
+
+  // RECENT CHANGES
+  if (form.changes) {
+    output += `RECENT CHANGES:\n${form.changes}\n\n`;
+  }
+
+  // IS THIS ISSUE REPRODUCIBLE?
+  if (form.reproducible) {
+    output += `IS THIS ISSUE REPRODUCIBLE?:\n${form.reproducible}\n\n`;
+  }
+
+  // REPRODUCTION STEPS
+  if (form.reproduction && isReproducible(form)) {
+    output += `REPRODUCTION STEPS:\n${form.reproduction}\n\n`;
+  }
+
+  // TROUBLESHOOTING PERFORMED
+  if (form.troubleshooting) {
+    output += `TROUBLESHOOTING PERFORMED:\n${form.troubleshooting}\n\n`;
+  }
+
+  // RESULTS AND OBSERVATIONS
+  if (form.results) {
+    output += `RESULTS AND OBSERVATIONS:\n${form.results}\n\n`;
+  }
+
+  // ==LOGS==
+  output += `==LOGS==\n`;
+  output += `DO YOU HAVE THE REQUIRED LOGS FOR THIS ESCALATION?:  LOG LOCATION:\n`;
+  output += `${form.evidence || ""}\t\t\t\t      ${form.logLocation || ""}`;
+
+  // Log reason if no logs
+  if (form.evidence === "No" && form.logReason) {
+    output += `\n\nREASON LOGS CANNOT BE OBTAINED:\n${form.logReason}`;
+  }
+
+  // Collection plan if present
+  if (form.collectionPlan) {
+    output += `\n\nPLANNED LOG COLLECTION:\n${form.collectionPlan}`;
+  }
+
+  return output;
 }
 function markChanged() {
   refreshCaseTitle();
