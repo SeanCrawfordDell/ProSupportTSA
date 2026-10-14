@@ -10,6 +10,12 @@
 
 Use **+ New Case** for a different service request. For another day of work on the same request, use **+ New note** in the Notes heading beside **Pop out**. Each entry has its own notes and action plan, while case details, screenshots, workflow context, and total time remain shared.
 
+### Quick notes for existing cases
+
+If you are picking up a case someone else opened and don't need to collect all the initial information, use **+ New Case Note** (or **Start New Case Note** in the empty workspace). This opens a slimmed-down view showing only Service Request Number, Service Tag, Notes, and Action Plan / Next Steps. The workflow, rubric, and layout toggle are hidden. A "Quick note" banner identifies the case, and a "Quick note" badge appears on the case in Recent cases.
+
+If DE escalation becomes necessary, choose **Show full case (DE escalation)** to reveal the complete interface. Nothing already entered is lost. Once expanded, a banner offers **Switch back to quick view** to return to the slim view.
+
 Date tabs use the entry's creation date in your local timezone. Multiple entries on the same day include a time and entry number. Editing an old entry does not change its creation date. Switching entries saves current work first. A failed save leaves the current entry and its edits in place.
 
 **Case Summary** shows the shared case details once, followed by all dated notes and action plans from oldest to newest. Each dated section can be collapsed. This is a formatted review of the recorded content, not an AI-generated summary. Select a date tab to resume editing.
