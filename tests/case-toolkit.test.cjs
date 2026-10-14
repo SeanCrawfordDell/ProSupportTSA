@@ -44,7 +44,8 @@ test('System/Platform saves, restores and appears in case outputs',()=>{
 
 test('issueTypesFor gives Systems Management only fix ME OMSA and every other OS the rest',()=>{
  assert.deepEqual(T.issueTypesFor('Systems Management'),['fix ME OMSA']);
- for(const os of ['','Windows Server','Redhat'])assert.deepEqual(T.issueTypesFor(os),Object.keys(T.issueTypes).filter(id=>id!=='fix ME OMSA'));
+ for(const os of ['','Windows Server','Redhat'])assert.deepEqual(T.issueTypesFor(os),Object.keys(T.issueTypes).filter(id=>id!=='fix ME OMSA' && !id.startsWith('hw-')));
+ for(const os of ['','Systems Management','No OS']){const hw=T.issueTypesFor(os,true);assert.ok(hw.length>=10 && hw.every(id=>id.startsWith('hw-')));assert.ok(hw.includes('hw-psu'));assert.equal(T.defaultIssueType(os,true),'hw-psu');}
  assert.equal(T.defaultIssueType('Systems Management'),'fix ME OMSA');assert.equal(T.defaultIssueType('ESX'),'general');
 });
 test('history saved before newer toolkit and workflow fields existed still loads',()=>{

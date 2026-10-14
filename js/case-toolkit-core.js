@@ -17,16 +17,36 @@ const CaseToolkitCore = (() => {
     smb: { name:"File shares / SMB / Permissions", prompts:["Affected client, server, and share", "Exact access error and incident time", "User scope and expected permissions", "Read versus write behavior", "Recent share or security changes", "SMB logs and permission evidence"] },
     "fix ME OMSA": { name:"fix ME OMSA", prompts:["OMSA version and build", "Affected system or component", "Exact error message and incident time", "Recent OMSA or system changes", "OMSA logs and diagnostic location", "Troubleshooting actions and results"] }
   };
+  // Hardware issue types (ids start with "hw-") replace the normal list while the case's Hardware Issue box is checked.
+  const hwPrompts = (component, ...extra) => ["Affected system and " + component, "Business impact and current system state", "Exact error, LED/amber code, or message and incident time", ...extra, "Recent hardware, firmware, or physical changes", "iDRAC / Lifecycle Controller log and TSR location", "Troubleshooting actions and results"];
+  Object.assign(issueTypes, {
+    "hw-psu": { name:"PSU", prompts:hwPrompts("PSU slot", "Redundancy status and AC input/PDU state") },
+    "hw-temperature": { name:"Temperature", prompts:hwPrompts("sensor", "Inlet/exhaust temperatures and ambient conditions") },
+    "hw-fan": { name:"Fan / Cooling", prompts:hwPrompts("fan slot", "Fan RPM and airflow obstructions") },
+    "hw-cpu": { name:"CPU Error", prompts:hwPrompts("CPU socket", "MCE or machine-check details") },
+    "hw-memory": { name:"Memory Error", prompts:hwPrompts("DIMM slot", "Correctable versus uncorrectable error counts") },
+    "hw-drive": { name:"Drive Error", prompts:hwPrompts("drive bay", "Drive model, firmware, and predictive-failure status") },
+    "hw-controller": { name:"RAID / Storage Controller", prompts:hwPrompts("controller", "Virtual disk state and controller firmware") },
+    "hw-pci": { name:"PCI Card Error", prompts:hwPrompts("PCIe slot and card", "Card model, firmware, and riser") },
+    "hw-nic": { name:"Network Adapter (NIC)", prompts:hwPrompts("NIC port", "Link state, cable/optic, and switch port") },
+    "hw-motherboard": { name:"Motherboard Error", prompts:hwPrompts("board component") },
+    "hw-idrac": { name:"iDRAC Error", prompts:hwPrompts("iDRAC", "iDRAC firmware and network reachability") },
+    "hw-nopost-novideo": { name:"No POST / No Video", prompts:hwPrompts("display output", "POST codes and video cable/monitor tested") },
+    "hw-nopost": { name:"No POST", prompts:hwPrompts("boot stage", "POST codes and minimum-configuration test results") },
+    "hw-bios": { name:"BIOS / Firmware", prompts:hwPrompts("component", "BIOS and firmware versions") },
+    "hw-other": { name:"Other Hardware", prompts:hwPrompts("component") }
+  });
   const statuses = ["Open", "In progress", "Waiting on customer", "Completed"];
   // Systems Management cases use only the OMSA issue type, and that issue type belongs to Systems Management only.
   const sysmanOs = "Systems Management", sysmanIssue = "fix ME OMSA";
-  function issueTypesFor(os) {
-    return Object.keys(issueTypes).filter(id => (os === sysmanOs) === (id === sysmanIssue));
+  const isHardware = id => typeof id === "string" && id.startsWith("hw-");
+  function issueTypesFor(os, hardware) {
+    return Object.keys(issueTypes).filter(id => hardware ? isHardware(id) : !isHardware(id) && (os === sysmanOs) === (id === sysmanIssue));
   }
-  const defaultIssueType = os => (os === sysmanOs ? sysmanIssue : "general");
+  const defaultIssueType = (os, hardware) => (hardware ? "hw-psu" : os === sysmanOs ? sysmanIssue : "general");
   // Cases saved while personal templates existed may still carry a custom-* issue type.
   const validIssueType = id => typeof id === "string" && (Object.hasOwn(issueTypes,id) || /^custom-[a-zA-Z0-9-]{1,80}$/.test(id));
-  function defaults() { return { issueType:"general", impact:"", questions:"", owner:"", due:"", status:"Open", checks:{}, timeline:[], timelineAction:"", timelineResult:"", customerDraft:"", summaryDraft:"", productApp:"" }; }
+  function defaults() { return { issueType:"general", hardware:false, impact:"", questions:"", owner:"", due:"", status:"Open", checks:{}, timeline:[], timelineAction:"", timelineResult:"", customerDraft:"", summaryDraft:"", productApp:"" }; }
   function ensure(note) {
     if (!note.toolkit) note.toolkit = defaults();
     // Cases saved before a field was added get its default, so older history still loads.
@@ -37,7 +57,7 @@ const CaseToolkitCore = (() => {
   }
   function validate(note) {
     const data = ensure(note);
-    if (!data || typeof data !== "object" || !validIssueType(data.issueType) || !statuses.includes(data.status) || !["impact","questions","owner","due","customerDraft","summaryDraft","timelineAction","timelineResult","productApp"].every(k=>typeof data[k]==="string") || (data.due && !Number.isFinite(Date.parse(data.due))) || !data.checks || typeof data.checks!=="object" || Array.isArray(data.checks) || !Object.values(data.checks).every(v=>typeof v==="boolean") || !Array.isArray(data.timeline) || !data.timeline.every(e=>e && typeof e.id==="string" && Number.isFinite(e.at) && e.at>=0 && typeof e.action==="string" && typeof e.result==="string")) throw Error("Invalid case toolkit data");
+    if (!data || typeof data !== "object" || !validIssueType(data.issueType) || typeof data.hardware!=="boolean" || !statuses.includes(data.status) || !["impact","questions","owner","due","customerDraft","summaryDraft","timelineAction","timelineResult","productApp"].every(k=>typeof data[k]==="string") || (data.due && !Number.isFinite(Date.parse(data.due))) || !data.checks || typeof data.checks!=="object" || Array.isArray(data.checks) || !Object.values(data.checks).every(v=>typeof v==="boolean") || !Array.isArray(data.timeline) || !data.timeline.every(e=>e && typeof e.id==="string" && Number.isFinite(e.at) && e.at>=0 && typeof e.action==="string" && typeof e.result==="string")) throw Error("Invalid case toolkit data");
     Workflow?.validate(note);
     return data;
   }
@@ -77,7 +97,7 @@ const CaseToolkitCore = (() => {
     const guide=guides[note.os];
     if(guide) list.push({id:guide[0],text:guide[1],label:guide[2],url:guide[3]});
     const specifics={boot:"Capture the boot console or failure screen and boot-device observations",crash:"Locate the crash dump / panic record and logs preceding the restart",network:"Record source/destination, interface configuration, and connectivity test results",performance:"Capture time-aligned resource metrics and a normal-performance comparison",general:"Capture reproduction steps and observed results"};
-    list.push({id:"issue-"+data.issueType,text:specifics[data.issueType] || specifics.general},{id:"location",text:"Attach collected evidence to the case and record its Log Location"});
+    list.push({id:"issue-"+data.issueType,text:specifics[data.issueType] || (data.hardware ? "Capture the iDRAC/Lifecycle log, TSR, and hardware indicators (LEDs, POST codes) for the affected component" : specifics.general)},{id:"location",text:"Attach collected evidence to the case and record its Log Location"});
     return list;
   }
   function extraText(note) {
@@ -107,6 +127,6 @@ const CaseToolkitCore = (() => {
     const data=ensure(note);
     return `HANDOFF SUMMARY\nService Request: ${note.request || "Not provided"}\nService Tag: ${note.tag || "Not provided"}\nSystem/Platform: ${note.platform || "Not provided"}\nOS/Solution: ${note.os || "Not provided"}\n\nIssue:\n${note.issue || "Not recorded"}\n\nBusiness impact:\n${data.impact || "Not recorded"}\n\nInvestigation:\n${concise(plain(note.notes)) || "Not recorded"}\n\nNext steps:\n${plain(note.next) || "Not recorded"}\n\nRemaining questions:\n${data.questions || "Not recorded"}\n\nEvidence location: ${note.logLocation || "Not recorded"}\nOwner: ${data.owner || "Not assigned"}\nStatus: ${data.status}\nFollow-up due: ${data.due ? new Date(data.due).toLocaleString() : "Not scheduled"}\nTime spent: ${elapsed}`;
   }
-  return {issueTypes,issueTypesFor,defaultIssueType,sysmanOs,statuses,defaults,ensure,validate,overdue,dueSoon,followupState,completeFollowup,lastFollowup,soonWindow,checklist,extraText,customerUpdate,summary};
+  return {issueTypes,issueTypesFor,isHardware,defaultIssueType,sysmanOs,statuses,defaults,ensure,validate,overdue,dueSoon,followupState,completeFollowup,lastFollowup,soonWindow,checklist,extraText,customerUpdate,summary};
 })();
 if(typeof module!=="undefined")module.exports=CaseToolkitCore;

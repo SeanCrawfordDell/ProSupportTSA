@@ -5,7 +5,8 @@ window.CaseToolkit = (() => {
   // The issue type list depends on the case's OS/Solution; see CaseToolkitCore.issueTypesFor.
   function refreshIssueTypes() {
     const select=$("caseIssueType"),note=api?.current(),id=note?.toolkit?.issueType || "general",os=note ? note.os : $("os").value;
-    const allowed=core.issueTypesFor(os);
+    const hardware=!!note?.toolkit?.hardware,allowed=core.issueTypesFor(os,hardware);
+    $("caseHardware").checked=hardware;
     select.replaceChildren(...allowed.map(key=>{const option=document.createElement("option");option.value=key;option.textContent=core.issueTypes[key].name;return option;}));
     // A saved issue type outside the list (an older case, or a removed personal template) stays selected until changed.
     if (!allowed.includes(id)) { const option=document.createElement("option");option.value=id;option.textContent=core.issueTypes[id]?.name || "Custom issue (no longer available)";select.append(option); }
@@ -16,10 +17,10 @@ window.CaseToolkit = (() => {
   // Changing OS/Solution moves a built-in issue type that does not apply to the new OS to that OS's default.
   function osChanged() {
     const note=api?.current();if(!note || !api.canEdit())return;
-    const data=core.ensure(note),allowed=core.issueTypesFor(note.os);
+    const data=core.ensure(note),allowed=core.issueTypesFor(note.os,data.hardware);
     api.mutate(current=>{
       const toolkit=core.ensure(current);
-      if(Object.hasOwn(core.issueTypes,toolkit.issueType) && !allowed.includes(toolkit.issueType))toolkit.issueType=core.defaultIssueType(current.os);
+      if(Object.hasOwn(core.issueTypes,toolkit.issueType) && !allowed.includes(toolkit.issueType))toolkit.issueType=core.defaultIssueType(current.os,toolkit.hardware);
       if(current.os!==core.sysmanOs)toolkit.productApp="";
     },false);
     $("productApp").value=data.productApp;
@@ -72,6 +73,12 @@ window.CaseToolkit = (() => {
     api=options;
     window.CaseWorkflow?.init(options);
     $("os").addEventListener("change",osChanged);
+    $("caseHardware").addEventListener("change",()=>{
+      if(!api.canEdit()){refreshIssueTypes();return;}
+      api.mutate(note=>{const toolkit=core.ensure(note);toolkit.hardware=$("caseHardware").checked;toolkit.issueType=core.defaultIssueType(note.os,toolkit.hardware);},false);
+      refreshIssueTypes();
+      window.CaseWorkflow?.refresh();
+    });
     const dialog=$("toolkitDialog");
     document.querySelectorAll("[data-toolkit]").forEach(button=>{
       button.addEventListener("click",()=>{
@@ -122,6 +129,7 @@ window.CaseToolkit = (() => {
   }
   return {init,refresh,refreshIssueTypes,finishFollowup,canEdit:()=>!!api?.canEdit(),setEditable(value){window.CaseWorkflow?.setEditable(value);$("toolkitFields").disabled=!value;refreshFollowupDone();
     $("caseIssueType").disabled=!value || !api?.current();
+    $("caseHardware").disabled=!value || !api?.current();
     refreshIssueTypes();
     document.querySelectorAll("[data-toolkit]").forEach(button=>{button.disabled=!api?.current();});}};
 })();
