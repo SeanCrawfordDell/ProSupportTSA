@@ -19,8 +19,7 @@ window.SiteTopbar = (() => {
   };
   const tools = [
     ["tools.html", "Tools Hub"],
-    ["https://seancrawforddell.github.io/DellSupportoolRepository/#/tools", "ISG Tools Catalog ↗", "", true],
-    ["https://github.com/DellProSupportGse/Tools", "Microsoft Support Tools ↗", "", true]
+    ["https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/", "ISG Tools Catalog ↗", "", true]
   ];
   const menus = { tools: "openToolsMenu", training: "openTraining", settings: "openSettingsMenu" };
   const settings = [["customizeFields", "Customize Site Options", "customize-fields"], ["openBackupRestore", "Backup &amp; Restore", "backup-restore"]];

@@ -35,7 +35,7 @@ test('Case Notes and Escalation Quality render the same top bar',()=>{
  const shared=list=>list.filter(id=>!['loadExampleNote','loadWeak','loadStrong'].includes(id));
  assert.deepEqual(shared(ids(notes)),shared(ids(escalation)),'same menus and controls in the same order');
  for(const markup of [notes,escalation]){
-  assert.ok(/Tools Hub[\s\S]*ISG Tools Catalog[\s\S]*Microsoft Support Tools/.test(markup));
+  assert.ok(/Tools Hub[\s\S]*ISG Tools Catalog/.test(markup));
   assert.ok(/id="tutorialDemo"[^>]*>Tutorial Demo/.test(markup));
   assert.ok(/id="openWiki" href="wiki.html"[^>]*>Wiki Documentation ↗/.test(markup));
   assert.ok(/Customize Site Options[\s\S]*Backup &amp; Restore/.test(markup));
