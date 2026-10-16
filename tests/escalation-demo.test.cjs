@@ -52,7 +52,7 @@ test('onStart prepares the page and onFinish receives its result once',()=>{
 test('Case Notes tour covers every area of the tool and points at real controls',()=>{
  let captured;vm.runInNewContext(fs.readFileSync(require.resolve('../js/case-notes-demo.js'),'utf8'),{GuidedTour:{create:options=>captured=options}});
  const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../js/site-topbar.js'),'utf8'),{window,document:{getElementById:()=>null}});
- const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8')+window.SiteTopbar.headerMarkup()+window.SiteTopbar.markup('case-notes');
+ const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8')+window.SiteTopbar.markup('case-notes');
  assert.equal(typeof captured.onStart,'function');assert.equal(typeof captured.onFinish,'function');
  const dynamic=new Set(['#caseSummaryTab']);
  for(const {target} of captured.steps){
@@ -69,7 +69,7 @@ test('Case Notes tour covers every area of the tool and points at real controls'
 test('Escalation tour covers the current form and points at real controls',()=>{
  let captured;vm.runInNewContext(fs.readFileSync(require.resolve('../js/escalation-demo.js'),'utf8'),{GuidedTour:{create:options=>captured=options}});
  const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../js/site-topbar.js'),'utf8'),{window,document:{getElementById:()=>null}});
- const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8')+window.SiteTopbar.headerMarkup()+window.SiteTopbar.markup('escalation');
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8')+window.SiteTopbar.markup('escalation');
  assert.equal(typeof captured.onStart,'function');assert.equal(typeof captured.onFinish,'function');
  for(const {target,container} of captured.steps){
   for(const selector of [target.split(' ').pop(),container].filter(Boolean)){

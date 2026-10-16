@@ -18,7 +18,6 @@
     openTraining: "Tutorial Demo and Load Example.",
     openSettingsMenu: "Settings: customize case fields, back up and restore.",
     openBackupRestore: "Back up, restore, or delete your case history and settings.",
-    openToolsMenu: "Tools hub and support tool catalogs.",
     tutorialDemo: "See a guided tour of Case Notes and the toolbox.",
     customizeFields: "Choose which case fields appear, their order, and site effects such as the Copy to Lightning shake.",
     toggleHistory: "Show or hide the list of saved case notes.",

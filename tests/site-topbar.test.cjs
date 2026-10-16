@@ -35,7 +35,7 @@ test('Case Notes and Escalation Quality render the same top bar',()=>{
  const shared=list=>list.filter(id=>!['loadExampleNote','loadWeak','loadStrong'].includes(id));
  assert.deepEqual(shared(ids(notes)),shared(ids(escalation)),'same menus and controls in the same order');
  for(const markup of [notes,escalation]){
-  assert.ok(/Tools Hub[\s\S]*ISG Tools Catalog/.test(markup));
+  assert.ok(/Tools hub[\s\S]*ISG Tools Catalog/.test(markup));
   assert.ok(/id="tutorialDemo"[^>]*>Tutorial Demo/.test(markup));
   assert.ok(/id="openWiki" href="wiki.html"[^>]*>Wiki Documentation ↗/.test(markup));
   assert.ok(/Customize Site Options[\s\S]*Backup &amp; Restore/.test(markup));
@@ -54,10 +54,10 @@ test('Case Notes and Escalation Quality render the same top bar',()=>{
 test('both pages load the shared top bar and keep no copy of their own',()=>{
  for(const [file,page] of [['../case-notes.html','case-notes'],['../escalation-quality.html','escalation']]){
   const html=fs.readFileSync(require.resolve(file),'utf8');
-  assert.match(html,new RegExp(`<header class="topbar" id="siteTopbar" data-page="${page}"></header>\\s*<script src="js/site-topbar\\.js\\?v=[^"]+"></script>`),file+' renders the bar before its deferred scripts run');
+  assert.match(html,new RegExp(`<header class="site-header" id="siteTopbar" data-page="${page}"></header>\\s*<script src="js/site-topbar\\.js\\?v=[^"]+"></script>`),file+' renders the bar before its deferred scripts run');
   assert.match(html,/<link rel="stylesheet" href="css\/site-topbar\.css\?v=[^"]+">/);
   for(const id of ['openToolsMenu','openTraining','openSettingsMenu','themeToggle','requestFeature','tutorialDemo'])assert.ok(!html.includes(`id="${id}"`),file+' has no own '+id);
-  assert.equal((html.match(/class="topbar"/g)||[]).length,1);
+  assert.equal((html.match(/class="site-header"/g)||[]).length,1);assert.ok(!/class="topbar"/.test(html),file+' has a single header bar');
  }
  const versions=['../case-notes.html','../escalation-quality.html'].map(f=>/site-topbar\.js\?v=([^"]+)"/.exec(fs.readFileSync(require.resolve(f),'utf8'))[1]);
  assert.equal(versions[0],versions[1]);
@@ -67,16 +67,16 @@ test('both pages load the shared top bar and keep no copy of their own',()=>{
 test('menus open one at a time and close on a choice, an outside click, or Escape',()=>{
  for(const page of ['case-notes','escalation']){
   const h=harness(page);
-  h.click('openToolsMenu');assert.equal(h.get('toolsMenuList').hidden,false);assert.equal(h.get('openToolsMenu').attributes['aria-expanded'],'true');
-  h.click('openTraining');assert.equal(h.get('trainingMenuList').hidden,false);assert.equal(h.get('toolsMenuList').hidden,true,'opening one closes the other');
+  h.click('openSettingsMenu');assert.equal(h.get('settingsMenuList').hidden,false);assert.equal(h.get('openSettingsMenu').attributes['aria-expanded'],'true');
+  h.click('openTraining');assert.equal(h.get('trainingMenuList').hidden,false);assert.equal(h.get('settingsMenuList').hidden,true,'opening one closes the other');
   h.get('trainingMenuList').handlers.click({target:h.get('tutorialDemo')});assert.equal(h.get('trainingMenuList').hidden,true,'a choice closes the menu');
   h.click('openSettingsMenu');h.docEvents.click({target:h.document.body});assert.equal(h.get('settingsMenuList').hidden,true,'outside click closes');
-  h.click('openToolsMenu');h.docEvents.keydown({key:'Escape'});
-  assert.equal(h.get('toolsMenuList').hidden,true);assert.equal(h.document.activeElement,h.get('openToolsMenu'),'Escape returns focus to the toggle');
+  h.click('openTraining');h.docEvents.keydown({key:'Escape'});
+  assert.equal(h.get('trainingMenuList').hidden,true);assert.equal(h.document.activeElement,h.get('openTraining'),'Escape returns focus to the toggle');
   let prevented=false;h.get('openSettingsMenu').handlers.keydown({key:'ArrowDown',preventDefault(){prevented=true;}});
   assert.ok(prevented);assert.equal(h.get('settingsMenuList').hidden,false);
   assert.equal(h.document.activeElement,h.get(page==='case-notes'?'openBackupRestore':'customizeFields'),'ArrowDown focuses the first enabled item');
-  h.window.SiteTopbar.closeMenus();assert.ok(['tools','training','settings'].every(n=>h.get(n+'MenuList').hidden));
+  h.window.SiteTopbar.closeMenus();assert.ok(['training','settings'].every(n=>h.get(n+'MenuList').hidden));
  }
 });
 test('menus stay open while the tutorial is showing them',()=>{
@@ -91,9 +91,9 @@ test('Support Trends uses the shared bar with only the Wiki link in its tutorial
  const {window}=harness('trends'),T=window.SiteTopbar;
  for(const [page,file] of [['trends','../support-trends.html']]){
   const markup=T.markup(page);
-  assert.ok(markup.includes('openTraining'));assert.match(markup,/<a class="dropdown-item" id="openWiki" href="wiki.html" target="_blank" rel="noopener noreferrer">Wiki Documentation ↗<\/a>/);assert.ok(!markup.includes('id="tutorialDemo"'));assert.match(markup,/Tools Hub/);assert.match(markup,/href="case-notes.html#backup-restore"/);
+  assert.ok(markup.includes('openTraining'));assert.match(markup,/<a class="dropdown-item" id="openWiki" href="wiki.html" target="_blank" rel="noopener noreferrer">Wiki Documentation ↗<\/a>/);assert.ok(!markup.includes('id="tutorialDemo"'));assert.match(markup,/Tools hub/);assert.match(markup,/href="case-notes.html#backup-restore"/);
   const html=fs.readFileSync(require.resolve(file),'utf8');
-  assert.match(html,new RegExp(`<header class="topbar" id="siteTopbar" data-page="${page}"></header>\\s*<script src="js/site-topbar\\.js\\?v=[^"]+"></script>`));
+  assert.match(html,new RegExp(`<header class="site-header" id="siteTopbar" data-page="${page}"></header>\\s*<script src="js/site-topbar\\.js\\?v=[^"]+"></script>`));
  }
  assert.match(T.markup('case-notes'),/Tutorial &amp; examples/);
 });
@@ -105,30 +105,33 @@ test('Escalation Quality links back to Case Notes and reopens the source case',(
  assert.match(fs.readFileSync(require.resolve('../js/app.js'),'utf8'),/"case-notes\.html#case=" \+ encodeURIComponent\(caseId\)/);
 });
 
-test('every tool page shows the landing-page header above its own bar, with the same menus and links',()=>{
- const {window}=harness('case-notes'),T=window.SiteTopbar,header=T.headerMarkup();
- // Same site menu as the landing pages: each hub link and each dropdown link, in order.
+test('every tool page has one header: the landing-page brand, search and menus with the tool\'s own menus in it',()=>{
+ const {window}=harness('case-notes'),T=window.SiteTopbar;
+ // The site menu is the landing page's menu: each hub link and each dropdown link, in order.
  const links=html=>[...html.matchAll(/<a [^>]*?href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(m=>m[1]+'|'+m[2].replace(/<[^>]+>/g,'').trim());
  const nav=html=>/<nav class="primary-nav"[^>]*>([\s\S]*?)<\/nav>/.exec(html)[1];
  const landing=fs.readFileSync(require.resolve('../index.html'),'utf8');
- assert.deepEqual(links(nav(header)),links(nav(landing)),'the tool pages and the landing page offer the same menu');
- assert.deepEqual(links(nav(header)).filter(l=>/ISG/.test(l)),['https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/|ISG Tools Catalog']);
- assert.match(header,/<a class="brand" href="index\.html"[^>]*><span class="dell">DELL<\/span>[\s\S]*Pro-Support/);
- for(const id of ['globalSearch','globalResults','themeToggle','themeLabel'])assert.equal((header.match(new RegExp(`id="${id}"`,'g'))||[]).length,1,id+' appears once');
- // The Light/Dark button moved here; the tool bar keeps its own menus and no second copy of it.
  for(const page of ['case-notes','escalation','trends']){
   const bar=T.markup(page);
-  assert.ok(!bar.includes('themeToggle'),page+' bar has no second theme button');
-  assert.match(bar,/id="openToolsMenu"/);assert.match(bar,/id="openSettingsMenu"/);assert.match(bar,/id="requestFeature"/);
+  assert.deepEqual(links(nav(bar)),links(nav(landing)),page+' offers the same site menu as the landing page');
+  assert.deepEqual(links(nav(bar)).filter(l=>/ISG/.test(l)),['https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/|ISG Tools Catalog']);
+  assert.match(bar,/<a class="brand" href="index\.html"[^>]*><span class="dell">DELL<\/span>[\s\S]*Pro-Support/);
+  for(const id of ['globalSearch','globalResults','themeToggle','themeLabel','openSettingsMenu','requestFeature','toolsMenu'])assert.equal((bar.match(new RegExp(`id="${id}"`,'g'))||[]).length,1,page+': '+id+' appears once');
+  // One bar only: no separate tool bar, second Tools menu, back link or second theme button.
+  assert.ok(!/topbar-actions|appearance-actions|home-link|openToolsMenu|theme-icon-toggle/.test(bar),page+' has no second bar');
  }
- assert.match(T.markup('case-notes'),/id="openTraining"/);assert.match(T.markup('escalation'),/id="openTraining"/);
+ // The tool's own menus sit after the site menu and before Light/Dark.
+ const bar=T.markup('case-notes'),at=id=>bar.indexOf(id);
+ assert.ok(at('class="primary-nav"')<at('id="openTraining"')&&at('id="openTraining"')<at('id="requestFeature"')&&at('id="requestFeature"')<at('id="openSettingsMenu"')&&at('id="openSettingsMenu"')<at('id="themeToggle"'));
+ assert.match(bar,/Request feature \/ Report bug/);assert.match(T.markup('escalation'),/id="openTraining"/);
 });
-test('the header is added once, above the tool bar, and the pages need no extra files',()=>{
- let inserted=[];const header={dataset:{page:'case-notes'},insertAdjacentHTML(where,html){inserted.push([where,html]);},set innerHTML(v){}};
- const document={body:{},getElementById:id=>id==='siteTopbar'?header:null,addEventListener(){}};
- const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../js/site-topbar.js'),'utf8'),{window,document,encodeURIComponent});
- assert.equal(inserted.length,1);assert.equal(inserted[0][0],'beforebegin');assert.match(inserted[0][1],/^<header class="site-header" id="siteHeader">/);
+test('the pages mount one header and the styles cover light, dark and narrow screens',()=>{
+ for(const page of ['case-notes.html','escalation-quality.html','support-trends.html']){
+  const html=fs.readFileSync(require.resolve('../'+page),'utf8');
+  assert.equal((html.match(/<header class="site-header" id="siteTopbar"/g)||[]).length,1,page);
+  assert.match(html,/css\/site-topbar\.css/,page+' loads the header styles');
+ }
  const css=fs.readFileSync(require.resolve('../css/site-topbar.css'),'utf8');
- assert.match(css,/\.site-header \.submenu/);assert.match(css,/\[data-theme="dark"\] \.site-header/);
- for(const page of ['case-notes.html','escalation-quality.html','support-trends.html'])assert.match(fs.readFileSync(require.resolve('../'+page),'utf8'),/css\/site-topbar\.css/,page+' loads the header styles');
+ assert.match(css,/\.site-header \.submenu/);assert.match(css,/\[data-theme="dark"\] \.site-header/);assert.match(css,/\.site-header \.page-actions/);
+ assert.match(css,/@media \(max-width:\d+px\)/);
 });
