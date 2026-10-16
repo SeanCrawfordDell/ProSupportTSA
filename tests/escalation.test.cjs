@@ -37,7 +37,7 @@ test('10-second autosave restores all fields, checks and paired actions; storage
  h.setFail(false);h.run('saveDraft()');assert.equal(h.run('dirty'),false);
 });
 test('edits invalidate review; copy requires a fresh review and reports clipboard failure',async()=>{
- const h=harness();await h.click('loadStrong');assert.equal(h.get('copyButton').disabled,false);await h.click('copyButton');assert.match(h.copied(),/^==CASE TITLE==\nUS \| PowerEdge R750 \| Windows Server \|/);assert.match(h.copied(),/AFFECTED SYSTEMS \/ USERS:\n1 server, 50 users\n/);assert.doesNotMatch(h.copied(),/SERVICE REQUEST|SERVICE TAG|EXPECTED BEHAVIOR/);
+ const h=harness();await h.click('loadStrong');assert.equal(h.get('copyButton').disabled,false);await h.click('copyButton');assert.match(h.copied(),/^==CASE TITLE==\nUnited States \| PowerEdge R750 \| Windows Server \|/);assert.match(h.copied(),/AFFECTED SYSTEMS \/ USERS:\n1 server, 50 users\n/);assert.doesNotMatch(h.copied(),/SERVICE REQUEST|SERVICE TAG|EXPECTED BEHAVIOR/);
  h.get('problem').value='Changed';h.run('markChanged()');assert.equal(h.get('copyButton').disabled,true);assert.match(h.get('resultTitle').textContent,/review again/);
  await h.click('copyButton');assert.match(h.get('copyStatus').textContent,/Review/);
  const f=harness({failClipboard:true});await f.click('loadStrong');await f.click('copyButton');assert.match(f.get('copyStatus').textContent,/Copy failed/);assert.equal(f.get('copyPreview').selected,true);
@@ -51,11 +51,11 @@ test('DE case title is composed from imported country platform OS and issue and 
  const note=core.create(core.empty(),'title',100);
  Object.assign(note,{country:'US',platform:'PowerEdge R750',os:'Windows Server',issue:'Hyper-V\nVMs are slow'});
  const h=harness({imported:core.escalation(note,100)});
- const expected='US | PowerEdge R750 | Windows Server | Hyper-V VMs are slow';
+ const expected='United States | PowerEdge R750 | Windows Server | Hyper-V VMs are slow';
  assert.equal(h.get('caseTitle').value,expected);
  assert.equal(harness({stored:h.stored()}).get('caseTitle').value,expected);
  assert.ok(h.run('formatEscalation(data())').startsWith('==CASE TITLE==\n'+expected));
- h.get('os').value='Azure Local';h.run('markChanged()');assert.equal(h.get('caseTitle').value,'US | PowerEdge R750 | Azure Local | Hyper-V VMs are slow');
+ h.get('os').value='Azure Local';h.run('markChanged()');assert.equal(h.get('caseTitle').value,'United States | PowerEdge R750 | Azure Local | Hyper-V VMs are slow');
 });
 test('case title omits missing parts and clears with the escalation form',()=>{
  const h=harness();h.run('populate({problem:" Boot failure "})');assert.equal(h.get('caseTitle').value,'Boot failure');

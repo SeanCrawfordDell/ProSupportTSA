@@ -69,10 +69,22 @@ function value(id) {
   const input = document.getElementById(id);
   return input.value.trim();
 }
+const countryNames = {
+  "US": "United States", "CA": "Canada", "GB": "United Kingdom", "DE": "Germany", "FR": "France",
+  "IT": "Italy", "ES": "Spain", "NL": "Netherlands", "BE": "Belgium", "AT": "Austria", "CH": "Switzerland",
+  "SE": "Sweden", "NO": "Norway", "DK": "Denmark", "FI": "Finland", "PL": "Poland", "CZ": "Czech Republic",
+  "HU": "Hungary", "RO": "Romania", "GR": "Greece", "PT": "Portugal", "IE": "Ireland", "LU": "Luxembourg",
+  "JP": "Japan", "CN": "China", "KR": "South Korea", "TW": "Taiwan", "SG": "Singapore", "HK": "Hong Kong",
+  "IN": "India", "AU": "Australia", "NZ": "New Zealand", "BR": "Brazil", "MX": "Mexico", "AR": "Argentina",
+  "CL": "Chile", "CO": "Colombia", "ZA": "South Africa", "AE": "United Arab Emirates", "SA": "Saudi Arabia",
+  "IL": "Israel", "TR": "Turkey", "RU": "Russia", "UA": "Ukraine", "MY": "Malaysia", "TH": "Thailand",
+  "VN": "Vietnam", "ID": "Indonesia", "PH": "Philippines", "Other": "Other"
+};
 function caseTitle(form) {
   const parts = [form.platform, form.os, form.problem].map(text => String(text || "").replace(/\s+/g," ").trim()).filter(Boolean);
   if (form.country) {
-    parts.unshift(form.country);
+    const countryName = countryNames[form.country] || form.country;
+    parts.unshift(countryName);
   }
   return parts.join(" | ");
 }
