@@ -70,10 +70,14 @@ function value(id) {
   return input.value.trim();
 }
 function caseTitle(form) {
-  return [form.platform, form.os, form.problem].map(text => String(text || "").replace(/\s+/g," ").trim()).filter(Boolean).join(" | ");
+  const parts = [form.platform, form.os, form.problem].map(text => String(text || "").replace(/\s+/g," ").trim()).filter(Boolean);
+  if (form.country) {
+    parts.unshift(form.country);
+  }
+  return parts.join(" | ");
 }
 function refreshCaseTitle() {
-  byId("caseTitle").value = caseTitle({platform:value("platform"),os:value("os"),problem:value("problem")});
+  byId("caseTitle").value = caseTitle({platform:value("platform"),os:value("os"),problem:value("problem"),country:value("country")});
 }
 function addFinding(target, field, reason, kind) { target.push({ field, reason, kind }); }
 function isWeak(text = "") { const value = text.trim(); return value.length > 0 && value.length < weakLimit && weakPhrases.test(value); }
