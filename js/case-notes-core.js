@@ -2,7 +2,7 @@
 // Pure case operations, shared with the Node regression tests.
 const CaseNotes = (() => {
   const Toolkit = typeof module !== "undefined" ? require("./case-toolkit-core.js") : CaseToolkitCore;
-  const fields = { tag: "Service Tag", platform: "System/Platform", request: "Service Request Number", os: "OS/Solution", osVersion: "OS version / build", country: "Customer Country", supportType: "OS Support Entitlement Verification", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
+  const fields = { tag: "Service Tag", platform: "System/Platform", request: "Service Request Number", os: "OS/Solution", osVersion: "OS version / build", country: "Customer Country", timezone: "What Timezone Does the Customer Want to Work In?", supportType: "OS Support Entitlement Verification", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
   const defaultFieldOrder = Object.keys(fields);
   const supportTypes = ["OEM OS", "ProSupport Plus Bring Your own License", "Solution Support includes OS", "No Software Support"];
   // Earlier versions stored short codes; map them to the current entitlement options.
@@ -224,7 +224,7 @@ const CaseNotes = (() => {
     const production = workflow.severity && workflow.severity !== "Unspecified" ? String(workflow.severity) : "";
     const evidence = String(note.logLocation || "").trim() || Object.values(checks).some(Boolean) ? "Yes" : "";
     // Results stay empty on purpose: outcomes must be recorded per action on the escalation page.
-    return { problem: note.issue, tag: note.tag, os: note.os, country: note.country,
+    return { problem: note.issue, tag: note.tag, os: note.os, country: note.country, timezone: note.timezone || "",
       osVersion: note.osVersion || "", serviceRequest: note.request, platform: note.platform || "", supportType: normalizeSupportType(note.supportType || ""), logLocation: note.logLocation || "", impact: note.toolkit?.impact || "", checks, issueType: note.toolkit?.issueType || "general", productApp: note.toolkit?.productApp || "",
       changes: String(workflow.recentChange || ""), production, evidence, results: "",
       troubleshooting: plainImages(exportField(note,"notes")), nextSteps: plainImages(exportField(note,"next")), sourceNote: copyText(note, now, config), customFields: customFieldsData };
@@ -279,7 +279,7 @@ const CaseNotes = (() => {
       if (note && reserved.has(note.id)) throw Error("Invalid case ID");
       // Older saved cases predate these optional fields; retain all existing data.
       if (note && typeof note === "object") {
-        for (const key of ["os", "country", "supportType", "logLocation", "platform", "osVersion", "productApp"]) {
+        for (const key of ["os", "country", "timezone", "supportType", "logLocation", "platform", "osVersion", "productApp"]) {
           if (!Object.hasOwn(note, key)) note[key] = "";
         }
         if (typeof note.supportType === "string") note.supportType = normalizeSupportType(note.supportType);

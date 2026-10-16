@@ -27,6 +27,7 @@ const CaseExample = (() => {
     os: "Windows Server",
     osVersion: "Windows Server 2022 Datacenter 21H2 (build 20348.2655); Broadcom NetXtreme-E firmware 22.31.6",
     country: "US",
+    timezone: "US Central (CT, UTC−6/−5)",
     supportType: "OEM OS",
     logLocation: "https://files.example.com/sr-123456789/",
     issue: "Since a Broadcom NIC driver update, the 14 virtual machines on Hyper-V host HV-NODE-02 (PowerEdge R750, Windows Server 2022) lose network connectivity for 30–90 seconds, 3–5 times per day. Event ID 27 (network link disconnected) is logged on NIC port 2 at each drop. The other two cluster nodes are not affected."

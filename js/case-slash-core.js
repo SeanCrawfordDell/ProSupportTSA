@@ -3,7 +3,7 @@
 const CaseSlash = (() => {
   // Short codes for the built-in fields. Custom fields use their own id as the code.
   const builtIn = {
-    tag: "st", request: "sr", platform: "pl", os: "os", osVersion: "osv", country: "cc", supportType: "sup",
+    tag: "st", request: "sr", platform: "pl", os: "os", osVersion: "osv", country: "cc", timezone: "tz", supportType: "sup",
     logLocation: "log", issue: "iss", caseIssueType: "it", productApp: "prod", severity: "sev",
     recentChange: "chg", fix: "fix", verification: "ver", prevention: "prev", repeatOf: "rep", knowledge: "kb"
   };

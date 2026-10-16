@@ -187,7 +187,8 @@
       <tr><td>System/Platform</td><td>Model, for example <code>PowerEdge R750</code>.</td><td>None</td></tr>
       <tr><td>Service Request Number</td><td>The SR number. If another case already uses it, a warning under the field links to that case.</td><td>6 or more digits</td></tr>
       <tr><td>OS version / build</td><td>Exact version, build, and relevant component firmware.</td><td>Must contain a number</td></tr>
-      <tr><td>Customer Country</td><td>Pick from the list (or Other).</td><td>None</td></tr>
+      <tr><td>Customer Country</td><td>Pick from the alphabetical list (or Other). Click the list and type to search by name or code.</td><td>None</td></tr>
+      <tr><td>What Timezone Does the Customer Want to Work In?</td><td>Pick the time zone the <em>customer</em> wants to work in. It carries over to the escalation request.</td><td>None</td></tr>
       <tr><td>OS Support Entitlement Verification</td><td>OEM OS, ProSupport Plus Bring Your own License, Solution Support includes OS, or No Software Support.</td><td>None</td></tr>
       <tr><td>Log Location</td><td>Where the collected logs live, for example <code>https://…</code> or <code>\\server\share</code>.</td><td>Link or path</td></tr>
       <tr><td>Issue Description</td><td>Summarize the issue and customer impact in concrete terms.</td><td>Checked for repeated or placeholder text</td></tr>
@@ -319,6 +320,7 @@
       <tr><td><code>/pl</code></td><td>System/Platform</td><td>Case Details</td><td><code>/pl PowerEdge R750</code></td></tr>
       <tr><td><code>/osv</code></td><td>OS version / build</td><td>Case Details</td><td><code>/osv Windows Server 2022, build 20348.2340</code></td></tr>
       <tr><td><code>/cc</code></td><td>Customer Country (dropdown)</td><td>Case Details</td><td><code>/cc us</code></td></tr>
+      <tr><td><code>/tz</code></td><td>Customer time zone (dropdown)</td><td>Case Details</td><td><code>/tz pacific</code></td></tr>
       <tr><td><code>/sup</code></td><td>OS Support Entitlement Verification (dropdown)</td><td>Case Details</td><td><code>/sup oem</code></td></tr>
       <tr><td><code>/log</code></td><td>Log Location</td><td>Case Details</td><td><code>/log \\fileshare\sr-123456789\</code></td></tr>
       <tr><td><code>/iss</code></td><td>Issue Description</td><td>Case Details</td><td><code>/iss VMs lose network for 30–90 seconds, 3–5 times a day</code></td></tr>

@@ -155,3 +155,13 @@ button:focus-visible, a:focus-visible { outline:3px solid #4a9eff; outline-offse
 .rubric-points li { margin-bottom:4px; }
 .rubric-details { margin-top:10px; }
 .rubric-details summary { font-size:12px; font-weight:700; color:var(--blue); cursor:pointer; }
+
+/* Type-to-search list opened from select[data-searchable]. */
+.ss-panel { position:fixed; z-index:9000; box-sizing:border-box; padding:8px; border:1px solid var(--input-border); border-radius:10px; background:var(--panel-bg); box-shadow:0 8px 24px rgba(0,0,0,.2); }
+.ss-panel .ss-search { margin-bottom:6px; min-height:38px; padding:8px 10px; font-size:13px; }
+.ss-list { position:relative; list-style:none; margin:0; padding:0; overflow-y:auto; }
+.ss-list li { padding:8px 10px; border-radius:6px; color:var(--ink); font-size:13px; font-weight:400; cursor:pointer; }
+.ss-list li.is-placeholder { color:var(--muted); }
+.ss-list li.is-selected { font-weight:700; }
+.ss-list li.is-active { background:var(--blue); color:var(--on-blue); }
+.ss-empty { margin:6px 4px 2px; color:var(--muted); font-size:13px; }

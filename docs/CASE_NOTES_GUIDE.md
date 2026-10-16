@@ -135,12 +135,13 @@ Type `/` at the start of a line to see the codes. Use the Up and Down arrows to 
 | `/st` | Service Tag (upper-cased) | `/sr` | Service Request Number |
 | `/pl` | System/Platform | `/os` | OS/Solution |
 | `/osv` | OS version / build | `/cc` | Customer Country |
-| `/sup` | OS Support Entitlement Verification | `/log` | Log Location |
-| `/iss` | Issue Description | `/it` | Issue type |
-| `/prod` | Product/Application (Systems Management only) | `/sev` | Service Impact |
-| `/chg` | Recent change | `/fix` | Resolution / workaround |
-| `/ver` | Verification test and observed result | `/prev` | Prevention / monitoring plan |
-| `/rep` | Related / repeat case | `/kb` | Editable knowledge draft |
+| `/tz` | Customer time zone | `/sup` | OS Support Entitlement Verification |
+| `/log` | Log Location | `/iss` | Issue Description |
+| `/it` | Issue type | `/prod` | Product/Application (Systems Management only) |
+| `/sev` | Service Impact | `/chg` | Recent change |
+| `/fix` | Resolution / workaround | `/ver` | Verification test and observed result |
+| `/prev` | Prevention / monitoring plan | `/rep` | Related / repeat case |
+| `/kb` | Editable knowledge draft | | |
 
 - **Custom fields** use their field ID as the code, for example `/asset`. A custom field whose ID matches a code in the table gets no command.
 - **Dropdown fields** accept part of an option: `/os win` selects Windows Server, and `/cc us` selects United States. If the text matches more than one option, or none, the field is left unchanged and the line under Notes lists the choices.
