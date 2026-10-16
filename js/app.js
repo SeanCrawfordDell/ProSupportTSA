@@ -287,8 +287,8 @@ function formatEscalation(form) {
 
   // ==ENVIRONMENT==
   output += `==ENVIRONMENT==\n`;
-  output += `SYSTEM/PLATFORM:  OS/SOLUTION:     OS VERSION / BUILD:\n`;
-  output += `${form.platform || ""}    ${form.os || ""}    ${form.osVersion || ""}\n\n`;
+  output += `SYSTEM/PLATFORM: ${form.platform || ""}  OS/SOLUTION: ${form.os || ""}\n`;
+  output += `OS VERSION / BUILD: ${form.osVersion || ""}\n\n`;
 
   // ===IMPACT===
   output += `===IMPACT===\n`;

@@ -489,7 +489,7 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
   .copy-actions:not(.right-rail) > .devin-copy > :is(p, div) { flex:1 1 100%; }
 }
 /* A slimmer page header so the case workspace starts higher on laptop screens. */
-#main > .hero { margin-bottom:12px; }
+#main > .hero { margin-bottom:0; }
 #main > .hero h1 { font-size:26px; margin:0; }
 #main > .hero .eyebrow, #main > .hero h1 + p { display:none; }
 #backupWarningBanner { padding:8px 14px; margin-bottom:10px; font-size:13px; }

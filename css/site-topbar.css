@@ -1,14 +1,14 @@
 /* Site header for Case Notes, DE Escalation and Support Trends, rendered by site-topbar.js: the landing-page brand, search and
    menus, with the tool's own Tutorial, feedback and Settings menus beside them. Light and dark colors match the landing pages. */
-.site-header { display:grid; grid-template-columns:auto 170px 1fr auto auto; gap:16px; align-items:center; height:92px; padding:0 max(24px,calc((100vw - 1440px)/2)); color:var(--ink); }
+.site-header { display:grid; grid-template-columns:auto 170px 1fr auto auto; gap:16px; align-items:center; height:72px; padding:0 max(24px,calc((100vw - 1440px)/2)); color:var(--ink); }
 .site-header a { color:inherit; text-decoration:none; }
 .site-header a:focus-visible { outline:3px solid #007db8; outline-offset:6px; }
 .site-header .visually-hidden { position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-.site-header .brand { grid-column:1; display:flex; align-items:center; gap:20px; font-size:18px; font-weight:600; white-space:nowrap; }
-.site-header .dell { font-size:27px; letter-spacing:-2px; font-weight:800; color:#0076ad; }
-.site-header .brand-divider { height:26px; width:1px; background:#ccd9e0; }
+.site-header .brand { grid-column:1; display:flex; align-items:center; gap:16px; font-size:16px; font-weight:600; white-space:nowrap; }
+.site-header .dell { font-size:24px; letter-spacing:-2px; font-weight:800; color:#0076ad; }
+.site-header .brand-divider { height:22px; width:1px; background:#ccd9e0; }
 .site-header .global-search { grid-column:2; grid-row:1; justify-self:start; position:relative; }
-.site-header .global-search input { width:154px; min-height:0; padding:9px; border:1px solid #d5e2e8; border-radius:5px; background:transparent; color:inherit; font:inherit; font-size:13px; font-weight:400; }
+.site-header .global-search input { width:154px; min-height:0; padding:7px; border:1px solid #d5e2e8; border-radius:5px; background:transparent; color:inherit; font:inherit; font-size:13px; font-weight:400; }
 .site-header .global-results { position:absolute; left:0; top:40px; z-index:75; width:260px; padding:6px; background:#fff; border:1px solid #d5e2e8; border-radius:6px; box-shadow:0 12px 24px #16324724; }
 .site-header .global-results a { display:block; padding:8px; border-radius:4px; font-size:12px; font-weight:600; }
 .site-header .global-results a:hover, .site-header .global-results a:focus-visible { background:#e8f4fa; color:#0076ad; outline:0; }
@@ -16,7 +16,7 @@
 .site-header .global-empty { margin:0; padding:8px; font-size:12px; color:#56657e; }
 .site-header .primary-nav { grid-column:3; grid-row:1; justify-self:center; display:flex; align-items:stretch; gap:4px; margin:0; }
 .site-header .menu-item { position:relative; display:flex; align-items:center; }
-.site-header .menu-trigger { display:flex; align-items:center; gap:7px; height:44px; padding:0 13px; border-radius:5px; color:#3b5667; font-size:13px; font-weight:650; white-space:nowrap; }
+.site-header .menu-trigger { display:flex; align-items:center; gap:6px; height:36px; padding:0 11px; border-radius:5px; color:#3b5667; font-size:13px; font-weight:650; white-space:nowrap; }
 .site-header .menu-trigger span { font-size:15px; color:#0076ad; }
 .site-header .menu-trigger:hover, .site-header .menu-item:focus-within .menu-trigger { background:#e8f4fa; color:#0076ad; }
 .site-header .submenu { position:absolute; z-index:70; top:calc(100% - 2px); left:0; min-width:190px; padding:7px; background:#fff; border:1px solid #d5e2e8; border-radius:6px; box-shadow:0 12px 24px #16324724; opacity:0; visibility:hidden; transform:translateY(-4px); transition:opacity .16s,transform .16s,visibility .16s; }
@@ -27,13 +27,19 @@
 
 /* The tool's own menus look and behave like the site menu items beside them. */
 .site-header .page-actions { grid-column:4; grid-row:1; display:flex; align-items:center; gap:2px; }
+.site-header .page-actions .menu-item { position:relative; display:flex; align-items:center; }
+.site-header .page-actions .menu-trigger { display:flex; align-items:center; gap:6px; height:36px; padding:0 11px; border-radius:5px; color:#3b5667; font-size:13px; font-weight:650; white-space:nowrap; }
+.site-header .page-actions .menu-trigger span { font-size:15px; color:#0076ad; }
+.site-header .page-actions .menu-trigger:hover, .site-header .page-actions .menu-item:focus-within .menu-trigger { background:#e8f4fa; color:#0076ad; }
+.site-header .page-actions .submenu { position:absolute; z-index:70; top:calc(100% - 2px); right:0; left:auto; min-width:190px; padding:7px; background:#fff; border:1px solid #d5e2e8; border-radius:6px; box-shadow:0 12px 24px #16324724; opacity:0; visibility:hidden; transform:translateY(-4px); transition:opacity .16s,transform .16s,visibility .16s; display:none; }
+.site-header .page-actions .menu-item:hover .submenu, .site-header .page-actions .menu-item:focus-within .submenu, #trainingMenu:hover .submenu, #trainingMenu:focus-within .submenu, #trainingMenu.force-hover .submenu { opacity:1 !important; visibility:visible !important; transform:translateY(0) !important; display:block !important; }
 .topbar-menu { position:relative; }
-.site-header .page-actions .button { display:inline-flex; align-items:center; height:44px; min-height:0; padding:0 13px; border:0; border-radius:5px; background:transparent; box-shadow:none; color:#3b5667; font-size:13px; font-weight:650; white-space:nowrap; cursor:pointer; }
+.site-header .page-actions .button { display:inline-flex; align-items:center; height:36px; min-height:0; padding:0 11px; border:0; border-radius:5px; background:transparent; box-shadow:none; color:#3b5667; font-size:13px; font-weight:650; white-space:nowrap; cursor:pointer; }
 .site-header .page-actions .button span { font-size:11px; margin-left:6px; color:#0076ad; }
 .site-header .page-actions #requestFeature span { margin-left:0; font-size:inherit; color:inherit; }
 .site-header .page-actions #requestFeature { gap:4px; }
-.site-header .page-actions .button:hover, .site-header .page-actions .button:focus-visible, .site-header .page-actions .topbar-menu > .button[aria-expanded="true"] { background:#e8f4fa; color:#0076ad; }
-.site-header .page-actions .settings-toggle { width:44px; padding:0; justify-content:center; }
+.site-header .page-actions .button:hover, .site-header .page-actions .button:focus-visible { background:#e8f4fa; color:#0076ad; }
+.site-header .page-actions .settings-toggle { width:36px; padding:0; justify-content:center; }
 .site-header .page-actions .settings-toggle:focus-visible { outline:3px solid #4a9eff; outline-offset:2px; }
 .rf-short { display:none; }
 .topbar-dropdown { position:absolute; top:calc(100% + 4px); right:0; left:auto; z-index:60; width:260px; max-width:calc(100vw - 32px); padding:7px; border:1px solid #d5e2e8; border-radius:6px; background:#fff; color:#496473; box-shadow:0 12px 24px #16324724; }
@@ -43,7 +49,7 @@
 .dropdown-item { display:block; width:100%; padding:9px 10px; border:0; border-radius:4px; background:transparent; color:#496473; font:600 12px Inter,"Segoe UI",Arial,sans-serif; text-align:left; cursor:pointer; }
 .dropdown-item:hover:not(:disabled), .dropdown-item:focus-visible { background:#e8f4fa; color:#0076ad; }
 .dropdown-item:focus-visible { outline:3px solid var(--blue); outline-offset:-3px; }
-.dropdown-item:disabled { opacity:.45; cursor:not-allowed; }
+.dropdown-item:disabled, .dropdown-item.disabled { opacity:.45; cursor:not-allowed; }
 .topbar-dropdown a.dropdown-item { box-sizing:border-box; text-decoration:none; }
 
 [data-theme="dark"] .site-header .dell, [data-theme="dark"] .site-header .global-results small { color:#73caff; }
@@ -58,9 +64,9 @@
    measuring the header (full label about 1415px, short label about 1295px, compact about 1190px) plus room for the scrollbar. */
 @media (max-width:1560px) {
   .site-header { grid-template-columns:auto 140px 1fr auto auto; gap:10px; }
-  .site-header .brand { gap:14px; }
+  .site-header .brand { gap:12px; }
   .site-header .global-search input { width:130px; }
-  .site-header .menu-trigger, .site-header .page-actions .button { padding:0 9px; }
+  .site-header .menu-trigger, .site-header .page-actions .button { padding:0 8px; }
   .site-header .page-actions .settings-toggle { padding:0; }
 }
 @media (max-width:1440px) {
@@ -69,16 +75,16 @@
 }
 @media (max-width:1310px) {
   .site-header { grid-template-columns:auto 112px 1fr auto auto; gap:8px; }
-  .site-header .brand { gap:10px; font-size:16px; }
-  .site-header .dell { font-size:24px; }
-  .site-header .global-search input { width:104px; padding:9px 7px; }
+  .site-header .brand { gap:10px; font-size:15px; }
+  .site-header .dell { font-size:22px; }
+  .site-header .global-search input { width:104px; padding:7px 6px; }
   .site-header .menu-trigger { gap:4px; padding:0 6px; font-size:12.5px; }
-  .site-header .page-actions .button { padding:0 7px; font-size:12.5px; }
+  .site-header .page-actions .button { padding:0 6px; font-size:12.5px; }
   .site-header .page-actions .settings-toggle { padding:0; }
-  .site-header .theme-controls button { padding:9px 8px; }
+  .site-header .theme-controls button { padding:7px 6px; }
 }
 @media (max-width:1190px) {
-  .site-header { grid-template-columns:auto 1fr auto auto; height:auto; padding-block:14px; row-gap:8px; }
+  .site-header { grid-template-columns:auto 1fr auto auto; height:auto; padding-block:12px; row-gap:8px; }
   .site-header .primary-nav { grid-column:1 / -1; grid-row:2; }
   .site-header .global-search { grid-column:2; justify-self:end; }
   .site-header .page-actions { grid-column:3; }
@@ -86,9 +92,9 @@
   .site-header .global-results { left:auto; right:0; }
 }
 @media (max-width:760px) {
-  .site-header { display:flex; flex-wrap:wrap; padding-inline:14px; }
-  .site-header .brand { gap:12px; font-size:15px; order:0; }
-  .site-header .dell { font-size:24px; }
+  .site-header { display:flex; flex-wrap:wrap; padding-inline:12px; }
+  .site-header .brand { gap:10px; font-size:14px; order:0; }
+  .site-header .dell { font-size:22px; }
   .site-header .theme-controls { order:1; margin-left:auto; }
   .site-header .page-actions { order:2; width:100%; justify-content:flex-end; }
   .site-header .global-search { order:3; width:100%; }
