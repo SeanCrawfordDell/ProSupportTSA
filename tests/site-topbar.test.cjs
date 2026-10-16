@@ -104,3 +104,31 @@ test('Escalation Quality links back to Case Notes and reopens the source case',(
  assert.match(fs.readFileSync(require.resolve('../js/case-notes.js'),'utf8'),/escalation-quality\.html#import=" \+ token \+ "&case=" \+ encodeURIComponent\(note\.id\)/);
  assert.match(fs.readFileSync(require.resolve('../js/app.js'),'utf8'),/"case-notes\.html#case=" \+ encodeURIComponent\(caseId\)/);
 });
+
+test('every tool page shows the landing-page header above its own bar, with the same menus and links',()=>{
+ const {window}=harness('case-notes'),T=window.SiteTopbar,header=T.headerMarkup();
+ // Same site menu as the landing pages: each hub link and each dropdown link, in order.
+ const links=html=>[...html.matchAll(/<a [^>]*?href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map(m=>m[1]+'|'+m[2].replace(/<[^>]+>/g,'').trim());
+ const nav=html=>/<nav class="primary-nav"[^>]*>([\s\S]*?)<\/nav>/.exec(html)[1];
+ const landing=fs.readFileSync(require.resolve('../index.html'),'utf8');
+ assert.deepEqual(links(nav(header)),links(nav(landing)),'the tool pages and the landing page offer the same menu');
+ assert.deepEqual(links(nav(header)).filter(l=>/ISG/.test(l)),['https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/|ISG Tools Catalog']);
+ assert.match(header,/<a class="brand" href="index\.html"[^>]*><span class="dell">DELL<\/span>[\s\S]*Pro-Support/);
+ for(const id of ['globalSearch','globalResults','themeToggle','themeLabel'])assert.equal((header.match(new RegExp(`id="${id}"`,'g'))||[]).length,1,id+' appears once');
+ // The Light/Dark button moved here; the tool bar keeps its own menus and no second copy of it.
+ for(const page of ['case-notes','escalation','trends']){
+  const bar=T.markup(page);
+  assert.ok(!bar.includes('themeToggle'),page+' bar has no second theme button');
+  assert.match(bar,/id="openToolsMenu"/);assert.match(bar,/id="openSettingsMenu"/);assert.match(bar,/id="requestFeature"/);
+ }
+ assert.match(T.markup('case-notes'),/id="openTraining"/);assert.match(T.markup('escalation'),/id="openTraining"/);
+});
+test('the header is added once, above the tool bar, and the pages need no extra files',()=>{
+ let inserted=[];const header={dataset:{page:'case-notes'},insertAdjacentHTML(where,html){inserted.push([where,html]);},set innerHTML(v){}};
+ const document={body:{},getElementById:id=>id==='siteTopbar'?header:null,addEventListener(){}};
+ const window={};vm.runInNewContext(fs.readFileSync(require.resolve('../js/site-topbar.js'),'utf8'),{window,document,encodeURIComponent});
+ assert.equal(inserted.length,1);assert.equal(inserted[0][0],'beforebegin');assert.match(inserted[0][1],/^<header class="site-header" id="siteHeader">/);
+ const css=fs.readFileSync(require.resolve('../css/site-topbar.css'),'utf8');
+ assert.match(css,/\.site-header \.submenu/);assert.match(css,/\[data-theme="dark"\] \.site-header/);
+ for(const page of ['case-notes.html','escalation-quality.html','support-trends.html'])assert.match(fs.readFileSync(require.resolve('../'+page),'utf8'),/css\/site-topbar\.css/,page+' loads the header styles');
+});

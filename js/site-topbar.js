@@ -17,15 +17,22 @@ window.SiteTopbar = (() => {
     },
     "trends": { name: "Support Trends", training: [["openWiki", "Wiki Documentation ↗", false, true]], settingsHere: false }
   };
+  const isgCatalog = "https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/";
   const tools = [
     ["tools.html", "Tools Hub"],
-    ["https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/", "ISG Tools Catalog ↗", "", true]
+    [isgCatalog, "ISG Tools Catalog ↗", "", true]
+  ];
+  // The site-wide menu, identical to the landing pages: [hub page, label, [[link, label, opens in a new tab]]].
+  const siteNav = [
+    ["tools.html", "Tools", [["tools.html", "Tools hub"], [isgCatalog, "ISG Tools Catalog", true]]],
+    ["case-management.html", "Case Management", [["case-management.html", "Case Management hub"], ["escalation-quality.html", "DE Escalation Request"], ["case-notes.html", "Case Notes"]]],
+    ["knowledge.html", "Knowledge", [["knowledge.html", "Knowledge hub"]]],
+    ["ai-resources.html", "AI Resources", [["ai-resources.html", "AI resources hub"]]],
+    ["training.html", "Training", [["training.html", "Training hub"]]]
   ];
   const menus = { tools: "openToolsMenu", training: "openTraining", settings: "openSettingsMenu" };
   const settings = [["customizeFields", "Customize Site Options", "customize-fields"], ["openBackupRestore", "Backup &amp; Restore", "backup-restore"]];
   const icons = {
-    moon: '<svg class="theme-moon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></svg>',
-    sun: '<svg class="theme-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>',
     gear: '<svg width="27.5" height="27.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 3 1-1h4l1 1 .5 2 2 .8 1.8-.6 2 3.5-.4 1.3-1.5 1.3v2.4l1.5 1.3.4 1.3-2 3.5-1.8-.6-2 .8-.5 2-1 1h-4l-1-1-.5-2-2-.8-1.8.6-2-3.5.4-1.3 1.5-1.3v-2.4l-1.5-1.3-.4-1.3 2-3.5 1.8.6 2-.8Z"/><circle cx="12" cy="12" r="3"/></svg>'
   };
   function feedbackUrl(name) {
@@ -47,9 +54,18 @@ window.SiteTopbar = (() => {
       `<nav class="topbar-actions" aria-label="${config.name} actions">${menu("tools", "Tools", toolItems)}${config.training.length ? menu("training", "Tutorial &amp; examples", trainingItems) : ""}</nav>` +
       `<div class="appearance-actions" role="group" aria-label="Feedback, appearance, and settings">` +
       `<a class="button secondary" id="requestFeature" href="${feedbackUrl(config.name).replace(/&/g, "&amp;")}" target="_blank" rel="noopener noreferrer" title="Opens a new GitHub issue in a new tab. Do not include customer or case data.">Request feature / Report bug ↗</a>` +
-      `<div class="theme-controls"><button class="theme-icon-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">${icons.moon}${icons.sun}</button></div>` +
       `<div class="topbar-menu" id="settingsMenu"><button class="button secondary settings-toggle" id="openSettingsMenu" type="button" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settingsMenuList">${icons.gear}</button><div class="topbar-dropdown settings-dropdown" id="settingsMenuList" hidden>${settingItems}</div></div>` +
       `</div>`;
+  }
+  // The landing-page header (brand, resource search, site menu, Light/Dark button) shown above the tool's own bar.
+  // site-navigation.js wires #globalSearch and theme.js wires #themeToggle once they exist.
+  function headerMarkup() {
+    const menu = ([hub, label, links]) => `<div class="menu-item"><a class="menu-trigger" href="${hub}">${label} <span aria-hidden="true">⌄</span></a><div class="submenu">` +
+      links.map(([href, text, external]) => `<a href="${href}"${external ? ' target="_blank" rel="noopener noreferrer"' : ""}>${text}</a>`).join("") + `</div></div>`;
+    return `<a class="brand" href="index.html" aria-label="Dell Pro-Support home"><span class="dell">DELL</span><span class="brand-divider"></span><span>Pro-Support</span></a>` +
+      `<div class="global-search" role="search"><label><span class="visually-hidden">Search resources</span><input id="globalSearch" type="search" placeholder="Search resources" autocomplete="off" aria-controls="globalResults"></label><div class="global-results" id="globalResults" hidden></div><p class="visually-hidden" id="globalStatus" role="status"></p></div>` +
+      `<nav class="primary-nav" aria-label="Primary navigation">${siteNav.map(menu).join("")}</nav>` +
+      `<div class="theme-controls" role="group" aria-label="Appearance"><button class="theme-switch" id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button></div>`;
   }
 
   // Dropdowns close after a choice, an outside click, or Escape. Only one is open at a time.
@@ -86,9 +102,10 @@ window.SiteTopbar = (() => {
   }
   function render(header = document.getElementById("siteTopbar")) {
     if (!header) return;
+    if (!document.getElementById("siteHeader")) header.insertAdjacentHTML?.("beforebegin", `<header class="site-header" id="siteHeader">${headerMarkup()}</header>`);
     header.innerHTML = markup(header.dataset.page);
     wire();
   }
   render();
-  return { pages, markup, render, setMenu, closeMenus };
+  return { pages, markup, headerMarkup, render, setMenu, closeMenus };
 })();

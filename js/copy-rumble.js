@@ -12,7 +12,7 @@ window.CopyRumble = (() => {
   }
   function shake() {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const targets = ["siteTopbar", "main"].map(id => document.getElementById(id)).filter(Boolean);
+    const targets = ["siteHeader", "siteTopbar", "main"].map(id => document.getElementById(id)).filter(Boolean);
     clearTimeout(timer);
     // Restart the animation if the button is pressed again mid-shake.
     targets.forEach(node => { node.classList.remove("copy-rumble"); void node.offsetWidth; node.classList.add("copy-rumble"); });
