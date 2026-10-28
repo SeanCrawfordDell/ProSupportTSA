@@ -17,12 +17,13 @@ window.SiteTopbar = (() => {
       training: [["openWiki", "Wiki Documentation ↗", false, true], ["tutorialDemo", "Tutorial Demo"], ["loadWeak", "Load Weak Example"], ["loadStrong", "Load Strong Example"]],
       settingsHere: false
     },
-    "trends": { name: "Support Trends", training: [["openWiki", "Wiki Documentation ↗", false, true]], settingsHere: false }
+    "trends": { name: "Support Trends", training: [["openWiki", "Wiki Documentation ↗", false, true]], settingsHere: false },
+    "portfolio": { name: "Tool Portfolio", training: [["openWiki", "Wiki Documentation ↗", false, true]], settingsHere: false }
   };
   const isgCatalog = "https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/";
   // The site-wide menu, identical to the landing pages: [hub page, label, [[link, label, opens in a new tab]]].
   const siteNav = [
-    ["tools.html", "Tools", [["tools.html", "Tools hub"], [isgCatalog, "ISG Tools Catalog", true]]],
+    ["tools.html", "Tools", [["tools.html", "Tools hub"], ["portfolio.html", "Tool Portfolio"], [isgCatalog, "ISG Tools Catalog", true]]],
     ["case-management.html", "Case Management", [["case-management.html", "Case Management hub"], ["escalation-quality.html", "DE Escalation Request"], ["case-notes.html", "Case Notes"]]],
     ["knowledge.html", "Knowledge", [["knowledge.html", "Knowledge hub"]]],
     ["ai-resources.html", "AI Resources", [["ai-resources.html", "AI resources hub"]]],
