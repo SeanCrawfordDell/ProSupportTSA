@@ -60,3 +60,22 @@ test('the page is wired into the site and builds catalog text with DOM methods o
  assert.match(read('index.html'),/<a href="portfolio\.html">Tool Portfolio<\/a>/);
  const data=require('../js/portfolio-data.js');assert.ok(Array.isArray(data.tools));
 });
+
+test('the catalog sync maps status, roadmap and owners without inventing health',()=>{
+ const S=require('../scripts/sync-portfolio-from-catalog.cjs');
+ const data=S.build({tools:[
+  {id:'t1',name:'One',status:'released',owner:'Team A',updatedAt:'2026-10-01',roadmap:[{feature:'Done',status:'completed'}]},
+  {id:'t2',name:'Two',status:'development',owner:'pat.lee@dell.com',roadmap:[{feature:'Late',status:'in-progress',targetDate:'2026-09-01'},{feature:'Later',status:'planned',targetDate:'2026-12-01'},{feature:'Done',status:'completed'}]},
+  {id:'t3',name:'Three',status:'internal-testing',progress:'Working Prototype',owner:'APJ',roadmap:[]},
+  {id:'t4',name:'Four',status:'planning',owner:'B',roadmap:[{feature:'Spec',status:'planned',targetDate:'2027-01-15'}]}
+ ]},'2026-10-28');
+ const [one,two,three,four]=data.tools;
+ assert.deepEqual([one.stage,two.stage,three.stage,four.stage],['Support','Build','Test','Intake']);
+ assert.deepEqual([one.health,two.health,four.health],['On track','At risk','On track'],'At risk only for an overdue open roadmap item');
+ assert.equal(two.note,'Late was due Sep 1, 2026');assert.equal(two.target,'Sep 1, 2026');assert.equal(two.tasksDone+'/'+two.tasksTotal,'1/3');
+ assert.equal(two.owner,'Pat Lee');assert.equal(three.note,'Internal testing · Working Prototype');assert.equal(four.note,'Next: Spec');
+ assert.equal(one.link,'https://seancrawforddell.github.io/ISGToolsCatalog/#/tools/t1');
+ const loaded={};new Function('window','module',S.render(data))(loaded,undefined);
+ assert.equal(loaded.PortfolioData.tools.length,4,'the generated file loads in the browser');
+ assert.ok(require('../js/portfolio-data.js').tools.length>0,'the shipped data lists the catalog tools');
+});

@@ -22,7 +22,7 @@
   <script src="js/site-topbar.js?v=20261028-portfolio"></script>
   <main id="main">
     <section class="hero"><div><p class="eyebrow">TOOLS</p><h1>Tool Portfolio</h1><p>Stage, health, progress and owner for every tool in the ISG Tools Catalog.</p></div><a class="button secondary" id="sourceLink" href="https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/" target="_blank" rel="noopener noreferrer">Open ISG Tools Catalog ↗</a></section>
-    <p class="notice">Health, Stage and the status note are set by each tool's owner every week. Progress counts closed tasks on the tool's tracking issue.</p>
+    <p class="notice" id="portfolioNotice">Health, Stage and the status note are set by each tool's owner every week. Progress counts closed tasks on the tool's tracking issue.</p>
 
     <section id="emptyState" class="panel empty-state" hidden>
       <h2>No tools listed yet</h2>
@@ -35,7 +35,7 @@
         <article class="metric metric-on"><span>On track</span><strong id="metricOn">0</strong><small>no action needed</small></article>
         <article class="metric metric-risk"><span>At risk</span><strong id="metricRisk">0</strong><small>watch this week</small></article>
         <article class="metric metric-off"><span>Off track</span><strong id="metricOff">0</strong><small>needs a decision</small></article>
-        <article class="metric metric-stale"><span>Stale updates</span><strong id="metricStale">0</strong><small>not reviewed in 7+ days</small></article>
+        <article class="metric metric-stale"><span>Stale updates</span><strong id="metricStale">0</strong><small id="metricStaleNote">not reviewed in 7+ days</small></article>
       </div>
 
       <section class="panel stage-panel" aria-labelledby="stageHeading">

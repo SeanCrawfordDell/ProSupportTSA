@@ -4,7 +4,7 @@
 (() => {
   const P = window.PortfolioCore, data = window.PortfolioData || { tools: [] };
   const $ = id => document.getElementById(id);
-  const staleDays = 7;
+  const staleDays = Number.isInteger(data.staleDays) && data.staleDays > 0 ? data.staleDays : 7;
   const views = ["portfolio", "pipeline", "owners"];
   const state = { view: "portfolio", group: "Health", query: "" };
   const tools = (Array.isArray(data.tools) ? data.tools : []).map(P.normalize);
@@ -152,6 +152,8 @@
   function start() {
     const source = $("sourceLink");
     if (source && /^https?:\/\//.test(data.sourceUrl || "")) source.href = data.sourceUrl;
+    if (typeof data.notice === "string" && data.notice.trim()) $("portfolioNotice").textContent = data.notice.trim();
+    $("metricStaleNote").textContent = `not updated in ${staleDays}+ days`;
     if (!tools.length) { $("emptyState").hidden = false; $("dashboard").hidden = true; return; }
     $("emptyState").hidden = true;
     $("dashboard").hidden = false;
