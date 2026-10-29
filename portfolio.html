@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Status of every tool in the ISG Tools Catalog: stage, health, progress and owner.">
+  <meta name="description" content="Development status, progress and owner for every tool in the ISG Tools Catalog.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
   <script src="js/theme.js?v=20261014-history-recovery"></script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
@@ -11,35 +11,36 @@
   <link rel="stylesheet" href="css/styles.css?v=20261016-header-compact-v13">
   <link rel="stylesheet" href="css/theme.css?v=20261014-history-recovery">
   <link rel="stylesheet" href="css/site-topbar.css?v=20261016-header-compact-v13">
-  <link rel="stylesheet" href="css/portfolio.css?v=20261028-portfolio">
-  <script src="js/portfolio-core.js?v=20261028-portfolio" defer></script>
-  <script src="js/portfolio-data.js?v=20261028-portfolio" defer></script>
-  <script src="js/portfolio.js?v=20261028-portfolio" defer></script>
+  <link rel="stylesheet" href="css/portfolio.css?v=20261029-portfolio-live">
+  <script src="js/portfolio-core.js?v=20261029-portfolio-live" defer></script>
+  <script src="js/portfolio-data.js?v=20261029-portfolio-live" defer></script>
+  <script src="js/portfolio.js?v=20261029-portfolio-live" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header" id="siteTopbar" data-page="portfolio"></header>
   <script src="js/site-topbar.js?v=20261028-portfolio"></script>
   <main id="main">
-    <section class="hero"><div><p class="eyebrow">TOOLS</p><h1>Tool Portfolio</h1><p>Stage, health, progress and owner for every tool in the ISG Tools Catalog.</p></div><a class="button secondary" id="sourceLink" href="https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/" target="_blank" rel="noopener noreferrer">Open ISG Tools Catalog ↗</a></section>
-    <p class="notice" id="portfolioNotice">Health, Stage and the status note are set by each tool's owner every week. Progress counts closed tasks on the tool's tracking issue.</p>
+    <section class="hero"><div><p class="eyebrow">TOOLS</p><h1>Tool Portfolio</h1><p>Development status, progress and owner for every tool in the ISG Tools Catalog.</p></div><a class="button secondary" id="sourceLink" href="https://pages.eos2git.cec.lab.emc.com/Sean-Crawford/ISGToolsCatalog/" target="_blank" rel="noopener noreferrer">Open ISG Tools Catalog ↗</a></section>
+    <p class="notice" id="portfolioNotice" role="status">Loading the ISG Tools Catalog…</p>
+    <p class="panel empty-inline" id="loadingState">Loading tools…</p>
 
     <section id="emptyState" class="panel empty-state" hidden>
       <h2>No tools listed yet</h2>
-      <p>Add the catalog's tools to <code>js/portfolio-data.js</code>, one entry per tool. The file lists the fields each entry takes.</p>
+      <p>The ISG Tools Catalog has no tools to show.</p>
     </section>
 
     <section id="dashboard" hidden>
       <div class="metric-grid portfolio-metrics" aria-label="Portfolio summary">
         <article class="metric"><span>Tools</span><strong id="metricTotal">0</strong><small>in the catalog</small></article>
-        <article class="metric metric-on"><span>On track</span><strong id="metricOn">0</strong><small>no action needed</small></article>
-        <article class="metric metric-risk"><span>At risk</span><strong id="metricRisk">0</strong><small>watch this week</small></article>
-        <article class="metric metric-off"><span>Off track</span><strong id="metricOff">0</strong><small>needs a decision</small></article>
-        <article class="metric metric-stale"><span>Stale updates</span><strong id="metricStale">0</strong><small id="metricStaleNote">not reviewed in 7+ days</small></article>
+        <article class="metric metric-released"><span>Released</span><strong id="metricReleased">0</strong><small>released or in maintenance</small></article>
+        <article class="metric metric-testing"><span>In testing</span><strong id="metricTesting">0</strong><small>testing or internal testing</small></article>
+        <article class="metric metric-development"><span>In development</span><strong id="metricDevelopment">0</strong><small>idea, planning or development</small></article>
+        <article class="metric"><span>Owners</span><strong id="metricOwners">0</strong><small>people or teams</small></article>
       </div>
 
       <section class="panel stage-panel" aria-labelledby="stageHeading">
-        <div class="stage-panel-head"><h2 id="stageHeading">Tools by stage</h2><span class="muted small">Intake → Design → Build → Test → Release → Support</span></div>
+        <div class="stage-panel-head"><h2 id="stageHeading">Tools by development status</h2><span class="muted small">Idea → Planning → Development → Testing → Internal Testing → Released → Maintenance</span></div>
         <div class="stage-bar" id="stageBar" aria-hidden="true"></div>
         <ul class="stage-legend" id="stageLegend"></ul>
       </section>
@@ -51,7 +52,7 @@
           <button class="view-tab" id="tab-owners" type="button" role="tab" aria-controls="panel-owners" aria-selected="false" tabindex="-1">Who owns what</button>
         </div>
         <div class="view-tools">
-          <label class="filter"><span class="visually-hidden">Filter tools</span><input id="toolFilter" type="search" placeholder="Filter by tool, owner, stage or note" autocomplete="off"></label>
+          <label class="filter"><span class="visually-hidden">Filter tools</span><input id="toolFilter" type="search" placeholder="Filter tools, owners or statuses" autocomplete="off"></label>
           <label class="group-control" id="groupControl">Group by <select id="groupBy"></select></label>
         </div>
       </div>
