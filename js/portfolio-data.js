@@ -14,7 +14,7 @@ const PortfolioData = {
       "name": "Dell ProSupport ToolBox",
       "category": "Log Collection",
       "description": "Central launcher interface for Dell ProSupport utilities and troubleshooting tools.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -26,7 +26,7 @@ const PortfolioData = {
       "name": "AzHCIUrlChecker",
       "category": "Utility",
       "description": "Connectivity checker for Azure Local endpoints and firewall requirements.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -39,7 +39,7 @@ const PortfolioData = {
       "name": "BOILER",
       "category": "Diagnostics",
       "description": "CBS and DISM log analyzer for Windows servicing failures and corruption.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -51,7 +51,7 @@ const PortfolioData = {
       "name": "DART",
       "category": "Updates & Maintenance",
       "description": "Dell Automated Server Updater for Windows Failover Cluster and HCI/S2D environments.",
-      "owner": "Jim Gandy",
+      "owner": "Jim.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -63,7 +63,7 @@ const PortfolioData = {
       "name": "FLEP",
       "category": "Diagnostics",
       "description": "Windows event log filter for common server, failover-clustering, and storage events.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -75,7 +75,7 @@ const PortfolioData = {
       "name": "GetHyperVBottlenecks",
       "category": "Diagnostics",
       "description": "Hyper-V performance bottleneck detection tool.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -87,7 +87,7 @@ const PortfolioData = {
       "name": "iDRAC Connection Manager",
       "category": "Server Management",
       "description": "PowerShell Windows Forms interface for managing Dell server iDRAC access.",
-      "owner": "Jim Gandy",
+      "owner": "Jim.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -99,7 +99,7 @@ const PortfolioData = {
       "name": "KeyRelay",
       "category": "Utility",
       "description": "GUI utility for sending text to applications that block clipboard paste operations.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -111,7 +111,7 @@ const PortfolioData = {
       "name": "LogCollector",
       "category": "Log Collection",
       "description": "Comprehensive log collection tool for Windows, Dell servers, and supported switches.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -123,7 +123,7 @@ const PortfolioData = {
       "name": "GetShowTech",
       "category": "Log Collection",
       "description": "Dell switch show-tech diagnostic output collection tool.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -135,7 +135,7 @@ const PortfolioData = {
       "name": "SDDC Dell Enhanced",
       "category": "Log Collection",
       "description": "SDDC diagnostic data collection workflow for Azure Stack HCI environments.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -147,7 +147,7 @@ const PortfolioData = {
       "name": "SDDC Offline Dell Enhanced",
       "category": "Log Collection",
       "description": "Offline SDDC diagnostic data collection for environments without internet access.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -159,7 +159,7 @@ const PortfolioData = {
       "name": "TSR Collector",
       "category": "Log Collection",
       "description": "Dell Technical Support Report collector for cluster nodes via iDRAC.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -171,7 +171,7 @@ const PortfolioData = {
       "name": "TALI",
       "category": "Diagnostics",
       "description": "Test-DellAzureLocalIssues - Azure Local cluster health and configuration checker.",
-      "owner": "Jim Gandy",
+      "owner": "Tommy.Paulk@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -183,7 +183,7 @@ const PortfolioData = {
       "name": "FLCkr",
       "category": "Diagnostics",
       "description": "File-system filter driver altitude checker for Windows troubleshooting.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -195,7 +195,7 @@ const PortfolioData = {
       "name": "Convert-Etl2Pcap",
       "category": "Utility",
       "description": "Windows ETL network trace to PCAP format converter.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Jimy.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -207,7 +207,7 @@ const PortfolioData = {
       "name": "CluChk",
       "category": "Diagnostics",
       "description": "CluChk (Cluster Checker) is a comprehensive PowerShell diagnostic analysis tool for Dell S2D Ready Node and Azure Local deployments. It processes multiple types of diagnostic logs—including Show Tech-Support, Support Assist collections, SDDC and performance reports—to generate interactive HTML reports that validate deployment compliance against Dell's official deployment guides.",
-      "owner": "Microsoft DE",
+      "owner": "Jim.Gandy@dell.com, Tommy.Paulk@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -219,7 +219,7 @@ const PortfolioData = {
       "name": "DriFT",
       "category": "Diagnostics",
       "description": "Driver and firmware validation tool for Windows and Azure Local servers.",
-      "owner": "Emily Watson",
+      "owner": "Jim.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -231,7 +231,7 @@ const PortfolioData = {
       "name": "SLIC",
       "category": "Log Collection",
       "description": "SLIC is a Dell switch Log Collection tool designed for Azure Local environments. It parses Dell switch logs, validates switch configurations against Azure Local recommended settings, and generates a detailed HTML report for troubleshooting and compliance review.",
-      "owner": "Jim Gandy",
+      "owner": "Jim.Gandy@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [
@@ -255,7 +255,7 @@ const PortfolioData = {
       "name": "OME Built-In Account Reset",
       "category": "Utility",
       "description": "Script to reset the OpenManage Enterprise (OME) built-in admin account password using the OME API.",
-      "owner": "Dell ProSupport GSE",
+      "owner": "Ted.Park@dell.com",
       "status": "released",
       "progress": 100,
       "operatingSystem": [

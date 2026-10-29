@@ -29,6 +29,11 @@
     wrap.append(avatar(name), document.createTextNode(name));
     return wrap;
   }
+  function ownerList(tool) {
+    const wrap = el("span", "owner-list");
+    wrap.append(...tool.owners.map(owner));
+    return wrap;
+  }
   function progress(tool) {
     if (tool.percent === null) return el("span", tool.progressLabel ? "progress-text" : "muted", tool.progressLabel || "—");
     const wrap = el("div", "progress"), bar = el("div", "bar"), fill = el("span");
@@ -73,7 +78,7 @@
       body.append(groupRow);
       for (const tool of group.tools) {
         const tr = el("tr");
-        for (const cell of [toolName(tool), owner(tool.owner), statusPill(tool), progress(tool), el("span", "os", tool.os || "—"), el("span", "note", tool.description || "—")]) {
+        for (const cell of [toolName(tool), ownerList(tool), statusPill(tool), progress(tool), el("span", "os", tool.os || "—"), el("span", "note", tool.description || "—")]) {
           const td = el("td"); td.append(cell); tr.append(td);
         }
         body.append(tr);
@@ -92,7 +97,7 @@
       if (!column.tools.length) section.append(el("p", "muted small column-empty", "No tools"));
       for (const tool of column.tools) {
         const card = el("article", "tool-card-mini");
-        card.append(toolName(tool), owner(tool.owner));
+        card.append(toolName(tool), ownerList(tool));
         if (tool.progressLabel && tool.percent !== 100) card.append(progress(tool));
         section.append(card);
       }
@@ -174,10 +179,11 @@
   }
 
   async function start() {
-    const catalogUrl = /^https?:\/\//.test(data.sourceUrl || "") ? data.sourceUrl : "";
-    if (catalogUrl) $("sourceLink").href = catalogUrl;
     wire();
     const live = await fetchLive();
+    // Links go to the catalog the data came from: the one beside this site when live, else the saved address.
+    const catalogUrl = live ? new URL("./", new URL(data.liveUrl, location.href)).href : /^https?:\/\//.test(data.sourceUrl || "") ? data.sourceUrl : "";
+    if (catalogUrl) $("sourceLink").href = catalogUrl;
     const notice = $("portfolioNotice");
     if (live) {
       tools = live.map((tool, i) => P.normalize(tool, i, catalogUrl));

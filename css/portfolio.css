@@ -71,6 +71,7 @@
 .tool-name { display:flex; flex-direction:column; min-width:0; }
 .portfolio-table .tool-name { min-width:190px; }
 .portfolio-table .owner { min-width:150px; }
+.owner-list { display:flex; flex-direction:column; gap:6px; }
 .tool-name a,.tool-name strong { font-weight:700; color:var(--ink); overflow-wrap:anywhere; }
 .tool-name a:hover { color:var(--blue); }
 .owner { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
@@ -88,6 +89,7 @@
 .column-empty { margin:4px 0; }
 .tool-card-mini { display:grid; gap:10px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--panel-bg); }
 .tool-card-mini .owner { font-size:13px; white-space:normal; }
+.tool-card-mini .owner-list { gap:4px; }
 .tool-card-mini .progress { min-width:0; }
 
 .owner-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; align-items:start; }

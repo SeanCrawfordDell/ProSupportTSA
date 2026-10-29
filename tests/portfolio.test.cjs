@@ -6,12 +6,15 @@ const catalog={tools:[
  {id:'t2',name:'Bravo',owner:'pat.lee@dell.com',status:'development',progress:40,category:'Diagnostics'},
  {id:'t3',name:'Charlie',owner:'Ana Ruiz',status:'internal-testing',progress:'Working Prototype',category:'Diagnostics'},
  {id:'t4',name:'Delta',status:'maintenance',roadmap:[{feature:'Old',status:'planned'}]},
- {id:'t5',name:'Echo',owner:'Ana Ruiz',status:'retired'}
+ {id:'t5',name:'Echo',owner:'Ana Ruiz',status:'retired'},
+ {id:'t6',name:'Foxtrot',owner:'jim.gandy@dell.com, Ana.Ruiz@dell.com',status:'released'}
 ]};
 const tools=P.load(catalog,'https://example.test/ISGToolsCatalog/');
 
 test('catalog records become rows with the catalog\'s own status labels',()=>{
- assert.deepEqual(tools.map(t=>t.statusLabel),['Released','Development','Internal Testing','Maintenance','Retired']);
+ assert.deepEqual(tools.map(t=>t.statusLabel),['Released','Development','Internal Testing','Maintenance','Retired','Released']);
+ assert.deepEqual(tools[5].owners,['Jim Gandy','Ana Ruiz'],'several owners in one field become separate owners');assert.equal(tools[5].owner,'Jim Gandy, Ana Ruiz');
+ assert.deepEqual(P.ownerNames('A; B and C & D / E'),['A','B','C','D','E']);assert.deepEqual(P.ownerNames(''),[P.unassigned]);
  assert.equal(tools[4].status,'other','unknown statuses keep their name but sit in Other');
  assert.equal(tools[1].owner,'Pat Lee','email owners read as names, so one person is one owner');
  assert.equal(tools[3].owner,P.unassigned);assert.equal(tools[3].category,'Uncategorized');
@@ -25,7 +28,7 @@ test('catalog records become rows with the catalog\'s own status labels',()=>{
 
 test('summary counts released, testing, development and owners',()=>{
  const s=P.summary(tools);
- assert.deepEqual([s.total,s.released,s.testing,s.inDevelopment,s.owners],[5,2,1,1,2]);
+ assert.deepEqual([s.total,s.released,s.testing,s.inDevelopment,s.owners],[6,3,1,1,3]);
  assert.deepEqual(s.statuses.map(x=>x.label),['Idea','Planning','Development','Testing','Internal Testing','Released','Maintenance','Other']);
  assert.equal(P.summary(tools.slice(0,3)).statuses.length,7,'Other appears only when a tool needs it');
 });
@@ -33,21 +36,22 @@ test('summary counts released, testing, development and owners',()=>{
 test('the table groups by Development Status, Owner or Category',()=>{
  assert.deepEqual(P.groupings,['Development Status','Owner','Category']);
  assert.deepEqual(P.groups(tools).map(g=>g.name),['Development','Internal Testing','Released','Maintenance','Other']);
- assert.deepEqual(P.groups(tools,'Owner').map(g=>g.name),[P.unassigned,'Ana Ruiz','Pat Lee']);
+ assert.deepEqual(P.groups(tools,'Owner').find(g=>g.name==='Ana Ruiz').tools.map(t=>t.name),['Charlie','Foxtrot','Echo'],'a shared tool appears under each owner');
+ assert.deepEqual(P.groups(tools,'Owner').map(g=>g.name),[P.unassigned,'Ana Ruiz','Pat Lee','Jim Gandy']);
  assert.deepEqual(P.groups(tools,'Category').map(g=>g.name),['Diagnostics','Utility','Uncategorized']);
 });
 
 test('the board has every status and the owner list counts each status',()=>{
  assert.deepEqual(P.columns(tools.slice(0,3)).map(c=>c.name),P.statuses.map(s=>s.label));
  const ana=P.owners(tools).find(o=>o.name==='Ana Ruiz');
- assert.deepEqual(ana.byStatus.map(s=>s.label+':'+s.count),['Internal Testing:1','Other:1']);
+ assert.deepEqual(ana.byStatus.map(s=>s.label+':'+s.count),['Internal Testing:1','Released:1','Other:1']);
  assert.equal(P.initials('Pat Lee'),'PL');assert.equal(P.initials(P.unassigned),'?');
 });
 
 test('the filter searches name, owner, status, category and description',()=>{
  assert.equal(tools.filter(t=>P.matches(t,'pat')).length,2);
  assert.equal(tools.filter(t=>P.matches(t,'internal testing')).length,1);
- assert.equal(tools.filter(t=>P.matches(t,'')).length,5);
+ assert.equal(tools.filter(t=>P.matches(t,'')).length,6);
 });
 
 test('the page reads the live catalog first and falls back to the saved copy',()=>{
@@ -55,6 +59,7 @@ test('the page reads the live catalog first and falls back to the saved copy',()
  assert.equal(data.liveUrl,'../ISGToolsCatalog/tools.json','the catalog sits beside this site on the same Pages host');
  assert.match(js,/fetch\(new URL\(data\.liveUrl, location\.href\), \{ cache: "no-store"/);
  assert.match(js,/tools = P\.load\(data, catalogUrl\)/,'falls back to the saved copy');
+ assert.match(js,/live \? new URL\("\.\/", new URL\(data\.liveUrl, location\.href\)\)\.href/,'links follow the catalog the data came from');
  assert.ok(data.tools.length>0&&data.snapshotDate);
  assert.ok(!/innerHTML|insertAdjacentHTML/.test(js),'no HTML parsing of catalog data');
  for(const word of ['Health','On track','At risk','Off track','Stale','Updated','Stage'])assert.ok(!new RegExp('\\b'+word+'\\b').test(html+js),word+' is gone from the page');
@@ -71,6 +76,6 @@ test('the sync script saves only the catalog fields the page uses',()=>{
  assert.equal(data.snapshotDate,'2026-10-29');assert.equal(data.liveUrl,'../ISGToolsCatalog/tools.json');
  assert.ok(!('roadmap' in data.tools[3]));assert.deepEqual(Object.keys(data.tools[0]),['id','name','category','owner','status','progress','operatingSystem']);
  const loaded={};new Function('window','module',S.render(data))(loaded,undefined);
- assert.equal(loaded.PortfolioData.tools.length,5,'the generated file loads in the browser');
+ assert.equal(loaded.PortfolioData.tools.length,6,'the generated file loads in the browser');
  assert.throws(()=>S.build({},'2026-10-29'));
 });

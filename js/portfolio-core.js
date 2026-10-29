@@ -30,6 +30,11 @@ const PortfolioCore = (() => {
     if (!email) return value || unassigned;
     return email[1].split(/[._-]+/).filter(Boolean).map(p => p[0].toUpperCase() + p.slice(1).toLowerCase()).join(" ");
   }
+  // A catalog owner field can name several people ("a@dell.com, b@dell.com"); each becomes its own owner.
+  function ownerNames(owner) {
+    const names = [...new Set(text(owner).split(/\s*[,;\/]\s*|\s+and\s+|\s*&\s*/i).map(text).filter(Boolean).map(ownerName))];
+    return names.length ? names : [unassigned];
+  }
 
   // Accepts the catalog file ({ tools: [...] }) or a bare list; anything else is not a catalog.
   function parseCatalog(json) {
@@ -45,13 +50,15 @@ const PortfolioCore = (() => {
     const status = statusOf(statusId);
     const progressValue = tool?.progress;
     const percent = Number.isFinite(progressValue) ? Math.max(0, Math.min(100, Math.round(progressValue))) : null;
+    const people = ownerNames(tool?.owner);
     const base = /^https?:\/\//i.test(text(catalogUrl)) ? text(catalogUrl).replace(/#.*$/, "") : "";
     return {
       id,
       name: text(tool?.name) || "Untitled tool",
       category: text(tool?.category) || uncategorized,
       description: text(tool?.description),
-      owner: ownerName(tool?.owner),
+      owners: people,
+      owner: people.join(", "),
       status: status.id,
       statusLabel: status === other && statusId ? statusId.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : status.label,
       percent,
@@ -80,7 +87,7 @@ const PortfolioCore = (() => {
       released: count(live),
       testing: count(inTesting),
       inDevelopment: count(inDevelopment),
-      owners: new Set(tools.map(t => t.owner).filter(o => o !== unassigned)).size,
+      owners: new Set(tools.flatMap(t => t.owners).filter(o => o !== unassigned)).size,
       statuses: usedStatuses(tools).map(s => ({ id: s.id, label: s.label, count: tools.filter(t => t.status === s.id).length }))
     };
   }
@@ -98,10 +105,10 @@ const PortfolioCore = (() => {
   // Pipeline board: one column per catalog status, including empty ones.
   const columns = tools => usedStatuses(tools).map(s => ({ id: s.id, name: s.label, tools: tools.filter(t => t.status === s.id).sort(order) }));
 
-  // Who owns what: Unassigned first, then owners with the most tools.
+  // Who owns what: Unassigned first, then owners with the most tools. A tool with two owners is listed under both.
   function owners(tools) {
-    return [...new Set(tools.map(t => t.owner))].map(name => {
-      const mine = tools.filter(t => t.owner === name).sort(order);
+    return [...new Set(tools.flatMap(t => t.owners))].map(name => {
+      const mine = tools.filter(t => t.owners.includes(name)).sort(order);
       const byStatus = usedStatuses(mine).map(s => ({ id: s.id, label: s.label, count: mine.filter(t => t.status === s.id).length })).filter(s => s.count);
       return { name, tools: mine, byStatus };
     }).sort((a, b) => (b.name === unassigned) - (a.name === unassigned) || b.tools.length - a.tools.length || a.name.localeCompare(b.name));
@@ -109,7 +116,7 @@ const PortfolioCore = (() => {
 
   const initials = name => name === unassigned ? "?" : text(name).split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join("");
 
-  return { statuses, groupings, unassigned, ownerName, parseCatalog, normalize, load, order, matches, summary, groups, columns, owners, initials };
+  return { statuses, groupings, unassigned, ownerName, ownerNames, parseCatalog, normalize, load, order, matches, summary, groups, columns, owners, initials };
 })();
 if (typeof window !== "undefined") window.PortfolioCore = PortfolioCore;
 if (typeof module !== "undefined") module.exports = PortfolioCore;
